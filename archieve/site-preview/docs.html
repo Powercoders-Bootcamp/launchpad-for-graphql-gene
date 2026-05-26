@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>graphql-gene Docs</title>
+    <meta
+      name="description"
+      content="Docs preview for graphql-gene rendered from a manifest-based GitHub source model."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="site-bg"></div>
+
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="./index.html" aria-label="graphql-gene home">
+          <img
+            src="./graphql_gene_logo.svg"
+            alt="graphql-gene logo"
+            class="brand__logo"
+          />
+          <span class="brand__name">graphql-gene</span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="./docs.html" aria-current="page">Docs</a>
+          <a href="./playground.html">Playground</a>
+        </nav>
+
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Toggle color theme"
+        >
+          <span class="theme-toggle__track">
+            <span class="theme-toggle__thumb"></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="docs-topbar">
+        <div class="container docs-topbar__inner">
+          <nav class="docs-topnav" aria-label="Documentation">
+            <a class="is-active" href="./docs.html">Guide</a>
+            <a href="./playground.html">Playground</a>
+            <a
+              href="https://github.com/accesimpot/graphql-gene"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            >
+          </nav>
+          <div class="docs-topbar__meta">
+            GitHub content source · manifest-based navigation preview
+          </div>
+        </div>
+      </section>
+
+      <section class="docs-shell-section">
+        <div class="container">
+          <div class="docs-shell">
+            <aside class="docs-sidebar">
+              <div class="docs-sidebar__top">
+                <div class="panel-kicker">Docs sections</div>
+                <div class="docs-section-tabs" id="docsSectionTabs"></div>
+              </div>
+
+              <label class="docs-search">
+                <span class="docs-search__label">Search current preview</span>
+                <input
+                  id="docsSearchInput"
+                  class="control-input"
+                  type="text"
+                  placeholder="Search guides, summaries, categories..."
+                />
+              </label>
+
+              <div class="docs-search__meta" id="docsSearchMeta"></div>
+
+              <div class="docs-sidebar__groups" id="docsSidebarGroups"></div>
+            </aside>
+
+            <section class="docs-article">
+              <div class="docs-article__head">
+                <div class="docs-article__head-main">
+                  <div class="docs-breadcrumb" id="docsArticleBreadcrumb"></div>
+                  <h2 id="docsArticleTitle"></h2>
+                  <p id="docsArticleDescription"></p>
+                </div>
+                <div class="docs-article__head-meta">
+                  <span class="docs-status" id="docsArticleStatus"></span>
+                  <a
+                    id="docsArticleSource"
+                    class="docs-source-link"
+                    target="_blank"
+                    rel="noreferrer"
+                    href="#"
+                    >Source file</a
+                  >
+                </div>
+              </div>
+
+              <div class="docs-article__body" id="docsArticleBody"></div>
+
+              <div class="docs-pager">
+                <button
+                  type="button"
+                  class="docs-pager__card"
+                  id="docsArticlePrev"
+                >
+                  <span class="docs-pager__meta"></span>
+                  <span class="docs-pager__title"></span>
+                </button>
+                <button
+                  type="button"
+                  class="docs-pager__card docs-pager__card--next"
+                  id="docsArticleNext"
+                >
+                  <span class="docs-pager__meta"></span>
+                  <span class="docs-pager__title"></span>
+                </button>
+              </div>
+            </section>
+
+            <aside class="docs-toc">
+              <div class="panel-kicker">On this page</div>
+              <ul class="docs-toc__list" id="docsTocList"></ul>
+              <div class="docs-toc__note">
+                The final website could generate this from headings during the
+                Markdown rendering step.
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__grid">
+        <div class="footer__brand">
+          <a
+            class="brand brand--footer"
+            href="./index.html"
+            aria-label="graphql-gene home"
+          >
+            <img
+              src="./graphql_gene_logo.svg"
+              alt="graphql-gene logo"
+              class="brand__logo"
+            />
+            <span class="brand__name">graphql-gene</span>
+          </a>
+          <p>Mock footer content for the documentation preview surface.</p>
+        </div>
+
+        <div class="footer__links">
+          <div>
+            <div class="footer__heading">Preview</div>
+            <a href="./index.html">Homepage</a>
+            <a href="./docs.html">Docs</a>
+            <a href="./playground.html">Playground</a>
+          </div>
+          <div>
+            <div class="footer__heading">Docs Model</div>
+            <a href="./docs.html">Manifest-based routing</a>
+            <a href="./docs.html">GitHub source</a>
+            <a href="./docs.html">Sidebar generation</a>
+          </div>
+          <div>
+            <div class="footer__heading">Source</div>
+            <a
+              href="https://github.com/accesimpot/graphql-gene"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            >
+            <a href="./docs.html">Taxonomy</a>
+            <a href="./docs.html">Validation</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./theme.js"></script>
+    <script src="./docs-data.js"></script>
+    <script src="./docs.js"></script>
+  </body>
+</html>

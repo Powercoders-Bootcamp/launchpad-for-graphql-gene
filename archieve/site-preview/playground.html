@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>graphql-gene Playground</title>
+    <meta
+      name="description"
+      content="Playground preview for graphql-gene capabilities."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="site-bg"></div>
+
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="./index.html" aria-label="graphql-gene home">
+          <img
+            src="./graphql_gene_logo.svg"
+            alt="graphql-gene logo"
+            class="brand__logo"
+          />
+          <span class="brand__name">graphql-gene</span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="./docs.html">Docs</a>
+          <a href="./playground.html">Playground</a>
+        </nav>
+
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Toggle color theme"
+        >
+          <span class="theme-toggle__track">
+            <span class="theme-toggle__thumb"></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <main class="playground-page">
+      <div class="container container--playground">
+        <section class="playground-shell" id="workbench">
+          <div class="playground-toolbar">
+            <div class="playground-toolbar__tabs">
+              <button class="pillar-tab is-active" data-pillar-card="schema">
+                <span class="pillar-tab__title">Schema Generation</span>
+              </button>
+              <button class="pillar-tab" data-pillar-card="runtime">
+                <span class="pillar-tab__title">Runtime Discipline</span>
+              </button>
+              <button class="pillar-tab" data-pillar-card="polymorphic">
+                <span class="pillar-tab__title">Polymorphic Associations</span>
+              </button>
+            </div>
+            <div class="playground-toolbar__actions">
+              <button
+                class="button button--secondary button--small"
+                id="shareButton"
+                type="button"
+                title="Copy shareable link to this scenario"
+              >
+                Share
+              </button>
+              <button
+                class="button button--primary button--small"
+                id="generateButton"
+              >
+                Generate output
+              </button>
+            </div>
+          </div>
+
+          <div class="scenario-subtoolbar">
+            <div class="scenario-subtoolbar__label">Scenarios</div>
+            <div
+              class="scenario-subtoolbar__list"
+              id="scenarioList"
+              aria-label="Scenario list"
+            ></div>
+          </div>
+
+          <div class="playground-layout">
+            <section class="controls-column">
+              <div class="panel-head panel-head--compact">
+                <div>
+                  <div class="panel-kicker" id="scenarioLabel">Pillar</div>
+                  <h2 class="panel-title" id="scenarioTitle">Model to Schema</h2>
+                </div>
+              </div>
+              <p class="panel-intro" id="scenarioIntro"></p>
+              <div class="control-stack" id="scenarioControls"></div>
+            </section>
+
+            <section class="editor-column">
+              <article class="output-card output-card--editor output-card--structured">
+                <div class="output-card__header">
+                  <div class="panel-kicker">Structured input</div>
+                  <span class="output-chip" id="inputChip">preview</span>
+                </div>
+                <div
+                  id="generatedInput"
+                  class="editor-surface editor-surface--input"
+                  aria-label="Structured input editor"
+                ></div>
+              </article>
+            </section>
+
+            <section class="results-column">
+              <article class="output-card output-card--editor">
+                <div class="output-card__header">
+                  <div class="panel-kicker">Engine output</div>
+                  <div class="output-card__chips">
+                    <span class="output-chip" id="outputChip">SDL</span>
+                    <span
+                      class="output-chip output-chip--status"
+                      id="statusChip"
+                      >ready</span
+                    >
+                  </div>
+                </div>
+                <div class="output-tabs">
+                  <button class="output-tab is-active" data-output="main" type="button">Output</button>
+                  <button class="output-tab is-hidden" data-output="sql" id="sqlTabBtn" type="button">SQL</button>
+                </div>
+                <div
+                  id="generatedOutput"
+                  class="editor-surface editor-surface--output"
+                  aria-label="Engine output viewer"
+                ></div>
+                <div
+                  id="sqlEditorSurface"
+                  class="editor-surface editor-surface--output"
+                  aria-label="Generated SQL"
+                  hidden
+                ></div>
+              </article>
+
+              <div class="meta-grid meta-grid--stacked">
+                <article class="meta-card">
+                  <div class="panel-kicker">Diagnostics</div>
+                  <ul class="meta-list" id="diagnosticsList"></ul>
+                </article>
+                <article class="meta-card">
+                  <div class="panel-kicker">Execution notes</div>
+                  <ul class="meta-list" id="notesList"></ul>
+                </article>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__grid">
+        <div class="footer__brand">
+          <a
+            class="brand brand--footer"
+            href="./index.html"
+            aria-label="graphql-gene home"
+          >
+            <img
+              src="./graphql_gene_logo.svg"
+              alt="graphql-gene logo"
+              class="brand__logo"
+            />
+            <span class="brand__name">graphql-gene</span>
+          </a>
+          <p>Mock footer content for the playground preview surface.</p>
+        </div>
+
+        <div class="footer__links">
+          <div>
+            <div class="footer__heading">Preview</div>
+            <a href="./index.html">Homepage</a>
+            <a href="./playground.html">Playground</a>
+            <a href="#">Live Demo</a>
+          </div>
+          <div>
+            <div class="footer__heading">Pillars</div>
+            <a href="#workbench">Schema Generation</a>
+            <a href="#workbench">Runtime Discipline</a>
+            <a href="#workbench">Polymorphic Associations</a>
+          </div>
+          <div>
+            <div class="footer__heading">Source</div>
+            <a
+              href="https://github.com/accesimpot/graphql-gene"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            >
+            <a href="#">Changelog</a>
+            <a href="#">Support</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./theme.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
+    <script src="./playground-monaco.js"></script>
+    <script src="./playground.js"></script>
+  </body>
+</html>

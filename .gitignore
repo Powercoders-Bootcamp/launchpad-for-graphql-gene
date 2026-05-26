@@ -21,5 +21,11 @@ Thumbs.db
 .idea
 .vscode/*.log
 
+# Claude Code AI memory (private)
+.claude/
+
+# Windows URL shortcut files
+*.url
+
 # Build artifacts
 .output/

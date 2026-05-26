@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>graphql-gene</title>
+    <meta
+      name="description"
+      content="ORM-native GraphQL generation for TypeScript engineers."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="site-bg"></div>
+
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="./index.html" aria-label="graphql-gene home">
+          <img
+            src="./graphql_gene_logo.svg"
+            alt="graphql-gene logo"
+            class="brand__logo"
+          />
+          <span class="brand__name">graphql-gene</span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="./docs.html">Docs</a>
+          <a href="./playground.html">Playground</a>
+        </nav>
+
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Toggle color theme"
+        >
+          <span class="theme-toggle__track">
+            <span class="theme-toggle__thumb"></span>
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero__content">
+          <div class="hero__copy hero__copy--centered">
+            <h1 class="hero__headline">
+              <span class="hero__headline-line hero__headline-line--soft"
+                >ORM-native</span
+              >
+              <span class="hero__headline-line hero__headline-line--accent"
+                >GraphQL generation</span
+              >
+            </h1>
+            <p class="hero__text hero__text--centered">
+              Generate executable GraphQL systems directly from ORM models with
+              strong TypeScript inference, query-shaped runtime loading, and
+              frontend-friendly polymorphic associations.
+            </p>
+
+            <div class="hero__actions hero__actions--centered">
+              <a class="button button--primary" href="./playground.html"
+                >Open Playground</a
+              >
+              <a
+                class="button button--secondary"
+                href="./docs.html"
+                >Read Docs</a
+              >
+            </div>
+
+            <div class="hero-pillars">
+              <article class="hero-pillar">
+                <div class="hero-pillar__title">Query-shaped loading</div>
+                <p>
+                  Nested relations follow the selection set instead of broad
+                  eager loading.
+                </p>
+              </article>
+              <article class="hero-pillar">
+                <div class="hero-pillar__title">Polymorphic associations</div>
+                <p>
+                  Typed heterogeneous content works naturally with fragments and
+                  __typename.
+                </p>
+              </article>
+              <article class="hero-pillar">
+                <div class="hero-pillar__title">Directive-aware behavior</div>
+                <p>
+                  Runtime middleware stays visible in the graph instead of
+                  hiding in resolver glue.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="section-heading section-heading--center">
+            <div class="eyebrow">Why it stands out</div>
+            <h2>Three strengths that deserve to be visible immediately.</h2>
+            <p>
+              graphql-gene is strongest when generation and runtime behavior
+              stay close together. That is the story the site should tell first.
+            </p>
+          </div>
+
+          <div class="feature-grid feature-grid--three">
+            <article class="feature-card feature-card--emphasis">
+              <div class="feature-card__number">01</div>
+              <h3>Model-native schema generation</h3>
+              <p>
+                Keep the path from ORM models to GraphQL shape short, explicit,
+                and structurally consistent across the codebase.
+              </p>
+            </article>
+
+            <article class="feature-card feature-card--emphasis">
+              <div class="feature-card__number">02</div>
+              <h3>Query-shaped runtime loading</h3>
+              <p>
+                Let the selection set drive what gets loaded so generated APIs
+                can still behave like engineered APIs.
+              </p>
+            </article>
+
+            <article class="feature-card feature-card--emphasis">
+              <div class="feature-card__number">03</div>
+              <h3>Polymorphic associations that stay usable</h3>
+              <p>
+                Resolve heterogeneous blocks through one graph while keeping the
+                frontend workflow natural and typed.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="section-heading">
+            <div class="eyebrow">Product details</div>
+            <h2>
+              Built for the parts of GraphQL that usually turn into hand-written
+              glue.
+            </h2>
+            <p>
+              graphql-gene should feel serious, calm, and deliberate. These
+              supporting capabilities reinforce that identity.
+            </p>
+          </div>
+
+          <div class="feature-grid feature-grid--four">
+            <article class="feature-card">
+              <h3>Typed aliases and access scopes</h3>
+              <p>
+                Public and authenticated views can stay explicit instead of
+                hiding behind ad hoc flags.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h3>Directive-aware behavior</h3>
+              <p>
+                Middleware and access rules can live on the graph rather than
+                disappearing into resolver sprawl.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h3>Less resolver boilerplate</h3>
+              <p>
+                Reduce repetitive SDL and resolver code while keeping object
+                identity and intent visible.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h3>TypeScript-first ergonomics</h3>
+              <p>
+                Designed for teams that want strong typing to feel native to the
+                platform, not bolted on later.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="callout">
+            <div>
+              <div class="eyebrow">Interactive preview</div>
+              <h2>Explore the three-pillar playground.</h2>
+              <p>
+                The playground is organized around schema generation, runtime
+                discipline, and polymorphic associations so the strongest parts
+                of the library are easy to evaluate.
+              </p>
+            </div>
+            <a class="button button--primary" href="./playground.html"
+              >Go to Playground</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__grid">
+        <div class="footer__brand">
+          <a
+            class="brand brand--footer"
+            href="./index.html"
+            aria-label="graphql-gene home"
+          >
+            <img
+              src="./graphql_gene_logo.svg"
+              alt="graphql-gene logo"
+              class="brand__logo"
+            />
+            <span class="brand__name">graphql-gene</span>
+          </a>
+          <p>Mock footer content for the public product website preview.</p>
+        </div>
+
+        <div class="footer__links">
+          <div>
+            <div class="footer__heading">Product</div>
+            <a href="./playground.html">Playground</a>
+            <a href="#">Examples</a>
+            <a href="#">Features</a>
+          </div>
+          <div>
+            <div class="footer__heading">Docs</div>
+            <a
+              href="./docs.html"
+              >Guide</a
+            >
+            <a
+              href="./docs.html"
+              >API Reference</a
+            >
+            <a
+              href="./docs.html"
+              >Architecture</a
+            >
+          </div>
+          <div>
+            <div class="footer__heading">Community</div>
+            <a
+              href="https://github.com/accesimpot/graphql-gene"
+              target="_blank"
+              rel="noreferrer"
+              >GitHub</a
+            >
+            <a href="#">Discussions</a>
+            <a href="#">Roadmap</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./theme.js"></script>
+  </body>
+</html>
