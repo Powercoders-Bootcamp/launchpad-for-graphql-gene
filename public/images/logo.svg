@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">GraphQL-Gene logo</title>
+  <desc id="desc">GraphQL style hexagon with a DNA double helix inside. Bottom helix section is refactored for cleaner curvature and symmetry.</desc>
+  <defs>
+    <linearGradient id="geneGradient" x1="92" y1="74" x2="420" y2="438" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff4f8b"/>
+      <stop offset="0.48" stop-color="#f044c8"/>
+      <stop offset="1" stop-color="#7c4dff"/>
+    </linearGradient>
+    
+    <clipPath id="hexClip">
+      <polygon points="256,44 439.6,150 439.6,362 256,468 72.4,362 72.4,150"/>
+    </clipPath>
+  </defs>
+
+  <g fill="none" stroke="url(#geneGradient)" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)">
+    <!-- GraphQL-inspired outer hexagon -->
+    <polygon points="256,44 439.6,150 439.6,362 256,468 72.4,362 72.4,150" stroke-width="22"/>
+
+    <g clip-path="url(#hexClip)">
+      <!-- DNA double helix: continuous strands with a cleaner lower turn -->
+   <path d="M222 105
+         C170 145 168 215 222 256
+         C276 297 342 367 290 407"
+      stroke-width="16"/>
+
+<path d="M290 105
+         C342 145 344 215 290 256
+         C236 297 170 367 222 407"
+      stroke-width="16"/>
+
+      <!-- base-pair rungs: lower section shortened and aligned to the refactored curve -->
+      <g stroke-width="10">
+        <line x1="222" y1="112" x2="290" y2="112"/>
+        <line x1="198" y1="151" x2="314" y2="151"/>
+        <line x1="189" y1="190" x2="323" y2="190"/>
+        <line x1="207" y1="229" x2="305" y2="229"/>
+        <line x1="286" y1="323" x2="226" y2="323"/>
+        <line x1="305" y1="361" x2="207" y2="361"/>
+        <line x1="222" y1="400" x2="290" y2="400"/>
+      </g>
+
+      <!-- molecule/node accents on major helix control points -->
+      <g fill="url(#geneGradient)" stroke="none">
+        <circle cx="222" cy="112" r="16"/><circle cx="290" cy="112" r="16"/>
+        <circle cx="189" cy="190" r="15"/><circle cx="323" cy="190" r="15"/>
+        <circle cx="226" cy="323" r="14"/><circle cx="286" cy="323" r="14"/>
+        <circle cx="222" cy="400" r="16"/><circle cx="290" cy="400" r="16"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- GraphQL corner nodes -->
+  <g fill="url(#geneGradient)" filter="url(#softGlow)">
+    <circle cx="256" cy="44" r="34"/>
+    <circle cx="439.6" cy="150" r="34"/>
+    <circle cx="439.6" cy="362" r="34"/>
+    <circle cx="256" cy="468" r="34"/>
+    <circle cx="72.4" cy="362" r="34"/>
+    <circle cx="72.4" cy="150" r="34"/>
+  </g>
+</svg>

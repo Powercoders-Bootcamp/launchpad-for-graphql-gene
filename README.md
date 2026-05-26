@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="site-preview/graphql_gene_logo.svg" alt="graphql-gene logo" width="96" />
+  <img src="public/images/logo.svg" alt="graphql-gene logo" width="96" />
 </p>
 
 <h1 align="center">graphql-gene — website</h1>
