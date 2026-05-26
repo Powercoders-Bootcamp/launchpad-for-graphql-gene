@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ─── Design tokens ─────────────────────────────────────────────── */
+@theme {
+  --font-family-display: "Space Grotesk", sans-serif;
+  --font-family-mono: "IBM Plex Mono", Consolas, monospace;
+
+  --color-pink:     #e535ab;
+  --color-violet:   #7c3aed;
+  --color-lavender: #c4b5fd;
+  --color-emerald:  #8df4c1;
+
+  --radius-site-xl: 28px;
+  --radius-site-lg: 22px;
+  --radius-site-md: 16px;
+
+  --max-w-site: 1120px;
+}
+
+/* ─── CSS custom properties (theme-aware) ───────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg:           #0b1020;
+  --bg-soft:      #121935;
+  --panel:        rgba(15, 20, 38, 0.88);
+  --panel-soft:   rgba(255, 255, 255, 0.04);
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-strong:rgba(229, 53, 171, 0.24);
+  --text:         #f5f7ff;
+  --muted:        #a9b3cb;
+  --muted-strong: #d8dff3;
+  --shadow:       0 22px 70px rgba(0, 0, 0, 0.34);
+}
+
+[data-theme="light"] {
+  --bg:           #fcf8ff;
+  --bg-soft:      #fffdfd;
+  --panel:        rgba(255, 252, 255, 0.94);
+  --panel-soft:   rgba(124, 58, 237, 0.04);
+  --border:       rgba(72, 46, 104, 0.1);
+  --border-strong:rgba(229, 53, 171, 0.34);
+  --text:         #211833;
+  --muted:        #6f6483;
+  --muted-strong: #43345e;
+  --shadow:       0 18px 52px rgba(74, 43, 102, 0.08);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-family-display);
+  background: linear-gradient(
+    180deg,
+    var(--bg) 0%,
+    color-mix(in srgb, var(--bg) 88%, #000 12%) 100%
+  );
+  min-height: 100dvh;
+}
+
+/* ─── Ambient background glow ───────────────────────────────────── */
+.site-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(229, 53, 171, 0.12), transparent 28%),
+    radial-gradient(circle at 84% 14%, rgba(124, 58, 237, 0.14), transparent 24%);
+}
+
+[data-theme="light"] .site-bg {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(229, 53, 171, 0.09), transparent 24%),
+    radial-gradient(circle at 86% 10%, rgba(124, 58, 237, 0.1), transparent 22%),
+    radial-gradient(circle at 52% 100%, rgba(255, 225, 238, 0.42), transparent 28%);
+}
+
+/* ─── Utility: container ────────────────────────────────────────── */
+.container-site {
+  max-width: var(--max-w-site);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
