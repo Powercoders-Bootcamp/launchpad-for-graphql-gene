@@ -8,6 +8,8 @@
   Marketing site · Interactive playground · Public documentation
 </p>
 
+For project overview, setup guide, and contributing guidelines, see the [Wiki](https://github.com/Powercoders-Bootcamp/launchpad-for-graphql-gene/wiki).
+
 ---
 
 ## What this repo is
