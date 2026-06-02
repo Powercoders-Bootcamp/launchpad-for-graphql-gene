@@ -15,6 +15,13 @@ export default defineNuxtConfig({
   ],
 
   content: {
+    sources: {
+      graphqlGeneDocs: {
+        driver: 'fs',
+        base: './content/graphql-gene/docs',
+        prefix: '/docs',
+      },
+    },
     highlight: {
       theme: {
         dark: 'github-dark',
