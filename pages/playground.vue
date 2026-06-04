@@ -32,17 +32,15 @@
       </option>
     </select>
 
-    <!-- Input panel (Monaco) -->
-    <ClientOnly>
-      <MonacoEditor
-        v-model:value="state.query"
-        v-bind="editorOptions('input')"
-        style="height: 220px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 1rem;"
-      />
-      <template #fallback>
-        <div style="height: 220px; background: var(--panel); border-radius: 8px; margin-bottom: 1rem;" />
-      </template>
-    </ClientOnly>
+    <!-- Input panel -->
+    <textarea
+      v-model="state.query"
+      :placeholder="state.scenarioId === 'model-to-schema' || state.scenarioId === 'directive-middleware'
+        ? 'No query needed — just click Run.'
+        : 'Enter your GraphQL query here…'"
+      :disabled="state.scenarioId === 'model-to-schema' || state.scenarioId === 'directive-middleware'"
+      style="width: 100%; height: 220px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: var(--font-family-mono); font-size: 0.875rem; resize: vertical; margin-bottom: 1rem; box-sizing: border-box; outline: none;"
+    />
 
     <!-- Run button -->
     <button
@@ -61,38 +59,22 @@
       {{ state.error }}
     </div>
 
-    <!-- Output panels -->
-    <div v-if="showSdl" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem;">SDL</p>
-      <ClientOnly>
-        <MonacoEditor
-          :value="state.sdl ?? ''"
-          v-bind="editorOptions('sdl-output')"
-          style="height: 300px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;"
-        />
-      </ClientOnly>
+    <!-- Output panels (pre instead of Monaco — Monaco doesn't update reactively on read-only panels) -->
+    <div v-if="showSdl && sdlOutput" style="margin-bottom: 1rem;">
+      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        {{ state.scenarioId === 'directive-middleware' ? 'SDL Excerpt' : 'SDL' }}
+      </p>
+      <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border); max-height: 400px; overflow-y: auto;">{{ sdlOutput }}</pre>
     </div>
 
-    <div v-if="showResult" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem;">Result</p>
-      <ClientOnly>
-        <MonacoEditor
-          :value="resultJson"
-          v-bind="editorOptions('result-output')"
-          style="height: 300px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;"
-        />
-      </ClientOnly>
+    <div v-if="showResult && resultJson" style="margin-bottom: 1rem;">
+      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Result</p>
+      <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border); max-height: 400px; overflow-y: auto;">{{ resultJson }}</pre>
     </div>
 
     <div v-if="showSql && state.sql" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem;">SQL</p>
-      <ClientOnly>
-        <MonacoEditor
-          :value="state.sql"
-          v-bind="editorOptions('sql-output')"
-          style="height: 120px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;"
-        />
-      </ClientOnly>
+      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">SQL</p>
+      <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border);">{{ state.sql }}</pre>
     </div>
 
     <!-- Diagnostics -->
@@ -142,6 +124,12 @@ const showSql = computed(() =>
 
 const resultJson = computed(() =>
   state.queryResult ? JSON.stringify(state.queryResult, null, 2) : '',
+)
+
+const sdlOutput = computed(() =>
+  state.scenarioId === 'directive-middleware'
+    ? (state.sdlExcerpt ?? '')
+    : (state.sdl ?? ''),
 )
 
 function run() {
