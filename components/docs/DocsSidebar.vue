@@ -58,6 +58,7 @@ const nav = await useDocsNav()
   top: 0;
   overflow-y: auto;
   max-height: 100vh;
+  background: var(--bg-soft);
 }
 
 /* ── Top label: "Documentation" ─────────────────────────────────── */
