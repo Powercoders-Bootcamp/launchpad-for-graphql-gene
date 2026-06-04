@@ -9,7 +9,7 @@ interface NavPage {
   order: number
   status?: string
   sidebarLabel?: string
-  _path: string
+  path: string
 }
 
 interface NavGroup {
@@ -38,9 +38,7 @@ function buildGroups(pages: NavPage[]): NavGroup[] {
 }
 
 export async function useDocsNav(): Promise<NavSection[]> {
-  const pages = await queryContent('/docs')
-    .only(['title', 'section', 'category', 'order', 'slug', 'status', 'sidebarLabel', '_path'])
-    .find() as NavPage[]
+  const pages = (await queryCollection('docs').all()) as unknown as NavPage[]
 
   return [...docsConfig.sections]
     .sort((a, b) => a.order - b.order)
