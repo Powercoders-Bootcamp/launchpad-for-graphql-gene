@@ -102,7 +102,7 @@ defineProps<{
 .docs-article__body :deep(h3) { font-size: 1.1rem; }
 
 .docs-article__body :deep(a) {
-  color: var(--accent, #e879f9);
+  color: var(--color-pink);
   text-decoration: underline;
 }
 
