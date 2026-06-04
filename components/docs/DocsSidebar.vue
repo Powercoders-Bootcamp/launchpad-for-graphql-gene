@@ -1,6 +1,10 @@
 <template>
   <aside class="docs-sidebar">
     <nav>
+      <ClientOnly>
+        <DocsSearch />
+      </ClientOnly>
+
       <p class="docs-sidebar__label">Documentation</p>
 
       <template v-for="section in nav" :key="section.id">

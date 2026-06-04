@@ -1,10 +1,9 @@
 <template>
-  <div class="docs-layout" style="display: flex; min-height: 100vh;">
+  <div class="docs-layout">
     <DocsSidebar />
-    <main style="flex: 1; padding: 2rem;">
-      <!-- TODO: implement full docs article layout (Phase 4) -->
-      <ContentRenderer v-if="page" :value="page" />
-      <p v-else style="color: var(--muted)">Page not found.</p>
+    <main class="docs-main">
+      <DocsArticle v-if="page" :page="page" />
+      <p v-else class="docs-not-found">Page not found.</p>
     </main>
   </div>
 </template>
@@ -21,3 +20,21 @@ useSeoMeta({
   description: () => page.value?.description ?? '',
 })
 </script>
+
+<style scoped>
+.docs-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.docs-main {
+  flex: 1;
+  padding: 2rem;
+  min-width: 0;
+  max-width: 800px;
+}
+
+.docs-not-found {
+  color: var(--muted);
+}
+</style>

@@ -6,6 +6,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
+    "generate:full": "nuxt generate && pagefind --source .output/public",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
@@ -23,12 +24,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@pagefind/default-ui": "^1.5.2",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^25.9.1",
     "monaco-editor": "^0.55.1",
     "nuxt-monaco-editor": "^1.4.0",
+    "pagefind": "^1.5.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3"
   }
