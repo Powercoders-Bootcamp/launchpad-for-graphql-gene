@@ -2,7 +2,7 @@
   <div class="docs-layout">
     <DocsSidebar />
     <main class="docs-main">
-      <DocsArticle v-if="page" :page="page" />
+      <DocsArticle v-if="page" :page="page" :title="page.title" :status="page.status" />
       <p v-else class="docs-not-found">Page not found.</p>
     </main>
   </div>
@@ -12,7 +12,7 @@
 const route = useRoute()
 const { data: page } = await useAsyncData(
   `docs-${route.path}`,
-  () => queryContent(route.path).findOne(),
+  () => queryCollection('docs').where('slug', '=', route.path).first(),
 )
 
 useSeoMeta({

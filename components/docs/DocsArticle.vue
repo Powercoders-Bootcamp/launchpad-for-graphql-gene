@@ -22,11 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import type { ParsedContent } from '@nuxt/content'
-
 defineProps<{
   title: string
-  page: ParsedContent
+  page: Record<string, unknown>
   status?: string
   editUrl?: string
 }>()
