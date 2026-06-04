@@ -59,7 +59,7 @@ defineProps<{
 .docs-article__title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--fg);
+  color: var(--text);
   margin: 0 0 0.5rem;
   line-height: 1.2;
 }
@@ -71,11 +71,95 @@ defineProps<{
 }
 
 .docs-article__edit:hover {
-  color: var(--fg);
+  color: var(--text);
 }
 
 .docs-article__body {
   line-height: 1.7;
-  color: var(--fg);
+  color: var(--text);
+}
+
+/* Force readable colors for ContentRenderer output on dark backgrounds */
+.docs-article__body :deep(p),
+.docs-article__body :deep(li),
+.docs-article__body :deep(td),
+.docs-article__body :deep(th) {
+  color: var(--text);
+}
+
+.docs-article__body :deep(h1),
+.docs-article__body :deep(h2),
+.docs-article__body :deep(h3),
+.docs-article__body :deep(h4) {
+  color: var(--text);
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.docs-article__body :deep(h1) { font-size: 1.5rem; }
+.docs-article__body :deep(h2) { font-size: 1.25rem; }
+.docs-article__body :deep(h3) { font-size: 1.1rem; }
+
+.docs-article__body :deep(a) {
+  color: var(--accent, #e879f9);
+  text-decoration: underline;
+}
+
+/* Heading anchor tags must not look like links */
+.docs-article__body :deep(h1 a),
+.docs-article__body :deep(h2 a),
+.docs-article__body :deep(h3 a),
+.docs-article__body :deep(h4 a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.docs-article__body :deep(code):not(pre code) {
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+.docs-article__body :deep(pre) {
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.docs-article__body :deep(hr) {
+  border-color: var(--border);
+  margin: 2rem 0;
+}
+
+.docs-article__body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+}
+
+.docs-article__body :deep(th),
+.docs-article__body :deep(td) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.docs-article__body :deep(th) {
+  font-weight: 600;
+  background: var(--panel-soft);
+}
+
+.docs-article__body :deep(ul),
+.docs-article__body :deep(ol) {
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.docs-article__body :deep(li) {
+  margin: 0.3rem 0;
 }
 </style>

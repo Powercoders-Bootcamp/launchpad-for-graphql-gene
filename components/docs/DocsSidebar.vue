@@ -73,7 +73,7 @@ const nav = await useDocsNav()
 }
 
 .docs-sidebar__section-title {
-  color: var(--fg);
+  color: var(--text);
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 0.4rem;
@@ -109,12 +109,12 @@ const nav = await useDocsNav()
 
 .docs-sidebar__link:hover {
   background: var(--panel-soft);
-  color: var(--fg);
+  color: var(--text);
 }
 
 .docs-sidebar__link--active {
   background: var(--panel-soft);
-  color: var(--fg);
+  color: var(--text);
   font-weight: 500;
 }
 
