@@ -453,10 +453,10 @@ onMounted(async () => {
 
 <style scoped>
 .playground-page {
-  --playground-panel: color-mix(in srgb, var(--panel, #171d2f) 92%, transparent);
-  --playground-panel-soft: color-mix(in srgb, var(--panel-soft, rgba(255, 255, 255, 0.05)) 100%, transparent);
-  --playground-border: var(--border, rgba(255, 255, 255, 0.08));
-  --playground-border-strong: var(--border-strong, rgba(229, 53, 171, 0.24));
+  --playground-panel: color-mix(in srgb, var(--panel-strong, var(--panel)) 96%, transparent);
+  --playground-panel-soft: color-mix(in srgb, var(--panel-soft) 100%, transparent);
+  --playground-border: var(--border);
+  --playground-border-strong: var(--border-strong);
 
   min-height: 100vh;
   padding: 1.25rem;
@@ -613,6 +613,7 @@ onMounted(async () => {
   border-radius: 18px;
   background: var(--playground-panel);
   box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
 }
 
 .playground-card--muted {
@@ -637,8 +638,8 @@ onMounted(async () => {
   margin: 1rem;
   border: 1px solid var(--playground-border);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--playground-panel) 94%, transparent);
-  color: var(--text);
+  background: var(--code-bg-soft);
+  color: var(--code-text);
   padding: 1rem;
   resize: vertical;
   font-family: var(--font-family-mono);
@@ -705,10 +706,10 @@ onMounted(async () => {
 .playground-code {
   margin: 1rem;
   padding: 1rem;
-  border: 1px solid var(--playground-border);
+  border: 1px solid var(--code-border);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--playground-panel) 94%, transparent);
-  color: var(--text);
+  background: linear-gradient(180deg, var(--code-shell) 0%, var(--code-bg) 100%);
+  color: var(--code-text);
   white-space: pre-wrap;
   word-break: break-word;
   overflow-x: auto;

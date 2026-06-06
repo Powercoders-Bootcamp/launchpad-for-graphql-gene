@@ -93,7 +93,8 @@ const sectionIcons: Record<string, string> = {
   top: 0;
   overflow-y: auto;
   max-height: 100vh;
-  background: var(--bg-soft);
+  background: color-mix(in srgb, var(--bg-soft) 92%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 /* ── Home link ───────────────────────────────────────────────────── */
@@ -161,7 +162,7 @@ const sectionIcons: Record<string, string> = {
 .tree-section__title {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--muted-strong);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -171,7 +172,7 @@ const sectionIcons: Record<string, string> = {
   position: relative;
   padding-left: 1.1rem;
   margin-left: 0.72rem;
-  border-left: 2px solid #d0d5dd;
+  border-left: 2px solid var(--line-subtle);
   padding-bottom: 0.25rem;
 }
 .tree-children--last {
@@ -190,13 +191,13 @@ const sectionIcons: Record<string, string> = {
   top: 50%;
   width: 0.7rem;
   height: 2px;
-  background: #d0d5dd;
+  background: var(--line-subtle);
 }
 .tree-category__label {
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #5a6478;
+  color: var(--muted);
   font-weight: 600;
 }
 
@@ -223,7 +224,7 @@ const sectionIcons: Record<string, string> = {
   top: 50%;
   width: 100%;
   height: 2px;
-  background: #d0d5dd;
+  background: var(--line-subtle);
   transition: background 0.2s;
 }
 .tree-item:hover .tree-item__connector::before,
@@ -236,8 +237,8 @@ const sectionIcons: Record<string, string> = {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  border: 2px solid #b0b8c4;
-  background: #ffffff;
+  border: 2px solid color-mix(in srgb, var(--muted) 72%, transparent);
+  background: var(--input-bg);
   flex-shrink: 0;
   margin-left: auto;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
@@ -263,13 +264,13 @@ const sectionIcons: Record<string, string> = {
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
   font-size: 0.875rem;
-  color: #2c3e50;
+  color: var(--muted-strong);
   text-decoration: none;
   transition: background 0.15s, color 0.15s, padding-left 0.15s;
   margin-left: 0.25rem;
 }
 .tree-item__link:hover {
-  background: rgba(229, 53, 171, 0.07);
+  background: var(--card-hover);
   color: var(--text);
   padding-left: 0.85rem;
 }

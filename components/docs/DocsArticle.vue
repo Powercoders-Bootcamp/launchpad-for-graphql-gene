@@ -79,12 +79,11 @@ defineProps<{
   color: var(--text);
 }
 
-/* Force readable colors for ContentRenderer output on dark backgrounds */
 .docs-article__body :deep(p),
 .docs-article__body :deep(li),
 .docs-article__body :deep(td),
 .docs-article__body :deep(th) {
-  color: var(--text);
+  color: var(--muted-strong);
 }
 
 .docs-article__body :deep(h1),
@@ -106,7 +105,6 @@ defineProps<{
   text-decoration: underline;
 }
 
-/* Heading anchor tags must not look like links */
 .docs-article__body :deep(h1 a),
 .docs-article__body :deep(h2 a),
 .docs-article__body :deep(h3 a),
@@ -115,18 +113,8 @@ defineProps<{
   text-decoration: none;
 }
 
-.docs-article__body :deep(code):not(pre code) {
-  background: var(--panel-soft);
-  color: var(--text);
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.875em;
-}
-
-.docs-article__body :deep(pre) {
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 1.25rem 0;
+.docs-article__body :deep(.prose-code-block) {
+  margin-inline: 0;
 }
 
 .docs-article__body :deep(hr) {
@@ -146,11 +134,20 @@ defineProps<{
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   text-align: left;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
 }
 
 .docs-article__body :deep(th) {
   font-weight: 600;
   background: var(--panel-soft);
+}
+
+.docs-article__body :deep(blockquote) {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--color-pink);
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  color: var(--muted-strong);
 }
 
 .docs-article__body :deep(ul),
@@ -161,5 +158,11 @@ defineProps<{
 
 .docs-article__body :deep(li) {
   margin: 0.3rem 0;
+}
+
+@media (max-width: 720px) {
+  .docs-article {
+    padding: 1rem 0;
+  }
 }
 </style>

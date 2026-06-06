@@ -1,5 +1,5 @@
 <template>
-  <div :data-theme="theme">
+  <div class="site-shell">
     <div class="site-bg" aria-hidden="true" />
     <AppNav />
     <NuxtPage />
@@ -14,6 +14,12 @@ const theme = useCookie<'dark' | 'light'>('graphql-gene-theme', {
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
 }
+
+useHead(() => ({
+  htmlAttrs: {
+    'data-theme': theme.value,
+  },
+}))
 
 provide('toggleTheme', toggleTheme)
 provide('theme', theme)

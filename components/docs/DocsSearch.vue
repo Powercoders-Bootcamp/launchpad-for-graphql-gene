@@ -118,10 +118,11 @@ function scorePage(page: SearchPage, needle: string) {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--input-bg);
   color: var(--text);
   padding: 0.7rem 0.85rem;
   font: inherit;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 .docs-search__input:focus {
@@ -144,10 +145,11 @@ function scorePage(page: SearchPage, needle: string) {
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
   color: inherit;
   text-decoration: none;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 6%, transparent);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .docs-search__result strong {
@@ -164,8 +166,9 @@ function scorePage(page: SearchPage, needle: string) {
 
 .docs-search__result:hover {
   border-color: rgba(229, 53, 171, 0.35);
-  background: rgba(229, 53, 171, 0.03);
+  background: var(--card-hover);
   transform: translateY(-1px);
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--color-pink) 12%, transparent);
 }
 
 .docs-search__empty {

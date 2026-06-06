@@ -401,10 +401,11 @@ const showcaseSdl = [
 
 /* ─── Code window ───────────────────────────────────────────────── */
 .code-window {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--code-shell) 0%, var(--code-bg) 100%);
+  border: 1px solid var(--code-border);
   border-radius: var(--radius-site-lg);
   overflow: hidden;
+  box-shadow: var(--code-shadow);
 }
 
 .code-window-bar {
@@ -412,8 +413,8 @@ const showcaseSdl = [
   align-items: center;
   gap: 0.4rem;
   padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel-soft);
+  border-bottom: 1px solid var(--code-border);
+  background: color-mix(in srgb, var(--code-shell) 92%, #fff 8%);
 }
 
 .dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -425,7 +426,7 @@ const showcaseSdl = [
   margin-left: 0.5rem;
   font-family: var(--font-family-mono);
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--code-muted);
 }
 
 .code-body {
@@ -434,14 +435,15 @@ const showcaseSdl = [
   font-family: var(--font-family-mono);
   font-size: 0.82rem;
   line-height: 1.75;
-  color: var(--text);
+  color: var(--code-text);
+  background: transparent;
   overflow-x: auto;
 }
 
-:deep(.t-k) { color: var(--color-lavender); }
-:deep(.t-t) { color: var(--color-pink); }
-:deep(.t-s) { color: var(--color-emerald); }
-:deep(.t-c) { color: var(--muted); font-style: italic; }
+:deep(.t-k) { color: var(--code-keyword); }
+:deep(.t-t) { color: var(--code-type); }
+:deep(.t-s) { color: var(--code-string); }
+:deep(.t-c) { color: var(--code-comment); font-style: italic; }
 
 /* ─── Features ──────────────────────────────────────────────────── */
 .features {
@@ -514,10 +516,11 @@ const showcaseSdl = [
 .inline-code {
   font-family: var(--font-family-mono);
   font-size: 0.8em;
-  color: var(--color-emerald);
-  background: var(--panel);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
+  color: var(--muted-strong);
+  background: color-mix(in srgb, var(--panel-soft) 88%, var(--bg-elevated) 12%);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  padding: 0.14em 0.45em;
+  border-radius: 999px;
 }
 
 /* ─── Showcase ──────────────────────────────────────────────────── */
