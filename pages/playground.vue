@@ -1,8 +1,8 @@
 <template>
-  <div class="playground-page" style="min-height: 100vh; padding: 1.5rem;">
+  <div class="playground-page">
 
     <!-- Scenario tabs -->
-    <nav style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+    <nav style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
       <button
         v-for="id in SCENARIO_IDS"
         :key="id"
@@ -61,19 +61,93 @@
 
     <!-- Output panels (pre instead of Monaco — Monaco doesn't update reactively on read-only panels) -->
     <div v-if="showSdl && sdlOutput" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">
-        {{ state.scenarioId === 'directive-middleware' ? 'SDL Excerpt' : 'SDL' }}
-      </p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+        <p style="color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+          {{ state.scenarioId === 'directive-middleware' ? 'SDL Excerpt' : 'SDL' }}
+        </p>
+
+        <button
+          :style="{
+            padding: '0.25rem 0.5rem',
+            border: copiedPanel === 'sdl'
+              ? '1px solid var(--color-pink)'
+              : '1px solid var(--border)',
+            borderRadius: '6px',
+            background: copiedPanel === 'sdl'
+              ? 'var(--color-pink)'
+              : 'var(--panel-soft)',
+            color: copiedPanel === 'sdl'
+              ? '#fff'
+              : 'var(--text)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }"
+          @click="copyToClipboard(sdlOutput, 'sdl')"
+        >
+          {{ copiedPanel === 'sdl' ? 'Copied!' : 'Copy' }}
+        </button>
+      </div>
       <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border); max-height: 400px; overflow-y: auto;">{{ sdlOutput }}</pre>
     </div>
 
     <div v-if="showResult && resultJson" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Result</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+        <p style="color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+          Result
+        </p>
+
+        <button
+          :style="{
+            padding: '0.25rem 0.5rem',
+            border: copiedPanel === 'result'
+              ? '1px solid var(--color-pink)'
+              : '1px solid var(--border)',
+            borderRadius: '6px',
+            background: copiedPanel === 'result'
+              ? 'var(--color-pink)'
+              : 'var(--panel-soft)',
+            color: copiedPanel === 'result'
+              ? '#fff'
+              : 'var(--text)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }"
+          @click="copyToClipboard(resultJson, 'result')"
+        >
+          {{ copiedPanel === 'result' ? 'Copied!' : 'Copy' }}
+        </button>
+      </div>
+
       <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border); max-height: 400px; overflow-y: auto;">{{ resultJson }}</pre>
     </div>
 
     <div v-if="showSql && state.sql" style="margin-bottom: 1rem;">
-      <p style="color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">SQL</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+        <p style="color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+          SQL
+        </p>
+
+        <button
+          :style="{
+            padding: '0.25rem 0.5rem',
+            border: copiedPanel === 'sql'
+              ? '1px solid var(--color-pink)'
+              : '1px solid var(--border)',
+            borderRadius: '6px',
+            background: copiedPanel === 'sql'
+              ? 'var(--color-pink)'
+              : 'var(--panel-soft)',
+            color: copiedPanel === 'sql'
+              ? '#fff'
+              : 'var(--text)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }"
+          @click="copyToClipboard(state.sql, 'sql')"
+        >
+          {{ copiedPanel === 'sql' ? 'Copied!' : 'Copy' }}
+        </button>
+      </div>
       <pre style="background: var(--panel); color: var(--text); padding: 1.25rem; border-radius: 8px; font-family: var(--font-family-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre; border: 1px solid var(--border);">{{ state.sql }}</pre>
     </div>
 
@@ -92,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { SCENARIO_IDS, type ScenarioId } from '~/types'
 import { usePlayground } from '~/composables/usePlayground'
@@ -102,6 +176,25 @@ useSeoMeta({ title: 'Playground — graphql-gene' })
 
 const { state, loadExamples, selectScenario, selectExample, runGenerate, runQuery, runDirectives, encodeToHash, decodeFromHash } = usePlayground()
 const { getOptions } = useEditor()
+
+async function copyToClipboard(text: string, panel: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+
+    copiedPanel.value = panel
+
+    setTimeout(() => {
+      if (copiedPanel.value === panel) {
+        copiedPanel.value = null
+      }
+    }, 2000)
+  }
+  catch (err) {
+    console.error('Copy failed', err)
+  }
+}
+
+const copiedPanel = ref<string | null>(null)
 
 function editorOptions(panel: Parameters<typeof getOptions>[0]) {
   return { options: getOptions(panel) }
@@ -174,3 +267,16 @@ onMounted(async () => {
   if (exampleParam) await selectExample(exampleParam)
 })
 </script>
+
+<style scoped>
+.playground-page {
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .playground-page {
+    padding: 1.5rem;
+  }
+}
+</style>
