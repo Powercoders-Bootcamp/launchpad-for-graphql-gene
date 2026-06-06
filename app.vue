@@ -1,6 +1,7 @@
 <template>
   <div :data-theme="theme">
     <div class="site-bg" aria-hidden="true" />
+    <AppNav />
     <NuxtPage />
   </div>
 </template>
