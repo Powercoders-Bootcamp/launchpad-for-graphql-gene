@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "generate:full": "nuxt generate && pagefind --source .output/public",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run"
   },
   "dependencies": {
     "@graphql-gene/plugin-sequelize": "^1.2.6",
@@ -33,6 +34,7 @@
     "nuxt-monaco-editor": "^1.4.0",
     "pagefind": "^1.5.2",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   }
 }
