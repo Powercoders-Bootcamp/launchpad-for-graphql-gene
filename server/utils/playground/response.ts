@@ -12,3 +12,14 @@ export function errorResponse(code: ErrorCode, message: string, details?: string
     error: { code, message, ...(details?.length ? { details } : {}) },
   }
 }
+
+export function logRequest(fields: {
+  requestId: string
+  scenario: string
+  exampleId: string
+  durationMs: number
+  status: 'ok' | 'error'
+  errorCode?: string
+}) {
+  console.log(JSON.stringify(fields))
+}
