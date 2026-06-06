@@ -1,8 +1,16 @@
+import { randomUUID } from 'node:crypto'
 import { WINDOW_MS, MAX_REQUESTS_PER_WINDOW, MAX_BODY_BYTES } from '~/server/utils/playground/limits'
+import { errorResponse } from '~/server/utils/playground/response'
 
 interface RateEntry {
   count: number
   windowStart: number
+}
+
+interface PlaygroundEventContext {
+  playgroundRequestId?: string
+  playgroundStartedAt?: number
+  playgroundIp?: string
 }
 
 const ipMap = new Map<string, RateEntry>()
@@ -10,19 +18,31 @@ const ipMap = new Map<string, RateEntry>()
 export default defineEventHandler((event) => {
   const path = getRequestURL(event).pathname
 
+  if (!path.startsWith('/api/playground/') && path !== '/api/health') return
+
+  const context = event.context as PlaygroundEventContext
+  context.playgroundRequestId ??= randomUUID()
+  context.playgroundStartedAt ??= Date.now()
+  context.playgroundIp = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+
   if (!path.startsWith('/api/playground/')) return
 
   // Body size check via Content-Length header
   const contentLength = Number(getRequestHeader(event, 'content-length') ?? 0)
-  if (contentLength > MAX_BODY_BYTES) {
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     setResponseStatus(event, 413)
-    return { status: 'error', error: { message: 'Request body too large.' } }
+    return errorResponse(
+      'VALIDATION_ERROR',
+      'Request body is too large for the playground API.',
+      undefined,
+      context.playgroundRequestId,
+    )
   }
 
   // Only rate-limit mutating requests
   if (event.method !== 'POST') return
 
-  const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+  const ip = context.playgroundIp ?? 'unknown'
   const now = Date.now()
   const entry = ipMap.get(ip)
 
@@ -35,6 +55,11 @@ export default defineEventHandler((event) => {
 
   if (entry.count > MAX_REQUESTS_PER_WINDOW) {
     setResponseStatus(event, 429)
-    return { status: 'error', error: { message: 'Too many requests. Please wait a moment and try again.' } }
+    return errorResponse(
+      'EXECUTION_ERROR',
+      'Rate limit exceeded. Please wait and try again.',
+      undefined,
+      context.playgroundRequestId,
+    )
   }
 })

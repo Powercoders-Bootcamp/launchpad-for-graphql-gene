@@ -180,14 +180,17 @@ pagefind --source .output/public --bundle-path pagefind
 
 This produces a static search index at `.output/public/pagefind/` served from the same CDN.
 
-Add a search input component to the docs layout that initializes Pagefind:
+The docs sidebar search now uses the local docs collection directly, so it no longer depends on `@pagefind/default-ui` at runtime:
 
 ```ts
-// In the docs layout component
-import { PagefindUI } from '@pagefind/default-ui'
-
-onMounted(() => {
-  new PagefindUI({ element: '#search', showSubResults: true })
+// In components/docs/DocsSearch.vue
+const { data: pages } = await useAsyncData('docs-search-pages', async () => {
+  const docs = await queryCollection('docs').all()
+  return docs.map(page => ({
+    title: String(page.title ?? ''),
+    description: String(page.description ?? ''),
+    slug: String(page.slug ?? page._path ?? ''),
+  }))
 })
 ```
 

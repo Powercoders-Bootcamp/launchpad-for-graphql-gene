@@ -1,30 +1,87 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const workspaceRoot = path.resolve(__dirname, '..')
+const localPort = 3174
+const BASE = process.env.TEST_BASE_URL || `http://127.0.0.1:${localPort}`
 
-async function api(path: string, options?: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, options)
-  return res.json()
+let serverProcess: ChildProcessWithoutNullStreams | null = null
+let serverLogs = ''
+
+async function api(pathname: string, options?: RequestInit) {
+  const response = await fetch(`${BASE}${pathname}`, options)
+  return response.json()
 }
 
-async function post(path: string, body: unknown) {
-  return api(path, {
+async function post(pathname: string, body: unknown) {
+  return api(pathname, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 }
 
-// Verify server is reachable before running
 beforeAll(async () => {
-  const res = await fetch(`${BASE}/api/health`).catch(() => null)
-  if (!res?.ok) throw new Error(`Dev server not reachable at ${BASE} — run "npm run dev" first`)
+  if (process.env.TEST_BASE_URL) {
+    const response = await fetch(`${BASE}/api/health`).catch(() => null)
+    if (!response?.ok) {
+      throw new Error(`Dev server not reachable at ${BASE}`)
+    }
+    return
+  }
+
+  serverProcess = spawn(
+    process.execPath,
+    ['node_modules/@nuxt/cli/bin/nuxi.mjs', 'dev', '--host', '127.0.0.1', '--port', String(localPort)],
+    {
+      cwd: workspaceRoot,
+      env: {
+        ...process.env,
+        NUXT_IGNORE_LOCK: '1',
+        NUXT_TELEMETRY_DISABLED: '1',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  )
+
+  serverProcess.stdout.on('data', (chunk) => {
+    serverLogs += chunk.toString()
+  })
+  serverProcess.stderr.on('data', (chunk) => {
+    serverLogs += chunk.toString()
+  })
+
+  await waitForServerReady()
+}, 60000)
+
+afterAll(async () => {
+  if (!serverProcess || serverProcess.killed) {
+    return
+  }
+
+  serverProcess.kill('SIGTERM')
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      serverProcess?.kill('SIGKILL')
+      resolve(undefined)
+    }, 8000)
+
+    serverProcess?.once('exit', () => {
+      clearTimeout(timeout)
+      resolve(undefined)
+    })
+  })
 })
 
 describe('GET /api/health', () => {
   it('returns ok status', async () => {
     const res = await api('/api/health')
     expect(res.status).toBe('ok')
+    expect(res.health.status).toBe('ok')
+    expect(res.requestId).toBeTypeOf('string')
   })
 })
 
@@ -49,7 +106,7 @@ describe('GET /api/playground/examples', () => {
 
   it('contains all four scenarios', async () => {
     const res = await api('/api/playground/examples')
-    const scenarios = res.examples.map((e: { scenario: string }) => e.scenario)
+    const scenarios = res.examples.map((example: { scenario: string }) => example.scenario)
     expect(scenarios).toContain('model-to-schema')
     expect(scenarios).toContain('query-lookahead')
     expect(scenarios).toContain('polymorphic-blocks')
@@ -81,7 +138,7 @@ describe('POST /api/playground/generate', () => {
     })
     expect(res.schema.typeSummary).toBeDefined()
     expect(Array.isArray(res.schema.typeSummary)).toBe(true)
-    const userType = res.schema.typeSummary.find((t: { name: string }) => t.name === 'User')
+    const userType = res.schema.typeSummary.find((type: { name: string }) => type.name === 'User')
     expect(userType).toBeDefined()
     expect(userType.kind).toBe('object')
   })
@@ -283,3 +340,34 @@ describe('POST /api/playground/directives', () => {
     expect(body).not.toContain('\n    at ')
   })
 })
+
+async function waitForServerReady() {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < 60000) {
+    if (serverProcess?.exitCode !== null) {
+      throw new Error(`Nuxt dev server exited early.\n${serverLogs}`)
+    }
+
+    try {
+      const response = await fetch(`${BASE}/api/health`, {
+        signal: AbortSignal.timeout(2000),
+      })
+
+      if (response.ok) {
+        return
+      }
+    }
+    catch {
+      // Keep polling until the server is ready.
+    }
+
+    await wait(750)
+  }
+
+  throw new Error(`Timed out waiting for the Nuxt dev server.\n${serverLogs}`)
+}
+
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
