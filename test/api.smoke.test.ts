@@ -123,3 +123,163 @@ describe('POST /api/playground/generate', () => {
     expect(body).not.toContain('\n    at ')
   })
 })
+
+describe('POST /api/playground/query', () => {
+  it('returns real data and SQL for me-with-orders', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: {
+        exampleId: 'me-with-orders',
+        query: '{ me { id email orders { id status } } }',
+      },
+    })
+    expect(res.status).toBe('ok')
+    expect(res.requestId).toBeTypeOf('string')
+    expect(res.scenario).toBe('query-lookahead')
+    expect(res.result.data.me).toBeDefined()
+    expect(res.result.data.me.id).toBeDefined()
+    expect(res.result.data.me.email).toBeDefined()
+    expect(Array.isArray(res.result.data.me.orders)).toBe(true)
+  })
+
+  it('returns SQL for query-lookahead', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: {
+        exampleId: 'me-with-orders',
+        query: '{ me { id email orders { id status } } }',
+      },
+    })
+    expect(res.execution.sql).not.toBeNull()
+    expect(res.execution.sql).toBeTypeOf('string')
+  })
+
+  it('returns includeGraph with orders for me-with-orders', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: {
+        exampleId: 'me-with-orders',
+        query: '{ me { id email orders { id status } } }',
+      },
+    })
+    expect(res.execution.includeGraph.User).toContain('orders')
+  })
+
+  it('returns real data for polymorphic-blocks', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'polymorphic-blocks',
+      input: {
+        exampleId: 'page-blocks-basic',
+        query: '{ page(slug: "/home") { id slug blocks { ... on HeroBlock { id headline } ... on TextBlock { id body } } } }',
+      },
+    })
+    expect(res.status).toBe('ok')
+    expect(res.scenario).toBe('polymorphic-blocks')
+    expect(res.result.data.page).toBeDefined()
+    expect(Array.isArray(res.result.data.page.blocks)).toBe(true)
+  })
+
+  it('returns UNKNOWN_EXAMPLE for unknown exampleId', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: {
+        exampleId: 'does-not-exist',
+        query: '{ me { id } }',
+      },
+    })
+    expect(res.status).toBe('error')
+    expect(res.error.code).toBe('UNKNOWN_EXAMPLE')
+  })
+
+  it('returns VALIDATION_ERROR when query field is missing', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: { exampleId: 'me-with-orders' },
+    })
+    expect(res.status).toBe('error')
+    expect(res.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('error responses never contain stack traces', async () => {
+    const res = await post('/api/playground/query', {
+      scenario: 'query-lookahead',
+      input: { exampleId: 'does-not-exist', query: '{ me { id } }' },
+    })
+    const body = JSON.stringify(res)
+    expect(body).not.toContain('node_modules')
+    expect(body).not.toContain('\n    at ')
+  })
+})
+
+describe('POST /api/playground/directives', () => {
+  it('returns directive metadata for user-auth-directive in named mode', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'user-auth-directive', directiveMode: 'named' },
+    })
+    expect(res.status).toBe('ok')
+    expect(res.requestId).toBeTypeOf('string')
+    expect(res.scenario).toBe('directive-middleware')
+    expect(res.directive.name).toBeTypeOf('string')
+    expect(res.directive.printsToSchema).toBe(true)
+    expect(res.directive.runtimeBehaviorSummary).toBeTypeOf('string')
+  })
+
+  it('returns directive metadata in anonymous mode', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'user-auth-directive', directiveMode: 'anonymous' },
+    })
+    expect(res.status).toBe('ok')
+    expect(res.directive.printsToSchema).toBe(false)
+  })
+
+  it('returns SDL excerpt', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'user-auth-directive', directiveMode: 'named' },
+    })
+    expect(res.schema.sdlExcerpt).toBeTypeOf('string')
+    expect(res.schema.sdlExcerpt.length).toBeGreaterThan(0)
+  })
+
+  it('named and anonymous mode produce different SDL excerpts', async () => {
+    const named = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'user-auth-directive', directiveMode: 'named' },
+    })
+    const anonymous = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'user-auth-directive', directiveMode: 'anonymous' },
+    })
+    expect(named.schema.sdlExcerpt).not.toBe(anonymous.schema.sdlExcerpt)
+  })
+
+  it('returns UNKNOWN_EXAMPLE for unknown exampleId', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'does-not-exist' },
+    })
+    expect(res.status).toBe('error')
+    expect(res.error.code).toBe('UNKNOWN_EXAMPLE')
+  })
+
+  it('returns VALIDATION_ERROR for bad payload', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: {},
+    })
+    expect(res.status).toBe('error')
+    expect(res.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('error responses never contain stack traces', async () => {
+    const res = await post('/api/playground/directives', {
+      scenario: 'directive-middleware',
+      input: { exampleId: 'does-not-exist' },
+    })
+    const body = JSON.stringify(res)
+    expect(body).not.toContain('node_modules')
+    expect(body).not.toContain('\n    at ')
+  })
+})
