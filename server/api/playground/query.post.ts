@@ -1,4 +1,5 @@
 import { QueryRequestSchema } from '~/types'
+import { MAX_VARIABLES_BYTES } from '~/server/utils/playground/limits'
 
 export default defineEventHandler(async (event) => {
   const start = Date.now()
@@ -14,6 +15,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const { scenario, input } = parsed.data
+
+  if (input.variables) {
+    const variablesSize = Buffer.byteLength(JSON.stringify(input.variables))
+    if (variablesSize > MAX_VARIABLES_BYTES) {
+      const res = errorResponse('VALIDATION_ERROR', 'The variables payload is too large.')
+      logRequest({ requestId: res.requestId, scenario, exampleId: input.exampleId, durationMs: Date.now() - start, status: 'error', errorCode: 'VALIDATION_ERROR' })
+      return res
+    }
+  }
+
   const example = getExample(scenario, input.exampleId)
   if (!example) {
     const res = errorResponse('UNKNOWN_EXAMPLE', `No example found for id "${input.exampleId}".`)
