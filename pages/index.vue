@@ -3,6 +3,10 @@
 
     <!-- ─── Hero ──────────────────────────────────────────────────── -->
     <section class="hero">
+      <div class="hero-mark" aria-hidden="true">
+        <img src="/images/logo.svg" alt="" width="360" height="360">
+      </div>
+
       <div class="container-site hero-inner">
 
         <div class="hero-text">
@@ -265,7 +269,22 @@ const showcaseSdl = [
 <style scoped>
 /* ─── Hero ──────────────────────────────────────────────────────── */
 .hero {
+  position: relative;
   padding: 6rem 0 5rem;
+  overflow: clip;
+}
+
+.hero-mark {
+  position: absolute;
+  left: max(-1rem, 2vw);
+  top: 0.5rem;
+  opacity: 0.08;
+  pointer-events: none;
+  transform: rotate(-14deg);
+}
+
+.hero-mark img {
+  display: block;
 }
 
 .hero-inner {
@@ -606,6 +625,12 @@ const showcaseSdl = [
 
 /* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .hero-mark {
+    left: -4rem;
+    top: -1rem;
+    opacity: 0.05;
+  }
+
   .hero-inner {
     grid-template-columns: 1fr;
     gap: 3rem;

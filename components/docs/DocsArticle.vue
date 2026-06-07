@@ -12,7 +12,7 @@
         target="_blank"
         rel="noopener noreferrer"
         class="docs-article__edit"
-      >Edit on GitHub ↗</a>
+      >Edit on GitHub</a>
     </header>
 
     <div class="docs-article__body">
@@ -32,9 +32,13 @@ defineProps<{
 
 <style scoped>
 .docs-article {
-  max-width: 720px;
-  padding: 2rem 2.5rem;
+  max-width: 100%;
   width: 100%;
+  padding: 2rem 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--panel) 97%, transparent);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .docs-article__header {
@@ -94,6 +98,7 @@ defineProps<{
   font-weight: 600;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
+  scroll-margin-top: 5.6rem;
 }
 
 .docs-article__body :deep(h1) { font-size: 1.5rem; }
@@ -162,7 +167,7 @@ defineProps<{
 
 @media (max-width: 720px) {
   .docs-article {
-    padding: 1rem 0;
+    padding: 1.25rem;
   }
 }
 </style>

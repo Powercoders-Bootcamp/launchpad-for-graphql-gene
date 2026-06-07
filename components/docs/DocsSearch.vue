@@ -101,7 +101,7 @@ function scorePage(page: SearchPage, needle: string) {
 <style scoped>
 .docs-search {
   position: relative;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.9rem;
 }
 
 .docs-search__label {

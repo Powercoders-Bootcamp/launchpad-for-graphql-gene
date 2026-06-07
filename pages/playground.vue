@@ -20,46 +20,61 @@
         </button>
 
         <button
-          class="playground-button playground-button--primary"
+          class="playground-button playground-button--secondary"
           type="button"
           :disabled="state.isLoading"
           @click="run"
         >
-          {{ state.isLoading ? 'Running...' : 'Run scenario' }}
+          {{ state.isLoading ? 'Refreshing...' : 'Refresh now' }}
         </button>
       </div>
     </header>
 
-    <section class="playground-toolbar">
-      <nav class="playground-scenarios" aria-label="Scenarios">
-        <button
-          v-for="id in SCENARIO_IDS"
-          :key="id"
-          class="playground-scenario-pill"
-          :class="{ 'is-active': state.scenarioId === id }"
-          type="button"
-          @click="selectScenario(id)"
-        >
-          {{ scenarioTitles[id] }}
-        </button>
-      </nav>
+    <section class="playground-toolbar-shell">
+      <div class="playground-toolbar">
+        <nav class="playground-scenarios" aria-label="Scenarios">
+          <button
+            v-for="id in SCENARIO_IDS"
+            :key="id"
+            class="playground-scenario-pill"
+            :class="{ 'is-active': state.scenarioId === id }"
+            type="button"
+            @click="selectScenario(id)"
+          >
+            {{ scenarioTitles[id] }}
+          </button>
+        </nav>
 
-      <label class="playground-field">
-        <span class="playground-field-label">Example</span>
-        <select
-          v-model="state.exampleId"
-          class="playground-select"
-          @change="selectExample(state.exampleId)"
-        >
-          <option v-for="example in scenarioExamples" :key="example.id" :value="example.id">
-            {{ example.title }}
-          </option>
-        </select>
-      </label>
+        <label class="playground-field">
+          <select
+            v-model="state.exampleId"
+            class="playground-select"
+            aria-label="Example"
+            @change="selectExample(state.exampleId)"
+          >
+            <option v-for="example in scenarioExamples" :key="example.id" :value="example.id">
+              {{ example.title }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <div class="playground-overview">
+        <div class="playground-overview-copy">
+          <h2>{{ activeScenarioOverview.title }}</h2>
+          <p>
+            {{ activeScenarioOverview.description }}
+          </p>
+          <div v-if="isQueryScenario" class="playground-overview-note">
+            <span class="playground-overview-note-label">Execution Notes</span>
+            <p>{{ executionNotesSummary }}</p>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="playground-layout" :class="{ 'is-query': isQueryScenario }">
-      <aside class="playground-input-column">
+    <section class="playground-layout">
+      <aside class="playground-column playground-column--input">
         <article class="playground-card">
           <div class="playground-card-head">
             <div>
@@ -96,15 +111,14 @@
               <input v-model="state.generate.showTypeSummary" type="checkbox">
               <span>
                 <strong>Return type summary</strong>
-                <small>Print the generated type map alongside the SDL output.</small>
+                <small>Keep the structural type map visible alongside the SDL.</small>
               </span>
             </label>
           </div>
 
           <div v-else class="playground-control-stack">
             <label class="playground-field">
-              <span class="playground-field-label">Directive mode</span>
-              <select v-model="state.directiveMode" class="playground-select">
+              <select v-model="state.directiveMode" class="playground-select" aria-label="Directive mode">
                 <option value="named">Named directive</option>
                 <option value="anonymous">Anonymous runtime middleware</option>
               </select>
@@ -117,100 +131,97 @@
           </div>
         </article>
 
-        <article v-if="isQueryScenario" class="playground-card playground-card--muted">
-          <p class="playground-section-label">Hint</p>
-          <p class="playground-help-text">
-            Query scenarios restore a curated default query when you switch examples, so it is easy
-            to compare runtime output without manually rebuilding the request.
-          </p>
-        </article>
-
-        <article v-if="state.directiveInfo" class="playground-card playground-card--muted">
-          <p class="playground-section-label">Directive behavior</p>
-          <div class="playground-meta-grid">
-            <div>
-              <strong>Name</strong>
-              <p>{{ state.directiveInfo.name || '(anonymous middleware)' }}</p>
-            </div>
-            <div>
-              <strong>Printed to schema</strong>
-              <p>{{ state.directiveInfo.printsToSchema ? 'Yes' : 'No' }}</p>
-            </div>
-            <div class="playground-meta-grid-span">
-              <strong>Runtime summary</strong>
-              <p>{{ state.directiveInfo.runtimeBehaviorSummary }}</p>
-            </div>
-          </div>
-        </article>
       </aside>
 
-      <section class="playground-output-column">
+      <section class="playground-column playground-column--primary">
         <div v-if="state.error" class="playground-error">
           {{ state.error }}
         </div>
 
-        <div class="playground-panels">
-          <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
-            <div class="playground-card-head">
-              <div>
-                <p class="playground-section-label">SDL</p>
-                <strong>Generated schema</strong>
-              </div>
-
-              <button
-                class="playground-copy-button"
-                type="button"
-                :disabled="!state.sdl"
-                @click="copyText(state.sdl, 'sdl')"
-              >
-                {{ copiedPanel === 'sdl' ? 'Copied' : 'Copy' }}
-              </button>
+        <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
+          <div class="playground-card-head">
+            <div>
+              <p class="playground-section-label">SDL</p>
+              <strong>Generated schema</strong>
             </div>
 
-            <pre class="playground-code">{{ state.sdl ?? 'Run schema generation to inspect the SDL output.' }}</pre>
-          </article>
+            <button
+              class="playground-copy-button"
+              type="button"
+              :disabled="!state.sdl"
+              @click="copyText(state.sdl, 'sdl')"
+            >
+              {{ copiedPanel === 'sdl' ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
 
-          <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
-            <div class="playground-card-head">
-              <div>
-                <p class="playground-section-label">Type Summary</p>
-                <strong>Generated type map</strong>
-              </div>
+          <pre class="playground-code playground-code--primary"><code v-html="sdlDisplayHtml" /></pre>
+        </article>
 
-              <button
-                class="playground-copy-button"
-                type="button"
-                :disabled="!typeSummaryText"
-                @click="copyText(typeSummaryText, 'type-summary')"
-              >
-                {{ copiedPanel === 'type-summary' ? 'Copied' : 'Copy' }}
-              </button>
+        <article v-if="isQueryScenario" class="playground-card playground-panel">
+          <div class="playground-card-head">
+            <div>
+              <p class="playground-section-label">Result</p>
+              <strong>GraphQL response payload</strong>
             </div>
 
-            <pre class="playground-code playground-code--compact">{{ typeSummaryDisplayText }}</pre>
-          </article>
+            <button
+              class="playground-copy-button"
+              type="button"
+              :disabled="!resultJson"
+              @click="copyText(resultJson, 'result')"
+            >
+              {{ copiedPanel === 'result' ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
 
-          <article v-if="isQueryScenario" class="playground-card playground-panel playground-panel--wide">
-            <div class="playground-card-head">
-              <div>
-                <p class="playground-section-label">Result</p>
-                <strong>GraphQL response payload</strong>
-              </div>
+          <pre class="playground-code playground-code--primary"><code v-html="resultDisplayHtml" /></pre>
+        </article>
 
-              <button
-                class="playground-copy-button"
-                type="button"
-                :disabled="!resultJson"
-                @click="copyText(resultJson, 'result')"
-              >
-                {{ copiedPanel === 'result' ? 'Copied' : 'Copy' }}
-              </button>
+        <article v-if="state.scenarioId === 'directive-middleware'" class="playground-card playground-panel">
+          <div class="playground-card-head">
+            <div>
+              <p class="playground-section-label">Directive SDL</p>
+              <strong>Schema excerpt</strong>
             </div>
 
-            <pre class="playground-code">{{ resultDisplayText }}</pre>
-          </article>
+            <button
+              class="playground-copy-button"
+              type="button"
+              :disabled="!state.sdlExcerpt"
+              @click="copyText(state.sdlExcerpt, 'directive-sdl')"
+            >
+              {{ copiedPanel === 'directive-sdl' ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
 
-          <article v-if="isQueryScenario" class="playground-card playground-panel">
+          <pre class="playground-code playground-code--primary"><code v-html="directiveSdlDisplayHtml" /></pre>
+        </article>
+      </section>
+
+      <aside class="playground-column playground-column--secondary">
+        <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
+          <div class="playground-card-head">
+            <div>
+              <p class="playground-section-label">Type Summary</p>
+              <strong>Generated type map</strong>
+            </div>
+
+            <button
+              class="playground-copy-button"
+              type="button"
+              :disabled="!typeSummaryText"
+              @click="copyText(typeSummaryText, 'type-summary')"
+            >
+              {{ copiedPanel === 'type-summary' ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+
+          <pre class="playground-code playground-code--secondary"><code v-html="typeSummaryDisplayHtml" /></pre>
+        </article>
+
+        <template v-if="isQueryScenario">
+          <article class="playground-card playground-panel">
             <div class="playground-card-head">
               <div>
                 <p class="playground-section-label">SQL</p>
@@ -227,10 +238,10 @@
               </button>
             </div>
 
-            <pre class="playground-code playground-code--compact">{{ state.sql ?? 'Run the query scenario to capture SQL output.' }}</pre>
+            <pre class="playground-code playground-code--secondary"><code v-html="sqlDisplayHtml" /></pre>
           </article>
 
-          <article v-if="isQueryScenario" class="playground-card playground-panel">
+          <article class="playground-card playground-panel">
             <div class="playground-card-head">
               <div>
                 <p class="playground-section-label">Include Graph</p>
@@ -247,43 +258,10 @@
               </button>
             </div>
 
-            <pre class="playground-code playground-code--compact">{{ includeGraphDisplayText }}</pre>
+            <pre class="playground-code playground-code--secondary"><code v-html="includeGraphDisplayHtml" /></pre>
           </article>
 
-          <article v-if="isQueryScenario" class="playground-card playground-panel">
-            <div class="playground-card-head">
-              <div>
-                <p class="playground-section-label">Execution Notes</p>
-                <strong>Runtime interpretation</strong>
-              </div>
-            </div>
-
-            <ul class="playground-list">
-              <li v-for="note in state.executionNotes" :key="note">{{ note }}</li>
-              <li v-if="!state.executionNotes.length">Run a query scenario to inspect runtime notes.</li>
-            </ul>
-          </article>
-
-          <article v-if="state.scenarioId === 'directive-middleware'" class="playground-card playground-panel playground-panel--wide">
-            <div class="playground-card-head">
-              <div>
-                <p class="playground-section-label">Directive SDL</p>
-                <strong>Schema excerpt</strong>
-              </div>
-
-              <button
-                class="playground-copy-button"
-                type="button"
-                :disabled="!state.sdlExcerpt"
-                @click="copyText(state.sdlExcerpt, 'directive-sdl')"
-              >
-                {{ copiedPanel === 'directive-sdl' ? 'Copied' : 'Copy' }}
-              </button>
-            </div>
-
-            <pre class="playground-code">{{ state.sdlExcerpt ?? 'Run the directive scenario to inspect the SDL excerpt.' }}</pre>
-          </article>
-        </div>
+        </template>
 
         <details v-if="state.diagnostics.length" class="playground-card playground-diagnostics" open>
           <summary>Diagnostics ({{ state.diagnostics.length }})</summary>
@@ -293,7 +271,7 @@
             </li>
           </ul>
         </details>
-      </section>
+      </aside>
     </section>
   </main>
 </template>
@@ -316,12 +294,35 @@ const scenarioTitles: Record<ScenarioId, string> = {
   'directive-middleware': 'Directive middleware',
 }
 
+const scenarioOverviewMap: Record<ScenarioId, {
+  title: string
+  description: string
+}> = {
+  'model-to-schema': {
+    title: 'Toggle the model shape and inspect the generated schema instantly.',
+    description: 'This scenario edits the example model definition, regenerates the SDL, and lets you compare the structural type map side by side.',
+  },
+  'query-lookahead': {
+    title: 'Edit a real query and watch the data path, include planning, and SQL stay in sync.',
+    description: 'This scenario runs the query against the example runtime and shows how graphql-gene shapes the GraphQL response, association graph, and final Sequelize statements.',
+  },
+  'polymorphic-blocks': {
+    title: 'Inspect a polymorphic page query from typed blocks down to include planning.',
+    description: 'This scenario shows how a query with unions and block variants resolves into a result payload, SQL statements, and an include plan you can read at a glance.',
+  },
+  'directive-middleware': {
+    title: 'Compare how directive middleware appears in the printed schema.',
+    description: 'This scenario flips between named and anonymous middleware modes so you can inspect the SDL excerpt that graphql-gene emits for each runtime contract.',
+  },
+}
+
 const {
   state,
   loadExamples,
   selectScenario,
   selectExample,
   resetQueryToDefault,
+  markDirty,
   runGenerate,
   runQuery,
   runDirectives,
@@ -330,6 +331,7 @@ const {
 } = usePlayground()
 
 const copiedPanel = ref<string | null>(null)
+const isHydrated = ref(false)
 
 const scenarioExamples = computed(() =>
   state.examples.filter(example => example.scenario === state.scenarioId),
@@ -341,37 +343,149 @@ const activeExample = computed(() =>
 
 const activeScenarioTitle = computed(() => scenarioTitles[state.scenarioId])
 
+const activeScenarioOverview = computed(() => scenarioOverviewMap[state.scenarioId])
+
 const isQueryScenario = computed(() =>
   state.scenarioId === 'query-lookahead' || state.scenarioId === 'polymorphic-blocks',
 )
 
+const executionNotesSummary = computed(() => {
+  if (!isQueryScenario.value) {
+    return ''
+  }
+
+  return state.executionNotes.length
+    ? state.executionNotes.join(' ')
+    : 'Edit the query to inspect runtime notes.'
+})
+
 const resultJson = computed(() =>
   state.queryResult ? JSON.stringify(state.queryResult, null, 2) : '',
-)
-
-const resultDisplayText = computed(() =>
-  resultJson.value || 'Run the query scenario to inspect the GraphQL response payload.',
 )
 
 const includeGraphText = computed(() =>
   state.includeGraph ? JSON.stringify(state.includeGraph, null, 2) : '',
 )
 
-const includeGraphDisplayText = computed(() =>
-  includeGraphText.value || 'Run the query scenario to inspect include planning.',
-)
-
 const typeSummaryText = computed(() =>
   state.typeSummary?.length ? JSON.stringify(state.typeSummary, null, 2) : '',
 )
 
-const typeSummaryDisplayText = computed(() => {
-  if (!state.generate.showTypeSummary) {
-    return 'Enable "Return type summary" and rerun schema generation to inspect the type map.'
+type CodeLanguage = 'graphql' | 'json' | 'sql' | 'plain'
+
+function escapeCodeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function highlightGraphql(value: string) {
+  return value.replace(
+    /(#.*$)|(@[A-Za-z_][\w-]*)|\b(type|input|interface|enum|scalar|union|directive|schema|extend|implements|on|query|mutation|subscription)\b|\b(ID|String|Int|Float|Boolean|Query|Mutation|Subscription)\b/gm,
+    (match, comment, directive, keyword, typeName) => {
+      if (comment) return `<span class="tok-comment">${comment}</span>`
+      if (directive) return `<span class="tok-fn">${directive}</span>`
+      if (keyword) return `<span class="tok-keyword">${keyword}</span>`
+      if (typeName) return `<span class="tok-type">${typeName}</span>`
+      return match
+    },
+  )
+}
+
+function highlightJson(value: string) {
+  return value.replace(
+    /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false)\b|\b(null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+    (match, stringToken, isKey, booleanToken, nullToken, numberToken) => {
+      if (stringToken) {
+        const tokenClass = isKey ? 'tok-type' : 'tok-string'
+        const suffix = isKey ? isKey : ''
+        return `<span class="${tokenClass}">${stringToken}</span>${suffix}`
+      }
+
+      if (booleanToken) {
+        return `<span class="tok-keyword">${booleanToken}</span>`
+      }
+
+      if (nullToken) {
+        return `<span class="tok-comment">${nullToken}</span>`
+      }
+
+      if (numberToken) {
+        return `<span class="tok-fn">${numberToken}</span>`
+      }
+
+      return match
+    },
+  )
+}
+
+function highlightSql(value: string) {
+  return value.replace(
+    /(--.*$)|('(?:''|[^'])*')|\b(SELECT|FROM|WHERE|LEFT|RIGHT|INNER|OUTER|JOIN|ON|AS|AND|OR|IN|NOT|NULL|IS|ORDER|BY|GROUP|LIMIT|OFFSET|DESC|ASC|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DISTINCT)\b|(-?\d+(?:\.\d+)?)/gim,
+    (match, comment, stringToken, keyword, numberToken) => {
+      if (comment) return `<span class="tok-comment">${comment}</span>`
+      if (stringToken) return `<span class="tok-string">${stringToken}</span>`
+      if (keyword) return `<span class="tok-keyword">${keyword}</span>`
+      if (numberToken) return `<span class="tok-fn">${numberToken}</span>`
+      return match
+    },
+  )
+}
+
+function highlightCode(value: string, language: CodeLanguage) {
+  const escaped = escapeCodeHtml(value)
+
+  if (language === 'plain') {
+    return escaped
   }
 
-  return typeSummaryText.value || 'Run schema generation to inspect the generated type map.'
-})
+  if (language === 'graphql') {
+    return highlightGraphql(escaped)
+  }
+
+  if (language === 'json') {
+    return highlightJson(escaped)
+  }
+
+  return highlightSql(escaped)
+}
+
+function renderPanelCode(value: string | null | undefined, placeholder: string, language: Exclude<CodeLanguage, 'plain'>) {
+  if (!value?.trim()) {
+    return highlightCode(placeholder, 'plain')
+  }
+
+  return highlightCode(value, language)
+}
+
+const sdlDisplayHtml = computed(() =>
+  renderPanelCode(state.sdl, 'Adjust the model options to generate live SDL here.', 'graphql'),
+)
+
+const resultDisplayHtml = computed(() =>
+  renderPanelCode(resultJson.value, 'Edit the query on the left to inspect the GraphQL response payload.', 'json'),
+)
+
+const directiveSdlDisplayHtml = computed(() =>
+  renderPanelCode(state.sdlExcerpt, 'Toggle the directive mode to inspect the printed schema excerpt.', 'graphql'),
+)
+
+const typeSummaryDisplayHtml = computed(() =>
+  renderPanelCode(
+    state.generate.showTypeSummary ? typeSummaryText.value : '',
+    'Enable "Return type summary" to inspect the generated type map.',
+    'json',
+  ),
+)
+
+const sqlDisplayHtml = computed(() =>
+  renderPanelCode(state.sql, 'Edit the query to inspect the generated SQL.', 'sql'),
+)
+
+const includeGraphDisplayHtml = computed(() =>
+  renderPanelCode(includeGraphText.value, 'Edit the query on the left to inspect include planning.', 'json'),
+)
 
 async function copyText(text: string | null, panel: string) {
   if (!text) return
@@ -403,19 +517,73 @@ function run() {
   return runQuery()
 }
 
-const updateHash = useDebounceFn(() => {
-  if (import.meta.client) {
-    window.location.hash = encodeToHash()
+function replaceHash() {
+  if (!import.meta.client || !isHydrated.value) {
+    return
   }
+
+  const nextHash = `#${encodeToHash()}`
+  if (window.location.hash === nextHash) {
+    return
+  }
+
+  const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`
+  window.history.replaceState(window.history.state, '', nextUrl)
+}
+
+const updateHash = useDebounceFn(() => {
+  replaceHash()
 }, 300)
 
+const scheduleAutoRun = useDebounceFn(() => {
+  if (!isHydrated.value || !state.exampleId) {
+    return
+  }
+
+  void run()
+}, 450)
+
+function scheduleLiveRun() {
+  if (!isHydrated.value || !state.exampleId) {
+    return
+  }
+
+  markDirty()
+  scheduleAutoRun()
+}
+
 watch([() => state.scenarioId, () => state.exampleId], () => {
-  if (import.meta.client) {
-    window.location.hash = encodeToHash()
+  replaceHash()
+
+  scheduleLiveRun()
+})
+
+watch(() => state.query, () => {
+  updateHash()
+
+  if (isQueryScenario.value) {
+    scheduleLiveRun()
   }
 })
 
-watch(() => state.query, updateHash)
+watch(
+  [
+    () => state.generate.includeOrders,
+    () => state.generate.includeAddress,
+    () => state.generate.showTypeSummary,
+  ],
+  () => {
+    if (state.scenarioId === 'model-to-schema') {
+      scheduleLiveRun()
+    }
+  },
+)
+
+watch(() => state.directiveMode, () => {
+  if (state.scenarioId === 'directive-middleware') {
+    scheduleLiveRun()
+  }
+})
 
 onMounted(async () => {
   $fetch('/api/health').catch(() => {})
@@ -434,19 +602,27 @@ onMounted(async () => {
     if (decoded?.query) {
       state.query = decoded.query
     }
-    return
+  }
+  else {
+    const params = new URLSearchParams(window.location.search)
+    const scenarioParam = params.get('scenario') as ScenarioId | null
+    const exampleParam = params.get('example')
+
+    if (scenarioParam && (SCENARIO_IDS as readonly string[]).includes(scenarioParam)) {
+      await selectScenario(scenarioParam)
+    }
+
+    if (exampleParam) {
+      await selectExample(exampleParam)
+    }
   }
 
-  const params = new URLSearchParams(window.location.search)
-  const scenarioParam = params.get('scenario') as ScenarioId | null
-  const exampleParam = params.get('example')
+  isHydrated.value = true
 
-  if (scenarioParam && (SCENARIO_IDS as readonly string[]).includes(scenarioParam)) {
-    await selectScenario(scenarioParam)
-  }
+  replaceHash()
 
-  if (exampleParam) {
-    await selectExample(exampleParam)
+  if (state.exampleId) {
+    await run()
   }
 })
 </script>
@@ -478,8 +654,7 @@ onMounted(async () => {
 }
 
 .playground-eyebrow,
-.playground-section-label,
-.playground-field-label {
+.playground-section-label {
   margin: 0 0 0.45rem;
   color: var(--muted);
   font-size: 0.72rem;
@@ -500,6 +675,7 @@ onMounted(async () => {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .playground-button,
@@ -523,14 +699,8 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.playground-button--primary {
-  background: var(--color-pink, #e535ab);
-  border-color: transparent;
-  color: #fff;
-  font-weight: 700;
-}
-
-.playground-button--ghost {
+.playground-button--ghost,
+.playground-button--secondary {
   background: var(--playground-panel-soft);
   color: var(--text);
 }
@@ -548,16 +718,62 @@ onMounted(async () => {
   transform: none;
 }
 
+.playground-toolbar-shell {
+  border: 1px solid var(--playground-border);
+  border-radius: 18px;
+  background: var(--playground-panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
 .playground-toolbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.1rem;
-  border: 1px solid var(--playground-border);
-  border-radius: 18px;
-  background: var(--playground-panel-soft);
-  margin-bottom: 1.25rem;
+}
+
+.playground-overview {
+  padding: 1rem 1.1rem;
+  border-top: 1px solid var(--playground-border);
+  background: transparent;
+}
+
+.playground-overview-copy h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.playground-overview-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.playground-overview-note {
+  margin-top: 0.95rem;
+  padding: 0.85rem 0.95rem;
+  border-left: 3px solid var(--color-pink, #e535ab);
+  border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--color-pink, #e535ab) 7%, transparent);
+}
+
+.playground-overview-note-label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.playground-overview-note p {
+  margin: 0;
 }
 
 .playground-scenarios {
@@ -597,15 +813,16 @@ onMounted(async () => {
 
 .playground-layout {
   display: grid;
-  grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
+  grid-template-columns: minmax(18rem, 23rem) minmax(0, 1.2fr) minmax(18rem, 0.95fr);
   gap: 1.25rem;
+  align-items: start;
 }
 
-.playground-input-column,
-.playground-output-column {
+.playground-column {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0;
 }
 
 .playground-card {
@@ -614,10 +831,6 @@ onMounted(async () => {
   background: var(--playground-panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
-}
-
-.playground-card--muted {
-  background: var(--playground-panel-soft);
 }
 
 .playground-card-head {
@@ -634,7 +847,7 @@ onMounted(async () => {
 
 .playground-textarea {
   width: calc(100% - 2rem);
-  min-height: 24rem;
+  min-height: 34rem;
   margin: 1rem;
   border: 1px solid var(--playground-border);
   border-radius: 14px;
@@ -675,7 +888,6 @@ onMounted(async () => {
 
 .playground-toggle-card small,
 .playground-help-text,
-.playground-meta-grid p,
 .playground-list {
   color: var(--muted);
 }
@@ -683,16 +895,6 @@ onMounted(async () => {
 .playground-help-text {
   margin: 0;
   line-height: 1.7;
-}
-
-.playground-panels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.playground-panel--wide {
-  grid-column: 1 / -1;
 }
 
 .playground-copy-button {
@@ -716,32 +918,40 @@ onMounted(async () => {
   font-family: var(--font-family-mono);
   font-size: 0.87rem;
   line-height: 1.7;
-  min-height: 14rem;
 }
 
-.playground-code--compact {
-  min-height: 11rem;
-}
-
-.playground-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.playground-meta-grid strong {
+.playground-code code {
   display: block;
-  margin-bottom: 0.35rem;
+  color: inherit;
 }
 
-.playground-meta-grid p {
-  margin: 0;
-  line-height: 1.6;
+:deep(.tok-keyword) {
+  color: var(--code-keyword);
 }
 
-.playground-meta-grid-span {
-  grid-column: 1 / -1;
+:deep(.tok-string) {
+  color: var(--code-string);
+}
+
+:deep(.tok-fn) {
+  color: var(--code-function);
+}
+
+:deep(.tok-type) {
+  color: var(--code-type);
+}
+
+:deep(.tok-comment) {
+  color: var(--code-comment);
+  font-style: italic;
+}
+
+.playground-code--primary {
+  min-height: min(58vh, 42rem);
+}
+
+.playground-code--secondary {
+  min-height: 12rem;
 }
 
 .playground-list {
@@ -751,16 +961,11 @@ onMounted(async () => {
 }
 
 .playground-error {
-  margin-bottom: 1rem;
   padding: 0.9rem 1rem;
   border: 1px solid var(--playground-border-strong);
   border-radius: 14px;
   background: color-mix(in srgb, var(--color-pink, #e535ab) 12%, transparent);
   color: var(--text);
-}
-
-.playground-diagnostics {
-  margin-top: 1rem;
 }
 
 .playground-diagnostics summary {
@@ -769,13 +974,39 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-@media (max-width: 1100px) {
+@media (min-width: 1280px) {
+  .playground-column--input,
+  .playground-column--secondary {
+    position: sticky;
+    top: 5rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  .playground-layout {
+    grid-template-columns: minmax(18rem, 23rem) minmax(0, 1fr);
+  }
+
+  .playground-column--secondary {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 920px) {
   .playground-layout {
     grid-template-columns: 1fr;
   }
 
-  .playground-panels {
+  .playground-column--secondary {
     grid-template-columns: 1fr;
+  }
+
+  .playground-textarea,
+  .playground-code--primary {
+    min-height: 24rem;
   }
 }
 
@@ -785,7 +1016,8 @@ onMounted(async () => {
   }
 
   .playground-hero,
-  .playground-toolbar {
+  .playground-toolbar,
+  .playground-hero-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -794,12 +1026,5 @@ onMounted(async () => {
     min-width: 100%;
   }
 
-  .playground-meta-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .playground-meta-grid-span {
-    grid-column: auto;
-  }
 }
 </style>

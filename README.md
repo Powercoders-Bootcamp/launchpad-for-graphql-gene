@@ -33,7 +33,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> The playground at `/playground` is fully functional with stub responses out of the box.
+> The playground at `/playground` runs real `graphql-gene` + Sequelize + SQLite execution.
 > Real graphql-gene execution is wired up in Phase 3 — see [`docs/05-phases.md`](docs/05-phases.md).
 
 ## Tech stack

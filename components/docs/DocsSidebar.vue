@@ -84,15 +84,15 @@ const sectionIcons: Record<string, string> = {
 <style scoped>
 /* ── Shell ───────────────────────────────────────────────────────── */
 .docs-sidebar {
-  width: 260px;
+  width: 280px;
   flex-shrink: 0;
-  padding: 2rem 1rem;
+  padding: 0.4rem 1rem 1rem;
   border-right: 1px solid var(--border);
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   position: sticky;
-  top: 0;
+  top: 64px;
   overflow-y: auto;
-  max-height: 100vh;
+  max-height: calc(100vh - 64px);
   background: color-mix(in srgb, var(--bg-soft) 92%, transparent);
   backdrop-filter: blur(18px);
 }
@@ -106,7 +106,7 @@ const sectionIcons: Record<string, string> = {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.1rem;
   font-weight: 700;
   text-decoration: none;
   transition: color 0.15s ease;

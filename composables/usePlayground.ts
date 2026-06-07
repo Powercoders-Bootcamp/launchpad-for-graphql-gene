@@ -78,6 +78,8 @@ function getDefaultQuery(scenarioId: ScenarioId) {
 }
 
 export function usePlayground() {
+  let latestRequestToken = 0
+
   const state = reactive<PlaygroundState>({
     scenarioId: 'model-to-schema',
     exampleId: '',
@@ -103,6 +105,8 @@ export function usePlayground() {
   })
 
   function clearOutput() {
+    latestRequestToken += 1
+    state.isLoading = false
     state.sdl = null
     state.typeSummary = null
     state.queryResult = null
@@ -158,9 +162,31 @@ export function usePlayground() {
     state.error = null
   }
 
-  async function runGenerate() {
+  function markDirty() {
+    latestRequestToken += 1
+    state.isLoading = false
+    state.error = null
+  }
+
+  function beginRequest() {
+    const token = ++latestRequestToken
     state.isLoading = true
     state.error = null
+    return token
+  }
+
+  function isLatestRequest(token: number) {
+    return token === latestRequestToken
+  }
+
+  function finishRequest(token: number) {
+    if (isLatestRequest(token)) {
+      state.isLoading = false
+    }
+  }
+
+  async function runGenerate() {
+    const token = beginRequest()
 
     try {
       const response = await $fetch<GenerateResponse>('/api/playground/generate', {
@@ -180,21 +206,26 @@ export function usePlayground() {
         },
       })
 
+      if (!isLatestRequest(token)) {
+        return
+      }
+
       state.sdl = response.schema?.sdl ?? null
       state.typeSummary = response.schema?.typeSummary ?? null
       state.diagnostics = response.diagnostics ?? []
     }
     catch (error) {
-      state.error = readFetchError(error, 'Schema generation failed. Please try again.')
+      if (isLatestRequest(token)) {
+        state.error = readFetchError(error, 'Schema generation failed. Please try again.')
+      }
     }
     finally {
-      state.isLoading = false
+      finishRequest(token)
     }
   }
 
   async function runQuery() {
-    state.isLoading = true
-    state.error = null
+    const token = beginRequest()
 
     try {
       const response = await $fetch<QueryResponse>('/api/playground/query', {
@@ -209,6 +240,10 @@ export function usePlayground() {
         },
       })
 
+      if (!isLatestRequest(token)) {
+        return
+      }
+
       state.queryResult = response.result?.data ?? null
       state.includeGraph = response.execution?.includeGraph ?? null
       state.sql = response.execution?.sql ?? null
@@ -216,16 +251,17 @@ export function usePlayground() {
       state.diagnostics = response.diagnostics ?? []
     }
     catch (error) {
-      state.error = readFetchError(error, 'Query execution failed. Please try again.')
+      if (isLatestRequest(token)) {
+        state.error = readFetchError(error, 'Query execution failed. Please try again.')
+      }
     }
     finally {
-      state.isLoading = false
+      finishRequest(token)
     }
   }
 
   async function runDirectives() {
-    state.isLoading = true
-    state.error = null
+    const token = beginRequest()
 
     try {
       const response = await $fetch<DirectivesResponse>('/api/playground/directives', {
@@ -239,15 +275,21 @@ export function usePlayground() {
         },
       })
 
+      if (!isLatestRequest(token)) {
+        return
+      }
+
       state.directiveInfo = response.directive ?? null
       state.sdlExcerpt = response.schema?.sdlExcerpt ?? null
       state.diagnostics = response.diagnostics ?? []
     }
     catch (error) {
-      state.error = readFetchError(error, 'Directive scenario failed. Please try again.')
+      if (isLatestRequest(token)) {
+        state.error = readFetchError(error, 'Directive scenario failed. Please try again.')
+      }
     }
     finally {
-      state.isLoading = false
+      finishRequest(token)
     }
   }
 
@@ -258,12 +300,12 @@ export function usePlayground() {
       ...(state.query ? { query: state.query } : {}),
     }
 
-    return btoa(JSON.stringify(payload))
+    return toBase64Url(JSON.stringify(payload))
   }
 
   function decodeFromHash(hash: string): Partial<PlaygroundHashState> | null {
     try {
-      const result = PlaygroundHashStateSchema.safeParse(JSON.parse(atob(hash)))
+      const result = PlaygroundHashStateSchema.safeParse(JSON.parse(fromBase64Url(hash)))
       return result.success ? result.data : null
     }
     catch {
@@ -277,6 +319,7 @@ export function usePlayground() {
     selectScenario,
     selectExample,
     resetQueryToDefault,
+    markDirty,
     runGenerate,
     runQuery,
     runDirectives,
@@ -294,4 +337,22 @@ function readFetchError(error: unknown, fallback: string) {
   }
 
   return fallback
+}
+
+function toBase64Url(value: string) {
+  return btoa(value)
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/g, '')
+}
+
+function fromBase64Url(value: string) {
+  const normalized = value
+    .replaceAll('-', '+')
+    .replaceAll('_', '/')
+
+  const padding = normalized.length % 4
+  const padded = padding === 0 ? normalized : normalized.padEnd(normalized.length + (4 - padding), '=')
+
+  return atob(padded)
 }

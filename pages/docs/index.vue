@@ -2,47 +2,45 @@
   <div class="docs-layout">
     <DocsSidebar />
     <main class="docs-main">
-      <div class="blob blob-1" aria-hidden="true" />
-      <div class="blob blob-2" aria-hidden="true" />
+      <div class="docs-main-shell">
+        <section class="docs-overview">
+          <div class="blob blob-1" aria-hidden="true" />
+          <div class="blob blob-2" aria-hidden="true" />
 
-      <div class="docs-hero">
-        <div class="docs-hero__badge animate-fade-up" style="--delay: 0ms">
-          <span class="badge-dot" />
-          Documentation
-        </div>
-        <h1 class="docs-hero__title animate-fade-up" style="--delay: 80ms">
-          <span class="title-animated">graphql-gene</span>
-        </h1>
-        <p class="docs-hero__subtitle animate-fade-up" style="--delay: 160ms">
-          {{ typedText }}<span v-if="!typingDone" class="type-cursor">|</span>
-        </p>
-        <div class="docs-hero__actions animate-fade-up" style="--delay: 240ms">
-          <NuxtLink to="/docs/concepts/getting-started" class="btn-primary">
-            Get Started <span class="btn-arrow">-></span>
-          </NuxtLink>
-          <NuxtLink to="/playground" class="btn-secondary">Try Playground</NuxtLink>
-        </div>
-      </div>
-
-      <div ref="featuresRef" class="docs-features" :class="{ 'features-visible': featuresVisible }">
-        <div v-for="(feature, index) in features" :key="feature.title" class="docs-feature" :style="`--i: ${index}`">
-          <div class="docs-feature__icon">{{ feature.icon }}</div>
-          <h3 class="docs-feature__title">{{ feature.title }}</h3>
-          <p class="docs-feature__desc">{{ feature.desc }}</p>
-        </div>
-      </div>
-
-      <div ref="snippetRef" class="docs-snippet" :class="{ 'snippet-visible': snippetVisible }">
-        <div class="docs-snippet__header">
-          <div class="snippet-dots">
-            <span class="dot dot-red" />
-            <span class="dot dot-yellow" />
-            <span class="dot dot-green" />
+          <div class="docs-hero">
+            <h1 class="docs-hero__title animate-fade-up" style="--delay: 0ms">
+              <span class="title-animated">graphql-gene</span>
+            </h1>
+            <p class="docs-hero__subtitle animate-fade-up" style="--delay: 80ms">
+              {{ typedText }}<span v-if="!typingDone" class="type-cursor">|</span>
+            </p>
+            <div class="docs-hero__actions animate-fade-up" style="--delay: 160ms">
+              <NuxtLink to="/docs/concepts/getting-started" class="btn-primary">
+                Get Started <span class="btn-arrow">-></span>
+              </NuxtLink>
+              <NuxtLink to="/playground" class="btn-secondary">Try Playground</NuxtLink>
+            </div>
           </div>
-          <span class="docs-snippet__label">Quick setup</span>
-          <span class="docs-snippet__file">schema.ts</span>
-        </div>
-        <pre class="docs-snippet__code"><span class="tok-keyword">import</span> { generateSchema } <span class="tok-keyword">from</span> <span class="tok-string">'graphql-gene'</span>
+
+          <div ref="featuresRef" class="docs-features" :class="{ 'features-visible': featuresVisible }">
+            <div v-for="(feature, index) in features" :key="feature.title" class="docs-feature" :style="`--i: ${index}`">
+              <div class="docs-feature__icon">{{ feature.icon }}</div>
+              <h3 class="docs-feature__title">{{ feature.title }}</h3>
+              <p class="docs-feature__desc">{{ feature.desc }}</p>
+            </div>
+          </div>
+
+          <div ref="snippetRef" class="docs-snippet" :class="{ 'snippet-visible': snippetVisible }">
+            <div class="docs-snippet__header">
+              <div class="snippet-dots">
+                <span class="dot dot-red" />
+                <span class="dot dot-yellow" />
+                <span class="dot dot-green" />
+              </div>
+              <span class="docs-snippet__label">Quick setup</span>
+              <span class="docs-snippet__file">schema.ts</span>
+            </div>
+            <pre class="docs-snippet__code"><span class="tok-keyword">import</span> { generateSchema } <span class="tok-keyword">from</span> <span class="tok-string">'graphql-gene'</span>
 <span class="tok-keyword">import</span> { pluginSequelize } <span class="tok-keyword">from</span> <span class="tok-string">'@graphql-gene/plugin-sequelize'</span>
 <span class="tok-keyword">import</span> * <span class="tok-keyword">as</span> graphqlTypes <span class="tok-keyword">from</span> <span class="tok-string">'../models/graphqlTypes'</span>
 
@@ -50,23 +48,26 @@
   plugins: [<span class="tok-fn">pluginSequelize</span>()],
   types: graphqlTypes,
 })<span class="cursor-blink">|</span></pre>
-      </div>
-
-      <div ref="sectionsRef" class="docs-sections" :class="{ 'sections-visible': sectionsVisible }">
-        <NuxtLink
-          v-for="(section, index) in sections"
-          :key="section.title"
-          :to="section.to"
-          class="docs-section-card"
-          :style="`--i: ${index}`"
-        >
-          <div class="docs-section-card__icon">{{ section.icon }}</div>
-          <div class="docs-section-card__body">
-            <h3 class="docs-section-card__title">{{ section.title }}</h3>
-            <p class="docs-section-card__desc">{{ section.desc }}</p>
           </div>
-          <span class="card-arrow">-></span>
-        </NuxtLink>
+
+          <div ref="sectionsRef" class="docs-sections" :class="{ 'sections-visible': sectionsVisible }">
+            <NuxtLink
+              v-for="(section, index) in sections"
+              :key="section.title"
+              :to="section.to"
+              class="docs-section-card"
+              :style="`--i: ${index}`"
+            >
+              <div class="docs-section-card__icon">{{ section.icon }}</div>
+              <div class="docs-section-card__body">
+                <h3 class="docs-section-card__title">{{ section.title }}</h3>
+                <p class="docs-section-card__desc">{{ section.desc }}</p>
+              </div>
+              <span class="card-arrow">-></span>
+            </NuxtLink>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
@@ -144,17 +145,24 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
   background: transparent;
   color: var(--text);
   font-family: "Space Grotesk", -apple-system, sans-serif;
-  position: relative;
-  overflow: hidden;
 }
 
 .docs-main {
   flex: 1;
   min-width: 0;
-  max-width: 860px;
-  padding: 3rem 3.5rem;
+  padding: 0 0 4rem;
   position: relative;
   z-index: 1;
+}
+
+.docs-main-shell {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.docs-overview {
+  min-width: 0;
+  position: relative;
 }
 
 .blob {
@@ -211,43 +219,6 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
   margin-bottom: 3rem;
   padding-bottom: 2.5rem;
   border-bottom: 1px solid var(--border);
-}
-
-.docs-hero__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 1.25rem;
-  padding: 0.25rem 0.75rem;
-  border: 1px solid rgba(229, 53, 171, 0.18);
-  border-radius: 20px;
-  background: rgba(229, 53, 171, 0.07);
-  color: var(--color-pink);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-pink);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.5;
-    transform: scale(0.8);
-  }
 }
 
 .docs-hero__title {
@@ -594,7 +565,7 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
 
 @media (max-width: 640px) {
   .docs-main {
-    padding: 1.5rem;
+    padding: 0 0 3rem;
   }
 
   .docs-features {
@@ -609,4 +580,5 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
     display: none;
   }
 }
+
 </style>
