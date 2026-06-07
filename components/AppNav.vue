@@ -67,6 +67,10 @@ const theme = inject<Ref<'dark' | 'light'>>('theme')
   align-items: center;
   height: 64px;
   gap: 2rem;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 40px;
 }
 
 .nav-logo {

@@ -74,9 +74,11 @@ useSeoMeta({
 .docs-layout {
   display: flex;
   min-height: 100vh;
+  padding-inline: 40px;
   background: transparent;
   color: var(--text);
   font-family: "Space Grotesk", -apple-system, sans-serif;
+  box-sizing: border-box;
 }
 
 .docs-main {

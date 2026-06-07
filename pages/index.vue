@@ -288,10 +288,18 @@ const showcaseSdl = [
 }
 
 .hero-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4rem;
+  gap: 2.5rem;
+}
+
+.hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 46rem;
 }
 
 .hero-badge {
@@ -301,7 +309,7 @@ const showcaseSdl = [
   border-radius: 999px;
   border: 1px solid var(--border-strong);
   background: color-mix(in srgb, var(--color-pink) 8%, transparent);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--color-pink);
   letter-spacing: 0.04em;
@@ -310,12 +318,12 @@ const showcaseSdl = [
 }
 
 .hero-title {
-  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-size: clamp(3.15rem, 7vw, 4.75rem);
   font-weight: 700;
-  line-height: 1.12;
+  line-height: 1.02;
   letter-spacing: -0.02em;
   color: var(--text);
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
 }
 
 .hero-title-accent {
@@ -326,16 +334,17 @@ const showcaseSdl = [
 }
 
 .hero-desc {
-  font-size: 1.05rem;
-  line-height: 1.7;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1.5;
   color: var(--muted);
   margin: 0 0 2rem;
-  max-width: 480px;
+  max-width: 40rem;
 }
 
 .hero-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
@@ -343,6 +352,8 @@ const showcaseSdl = [
 
 .hero-npm {
   margin-top: 0.5rem;
+  display: flex;
+  justify-content: center;
 }
 
 .npm-cmd {
@@ -356,9 +367,11 @@ const showcaseSdl = [
 }
 
 .hero-code-wrap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  width: min(100%, 68rem);
+  align-items: stretch;
 }
 
 /* ─── Buttons ───────────────────────────────────────────────────── */
@@ -632,10 +645,11 @@ const showcaseSdl = [
   }
 
   .hero-inner {
-    grid-template-columns: 1fr;
     gap: 3rem;
   }
-  .hero-code-wrap { order: -1; }
+  .hero-code-wrap {
+    grid-template-columns: 1fr;
+  }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .showcase-grid { grid-template-columns: 1fr; }
   .showcase-arrow {
@@ -647,5 +661,12 @@ const showcaseSdl = [
 @media (max-width: 600px) {
   .features-grid { grid-template-columns: 1fr; }
   .hero { padding: 3.5rem 0 3rem; }
+  .hero-title {
+    font-size: clamp(2.7rem, 14vw, 3.4rem);
+  }
+  .hero-desc {
+    font-size: 1.05rem;
+    line-height: 1.65;
+  }
 }
 </style>

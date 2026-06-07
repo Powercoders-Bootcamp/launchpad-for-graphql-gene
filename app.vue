@@ -7,12 +7,32 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick } from 'vue'
+
 const theme = useCookie<'dark' | 'light'>('graphql-gene-theme', {
   default: () => 'dark',
 })
 
-function toggleTheme() {
-  theme.value = theme.value === 'dark' ? 'light' : 'dark'
+async function applyTheme(nextTheme: 'dark' | 'light') {
+  theme.value = nextTheme
+  await nextTick()
+}
+
+async function toggleTheme() {
+  const nextTheme = theme.value === 'dark' ? 'light' : 'dark'
+
+  if (!import.meta.client || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    await applyTheme(nextTheme)
+    return
+  }
+
+  const startViewTransition = document.startViewTransition?.bind(document)
+  if (!startViewTransition) {
+    await applyTheme(nextTheme)
+    return
+  }
+
+  await startViewTransition(() => applyTheme(nextTheme)).finished
 }
 
 useHead(() => ({

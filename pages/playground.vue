@@ -74,8 +74,8 @@
     </section>
 
     <section class="playground-layout">
-      <aside class="playground-column playground-column--input">
-        <article class="playground-card">
+      <aside ref="inputColumnRef" class="playground-column playground-column--input">
+        <article ref="inputCardRef" class="playground-card playground-card--editor">
           <div class="playground-card-head">
             <div>
               <p class="playground-section-label">{{ isQueryScenario ? 'Query' : 'Options' }}</p>
@@ -133,12 +133,12 @@
 
       </aside>
 
-      <section class="playground-column playground-column--primary">
+      <section ref="primaryColumnRef" class="playground-column playground-column--primary">
         <div v-if="state.error" class="playground-error">
           {{ state.error }}
         </div>
 
-        <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
+        <article v-if="state.scenarioId === 'model-to-schema'" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
               <p class="playground-section-label">SDL</p>
@@ -158,7 +158,7 @@
           <pre class="playground-code playground-code--primary"><code v-html="sdlDisplayHtml" /></pre>
         </article>
 
-        <article v-if="isQueryScenario" class="playground-card playground-panel">
+        <article v-if="isQueryScenario" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
               <p class="playground-section-label">Result</p>
@@ -178,7 +178,7 @@
           <pre class="playground-code playground-code--primary"><code v-html="resultDisplayHtml" /></pre>
         </article>
 
-        <article v-if="state.scenarioId === 'directive-middleware'" class="playground-card playground-panel">
+        <article v-if="state.scenarioId === 'directive-middleware'" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
               <p class="playground-section-label">Directive SDL</p>
@@ -199,8 +199,12 @@
         </article>
       </section>
 
-      <aside class="playground-column playground-column--secondary">
-        <article v-if="state.scenarioId === 'model-to-schema'" class="playground-card playground-panel">
+      <aside ref="secondaryColumnRef" class="playground-column playground-column--secondary">
+        <article
+          v-if="state.scenarioId === 'model-to-schema'"
+          ref="secondaryPanelRef"
+          class="playground-card playground-panel"
+        >
           <div class="playground-card-head">
             <div>
               <p class="playground-section-label">Type Summary</p>
@@ -221,7 +225,7 @@
         </article>
 
         <template v-if="isQueryScenario">
-          <article class="playground-card playground-panel">
+          <article ref="secondaryPanelRef" class="playground-card playground-panel">
             <div class="playground-card-head">
               <div>
                 <p class="playground-section-label">SQL</p>
@@ -277,7 +281,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { SCENARIO_IDS, type ScenarioId } from '~/types'
 import { usePlayground } from '~/composables/usePlayground'
@@ -332,6 +336,12 @@ const {
 
 const copiedPanel = ref<string | null>(null)
 const isHydrated = ref(false)
+const inputColumnRef = ref<HTMLElement | null>(null)
+const primaryColumnRef = ref<HTMLElement | null>(null)
+const secondaryColumnRef = ref<HTMLElement | null>(null)
+const inputCardRef = ref<HTMLElement | null>(null)
+const primaryPanelRef = ref<HTMLElement | null>(null)
+const secondaryPanelRef = ref<HTMLElement | null>(null)
 
 const scenarioExamples = computed(() =>
   state.examples.filter(example => example.scenario === state.scenarioId),
@@ -552,6 +562,56 @@ function scheduleLiveRun() {
   scheduleAutoRun()
 }
 
+function resetBalancedPanelHeights() {
+  for (const element of [inputCardRef.value, primaryPanelRef.value, secondaryPanelRef.value]) {
+    element?.style.removeProperty('min-height')
+  }
+}
+
+async function balanceQueryColumns() {
+  if (!import.meta.client) {
+    return
+  }
+
+  resetBalancedPanelHeights()
+  await nextTick()
+  await new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()))
+
+  if (!isHydrated.value || !isQueryScenario.value || window.innerWidth <= 1180) {
+    return
+  }
+
+  const columns = [
+    { column: inputColumnRef.value, target: inputCardRef.value },
+    { column: primaryColumnRef.value, target: primaryPanelRef.value },
+    { column: secondaryColumnRef.value, target: secondaryPanelRef.value },
+  ].filter((entry): entry is { column: HTMLElement, target: HTMLElement } => Boolean(entry.column && entry.target))
+
+  if (columns.length < 3) {
+    return
+  }
+
+  const tallestColumnHeight = Math.max(...columns.map(({ column }) => column.getBoundingClientRect().height))
+
+  for (const { column, target } of columns) {
+    const missingHeight = tallestColumnHeight - column.getBoundingClientRect().height
+    if (missingHeight <= 1) {
+      continue
+    }
+
+    const nextMinHeight = target.getBoundingClientRect().height + missingHeight
+    target.style.minHeight = `${Math.ceil(nextMinHeight)}px`
+  }
+}
+
+const scheduleColumnBalance = useDebounceFn(() => {
+  void balanceQueryColumns()
+}, 40)
+
+function handleWindowResize() {
+  scheduleColumnBalance()
+}
+
 watch([() => state.scenarioId, () => state.exampleId], () => {
   replaceHash()
 
@@ -585,7 +645,26 @@ watch(() => state.directiveMode, () => {
   }
 })
 
+watch(
+  [
+    isQueryScenario,
+    () => state.scenarioId,
+    () => state.exampleId,
+    () => state.query,
+    resultJson,
+    () => state.sql,
+    includeGraphText,
+    () => state.diagnostics.map(diagnostic => `${diagnostic.level}:${diagnostic.message}`).join('\n'),
+    () => state.isLoading,
+  ],
+  () => {
+    scheduleColumnBalance()
+  },
+  { flush: 'post' },
+)
+
 onMounted(async () => {
+  window.addEventListener('resize', handleWindowResize)
   $fetch('/api/health').catch(() => {})
 
   await loadExamples()
@@ -624,6 +703,13 @@ onMounted(async () => {
   if (state.exampleId) {
     await run()
   }
+
+  scheduleColumnBalance()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleWindowResize)
+  resetBalancedPanelHeights()
 })
 </script>
 
@@ -635,7 +721,7 @@ onMounted(async () => {
   --playground-border-strong: var(--border-strong);
 
   min-height: 100vh;
-  padding: 1.25rem;
+  padding: 1.25rem 40px;
 }
 
 .playground-hero {
@@ -825,6 +911,13 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.playground-card--editor,
+.playground-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .playground-card {
   border: 1px solid var(--playground-border);
   border-radius: 18px;
@@ -858,6 +951,8 @@ onMounted(async () => {
   font-family: var(--font-family-mono);
   font-size: 0.9rem;
   line-height: 1.7;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .playground-control-stack {
@@ -918,6 +1013,8 @@ onMounted(async () => {
   font-family: var(--font-family-mono);
   font-size: 0.87rem;
   line-height: 1.7;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .playground-code code {
@@ -1012,7 +1109,7 @@ onMounted(async () => {
 
 @media (max-width: 760px) {
   .playground-page {
-    padding: 1rem;
+    padding: 1rem 40px;
   }
 
   .playground-hero,
