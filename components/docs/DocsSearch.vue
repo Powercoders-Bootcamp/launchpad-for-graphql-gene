@@ -1,13 +1,13 @@
 <template>
   <div class="docs-search">
-    <label class="docs-search__label" for="docs-search-input">Search docs</label>
+    <label class="docs-search__label" for="docs-search-input">{{ t('docs.searchLabel') }}</label>
 
     <input
       id="docs-search-input"
       v-model.trim="query"
       class="docs-search__input"
       type="search"
-      placeholder="Search docs"
+      :placeholder="t('docs.searchPlaceholder')"
       autocomplete="off"
     >
 
@@ -15,7 +15,7 @@
       <NuxtLink
         v-for="result in limitedResults"
         :key="result.slug"
-        :to="result.slug"
+        :to="localePath(result.slug)"
         class="docs-search__result"
       >
         <strong>{{ result.sidebarLabel || result.title }}</strong>
@@ -23,7 +23,7 @@
       </NuxtLink>
 
       <p v-if="!limitedResults.length" class="docs-search__empty">
-        No results for "{{ query }}".
+        {{ t('docs.noResults', { query }) }}
       </p>
     </div>
   </div>
@@ -43,8 +43,10 @@ interface SearchPage {
 }
 
 const query = ref('')
+const localePath = useLocalePath()
+const { locale, t } = useI18n()
 
-const { data: pages } = await useAsyncData('docs-search-pages', async () => {
+const { data: pages } = await useAsyncData(`docs-search-pages-${locale.value}`, async () => {
   const docs = await queryCollection('docs').all()
 
   return docs.map((page) => ({

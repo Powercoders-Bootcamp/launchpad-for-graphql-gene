@@ -1,9 +1,9 @@
 <template>
   <aside v-if="flatLinks.length" class="docs-on-this-page">
     <div class="docs-on-this-page__inner" :class="{ 'docs-on-this-page__inner--sticky': sticky }">
-      <p class="docs-on-this-page__eyebrow">On This Page</p>
+      <p class="docs-on-this-page__eyebrow">{{ t('docs.onThisPage') }}</p>
 
-      <nav aria-label="On this page">
+      <nav :aria-label="t('docs.onThisPage')">
         <a
           v-for="link in flatLinks"
           :key="`${link.id}-${link.depth}`"
@@ -32,6 +32,7 @@ const props = defineProps<{
   links?: TocLink[]
   sticky?: boolean
 }>()
+const { t } = useI18n()
 
 const sticky = computed(() => props.sticky ?? true)
 

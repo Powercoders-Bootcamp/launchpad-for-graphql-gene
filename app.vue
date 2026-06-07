@@ -12,6 +12,11 @@ import { nextTick } from 'vue'
 const theme = useCookie<'dark' | 'light'>('graphql-gene-theme', {
   default: () => 'dark',
 })
+const localeHead = useLocaleHead({
+  lang: true,
+  dir: true,
+  seo: true,
+})
 
 async function applyTheme(nextTheme: 'dark' | 'light') {
   theme.value = nextTheme
@@ -37,8 +42,11 @@ async function toggleTheme() {
 
 useHead(() => ({
   htmlAttrs: {
+    ...(localeHead.value.htmlAttrs ?? {}),
     'data-theme': theme.value,
   },
+  link: [...(localeHead.value.link ?? [])],
+  meta: [...(localeHead.value.meta ?? [])],
 }))
 
 provide('toggleTheme', toggleTheme)

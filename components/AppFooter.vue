@@ -8,40 +8,44 @@
         </div>
 
         <p class="footer-tagline">
-          ORM-native GraphQL generation for TypeScript teams that want schema output, query
-          execution, and SQL behavior to stay visible in one place.
+          {{ t('footer.tagline') }}
         </p>
       </section>
 
       <div class="footer-links">
         <div class="footer-col">
-          <p class="footer-col-title">Product</p>
-          <NuxtLink to="/playground" class="footer-link">Live Playground</NuxtLink>
-          <NuxtLink to="/docs" class="footer-link">Documentation</NuxtLink>
-          <NuxtLink to="/docs/guides/schema-design" class="footer-link">Schema Design</NuxtLink>
+          <p class="footer-col-title">{{ t('footer.product') }}</p>
+          <NuxtLink :to="localePath('/playground')" class="footer-link">{{ t('footer.livePlayground') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs')" class="footer-link">{{ t('footer.documentation') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs/guides/schema-design')" class="footer-link">{{ t('footer.schemaDesign') }}</NuxtLink>
         </div>
 
         <div class="footer-col">
-          <p class="footer-col-title">Scenarios</p>
-          <NuxtLink to="/playground?scenario=model-to-schema" class="footer-link">Model to schema</NuxtLink>
-          <NuxtLink to="/playground?scenario=query-lookahead" class="footer-link">Query lookahead</NuxtLink>
-          <NuxtLink to="/playground?scenario=directive-middleware" class="footer-link">Directive middleware</NuxtLink>
+          <p class="footer-col-title">{{ t('footer.scenarios') }}</p>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'model-to-schema' } })" class="footer-link">{{ t('footer.modelToSchema') }}</NuxtLink>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'query-lookahead' } })" class="footer-link">{{ t('footer.queryLookahead') }}</NuxtLink>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'directive-middleware' } })" class="footer-link">{{ t('footer.directiveMiddleware') }}</NuxtLink>
         </div>
 
         <div class="footer-col">
-          <p class="footer-col-title">Resources</p>
-          <a href="https://github.com/accesimpot/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
-          <a href="https://www.npmjs.com/package/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">npm</a>
-          <a href="https://github.com/accesimpot/graphql-gene/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="footer-link">MIT License</a>
+          <p class="footer-col-title">{{ t('footer.resources') }}</p>
+          <a href="https://github.com/accesimpot/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.github') }}</a>
+          <a href="https://www.npmjs.com/package/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.npm') }}</a>
+          <a href="https://github.com/accesimpot/graphql-gene/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.license') }}</a>
         </div>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>Built with Nuxt. Playground execution uses graphql-gene, Sequelize, and SQLite.</p>
+      <p>{{ t('footer.builtWith') }}</p>
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+const localePath = useLocalePath()
+const { t } = useI18n()
+</script>
 
 <style scoped>
 .footer-root {

@@ -5,31 +5,52 @@
         <DocsSearch />
       </ClientOnly>
 
-      <NuxtLink to="/docs" class="docs-sidebar__label">
-        <svg class="docs-sidebar__home-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <NuxtLink :to="localePath('/docs')" class="docs-sidebar__label">
+        <svg
+          class="docs-sidebar__home-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
           <polyline points="9 21 9 12 15 12 15 21" />
         </svg>
-        Documentation
+        {{ t("docs.home") }}
       </NuxtLink>
 
       <!-- Tree root line -->
       <div class="tree-root">
         <template v-for="(section, si) in nav" :key="section.id">
-          <div v-if="section.groups.some(g => g.pages.length > 0)" class="tree-section">
-
+          <div
+            v-if="section.groups.some((g) => g.pages.length > 0)"
+            class="tree-section"
+          >
             <!-- Section node -->
             <div class="tree-section__head">
               <div class="tree-node tree-node--section">
-                <span class="tree-node__icon" v-html="sectionIcons[section.id] ?? sectionIcons.default" />
+                <span
+                  class="tree-node__icon"
+                  v-html="sectionIcons[section.id] ?? sectionIcons.default"
+                />
               </div>
               <span class="tree-section__title">{{ section.title }}</span>
             </div>
 
             <!-- Section children -->
-            <div class="tree-children" :class="{ 'tree-children--last': si === nav.length - 1 }">
-              <template v-for="group in section.groups" :key="group.category ?? '_root'">
-
+            <div
+              class="tree-children"
+              :class="{ 'tree-children--last': si === nav.length - 1 }"
+            >
+              <template
+                v-for="group in section.groups"
+                :key="group.category ?? '_root'"
+              >
                 <!-- Category sub-label -->
                 <div v-if="group.category" class="tree-category">
                   <span class="tree-category__label">{{ group.category }}</span>
@@ -43,24 +64,32 @@
                   :class="{ 'tree-item--last': pi === group.pages.length - 1 }"
                 >
                   <div class="tree-item__connector">
-                    <div class="tree-item__dot" :class="{ 'tree-item__dot--active': route.path === (page.slug ?? page._path) }" />
+                    <div
+                      class="tree-item__dot"
+                      :class="{
+                        'tree-item__dot--active':
+                          currentPath === (page.slug ?? page._path),
+                      }"
+                    />
                   </div>
                   <NuxtLink
-                    :to="page.slug ?? page._path"
+                    :to="localePath(page.slug ?? page._path)"
                     class="tree-item__link"
-                    :class="{ 'tree-item__link--active': route.path === (page.slug ?? page._path) }"
+                    :class="{
+                      'tree-item__link--active':
+                        currentPath === (page.slug ?? page._path),
+                    }"
                   >
                     {{ page.sidebarLabel ?? page.title }}
                     <span
                       v-if="page.status && page.status !== 'stable'"
                       class="tree-item__badge"
-                    >{{ page.status }}</span>
+                      >{{ t(`docs.statuses.${page.status}`) }}</span
+                    >
                   </NuxtLink>
                 </div>
-
               </template>
             </div>
-
           </div>
         </template>
       </div>
@@ -69,8 +98,12 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
-const nav = await useDocsNav()
+const route = useRoute();
+const localePath = useLocalePath();
+const { stripLocalePrefix } = useLocaleRouting();
+const { t } = useI18n();
+const nav = await useDocsNav();
+const currentPath = computed(() => stripLocalePrefix(route.path));
 
 const sectionIcons: Record<string, string> = {
   concepts: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>`,
@@ -78,7 +111,7 @@ const sectionIcons: Record<string, string> = {
   reference: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
   tutorials: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
   default: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-}
+};
 </script>
 
 <style scoped>
@@ -97,6 +130,10 @@ const sectionIcons: Record<string, string> = {
   backdrop-filter: blur(18px);
 }
 
+.docs-sidebar nav {
+  padding-top: 32px;
+}
+
 /* ── Home link ───────────────────────────────────────────────────── */
 .docs-sidebar__label {
   display: flex;
@@ -111,7 +148,9 @@ const sectionIcons: Record<string, string> = {
   text-decoration: none;
   transition: color 0.15s ease;
 }
-.docs-sidebar__label:hover { color: var(--color-pink); }
+.docs-sidebar__label:hover {
+  color: var(--color-pink);
+}
 .docs-sidebar__home-icon {
   flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -146,18 +185,32 @@ const sectionIcons: Record<string, string> = {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: linear-gradient(135deg, rgba(229,53,171,0.12) 0%, rgba(124,58,237,0.08) 100%);
-  border: 1px solid rgba(229,53,171,0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(229, 53, 171, 0.12) 0%,
+    rgba(124, 58, 237, 0.08) 100%
+  );
+  border: 1px solid rgba(229, 53, 171, 0.2);
   color: var(--color-pink);
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
 }
 .tree-section__head:hover .tree-node--section {
-  background: linear-gradient(135deg, rgba(229,53,171,0.2) 0%, rgba(124,58,237,0.14) 100%);
-  border-color: rgba(229,53,171,0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(229, 53, 171, 0.2) 0%,
+    rgba(124, 58, 237, 0.14) 100%
+  );
+  border-color: rgba(229, 53, 171, 0.4);
   transform: scale(1.08);
 }
-.tree-node__icon { display: flex; align-items: center; }
+.tree-node__icon {
+  display: flex;
+  align-items: center;
+}
 
 .tree-section__title {
   font-size: 0.78rem;
@@ -241,7 +294,10 @@ const sectionIcons: Record<string, string> = {
   background: var(--input-bg);
   flex-shrink: 0;
   margin-left: auto;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.2s;
   z-index: 1;
 }
 .tree-item:hover .tree-item__dot {
@@ -266,7 +322,10 @@ const sectionIcons: Record<string, string> = {
   font-size: 0.875rem;
   color: var(--muted-strong);
   text-decoration: none;
-  transition: background 0.15s, color 0.15s, padding-left 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    padding-left 0.15s;
   margin-left: 0.25rem;
 }
 .tree-item__link:hover {
@@ -275,11 +334,15 @@ const sectionIcons: Record<string, string> = {
   padding-left: 0.85rem;
 }
 .tree-item__link--active {
-  background: linear-gradient(90deg, rgba(229,53,171,0.13) 0%, rgba(124,58,237,0.06) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(229, 53, 171, 0.13) 0%,
+    rgba(124, 58, 237, 0.06) 100%
+  );
   color: var(--text);
   font-weight: 600;
   padding-left: 0.85rem;
-  box-shadow: inset 0 0 0 1px rgba(229,53,171,0.12);
+  box-shadow: inset 0 0 0 1px rgba(229, 53, 171, 0.12);
 }
 
 /* ── Status badge ────────────────────────────────────────────────── */

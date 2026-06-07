@@ -11,7 +11,7 @@
           :status="typeof page.status === 'string' ? page.status : undefined"
           :edit-url="editUrl"
         />
-        <p v-else class="docs-not-found">Page not found.</p>
+        <p v-else class="docs-not-found">{{ t('docs.notFound') }}</p>
 
         <aside class="docs-main-rail">
           <DocsOnThisPage :links="tocLinks" :sticky="false" />
@@ -44,9 +44,12 @@ interface DocsPageRecord {
 }
 
 const route = useRoute()
+const { t } = useI18n()
+const { stripLocalePrefix } = useLocaleRouting()
+const canonicalPath = computed(() => stripLocalePrefix(route.path))
 const { data: page } = await useAsyncData(
   `docs-${route.path}`,
-  () => queryCollection('docs').where('slug', '=', route.path).first() as Promise<DocsPageRecord | null>,
+  () => queryCollection('docs').where('slug', '=', canonicalPath.value).first() as Promise<DocsPageRecord | null>,
 )
 
 const tocLinks = computed(() => page.value?.body?.toc?.links ?? [])
@@ -54,7 +57,7 @@ const tocLinks = computed(() => page.value?.body?.toc?.links ?? [])
 const editUrl = computed(() => {
   const sourceId = page.value?._id
   if (!sourceId) {
-    const slug = route.path.split('/').filter(Boolean).at(-1)
+    const slug = canonicalPath.value.split('/').filter(Boolean).at(-1)
     return slug
       ? `https://github.com/accesimpot/graphql-gene/blob/main/docs/${slug}.md`
       : undefined
@@ -65,7 +68,7 @@ const editUrl = computed(() => {
 })
 
 useSeoMeta({
-  title: () => page.value?.title ?? 'Docs',
+  title: () => page.value?.title ?? t('docs.home'),
   description: () => page.value?.description ?? '',
 })
 </script>
@@ -74,7 +77,7 @@ useSeoMeta({
 .docs-layout {
   display: flex;
   min-height: 100vh;
-  padding-inline: 40px;
+  padding-inline: 60px;
   background: transparent;
   color: var(--text);
   font-family: "Space Grotesk", -apple-system, sans-serif;

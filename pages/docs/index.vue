@@ -15,10 +15,10 @@
               {{ typedText }}<span v-if="!typingDone" class="type-cursor">|</span>
             </p>
             <div class="docs-hero__actions animate-fade-up" style="--delay: 160ms">
-              <NuxtLink to="/docs/concepts/getting-started" class="btn-primary">
-                Get Started <span class="btn-arrow">-></span>
+              <NuxtLink :to="localePath('/docs/concepts/getting-started')" class="btn-primary">
+                {{ t('docs.landing.getStarted') }} <span class="btn-arrow">-></span>
               </NuxtLink>
-              <NuxtLink to="/playground" class="btn-secondary">Try Playground</NuxtLink>
+              <NuxtLink :to="localePath('/playground')" class="btn-secondary">{{ t('docs.landing.tryPlayground') }}</NuxtLink>
             </div>
           </div>
 
@@ -37,7 +37,7 @@
                 <span class="dot dot-yellow" />
                 <span class="dot dot-green" />
               </div>
-              <span class="docs-snippet__label">Quick setup</span>
+              <span class="docs-snippet__label">{{ t('docs.landing.snippetLabel') }}</span>
               <span class="docs-snippet__file">schema.ts</span>
             </div>
             <pre class="docs-snippet__code"><span class="tok-keyword">import</span> { generateSchema } <span class="tok-keyword">from</span> <span class="tok-string">'graphql-gene'</span>
@@ -54,7 +54,7 @@
             <NuxtLink
               v-for="(section, index) in sections"
               :key="section.title"
-              :to="section.to"
+              :to="localePath(section.to)"
               class="docs-section-card"
               :style="`--i: ${index}`"
             >
@@ -74,42 +74,66 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 
+const { t } = useI18n()
+const localePath = useLocalePath()
+
 useSeoMeta({
-  title: 'Documentation - graphql-gene',
-  description: 'Official documentation for graphql-gene - generate executable GraphQL schemas from your ORM models.',
+  title: () => t('docs.seo.title'),
+  description: () => t('docs.seo.description'),
 })
 
-const features = [
-  { icon: 'Fast', title: 'Performant', desc: 'Query lookahead avoids loading associations the client never requested. No wasted database work.' },
-  { icon: 'Safe', title: 'Type-safe', desc: 'Resolver arguments and return types are deeply inferred from your models. One source of truth.' },
-  { icon: 'Flex', title: 'Extensible', desc: 'The plugin system supports any Node.js ORM. Add directives, aliases, and custom resolvers with ease.' },
-]
+const features = computed(() => [
+  { icon: 'Fast', title: t('docs.landing.featureOneTitle'), desc: t('docs.landing.featureOneDescription') },
+  { icon: 'Safe', title: t('docs.landing.featureTwoTitle'), desc: t('docs.landing.featureTwoDescription') },
+  { icon: 'Flex', title: t('docs.landing.featureThreeTitle'), desc: t('docs.landing.featureThreeDescription') },
+])
 
-const sections = [
-  { icon: '01', title: 'Concepts', desc: 'Mental models, architecture, and how graphql-gene works under the hood.', to: '/docs/concepts/getting-started' },
-  { icon: '02', title: 'Guides', desc: 'Schema design, directives, and polymorphic blocks through focused how-to pages.', to: '/docs/guides/schema-design' },
-  { icon: '03', title: 'Reference', desc: 'Plugin API, configuration options, and exact lookup-style documentation.', to: '/docs/reference/writing-a-plugin' },
-]
+const sections = computed(() => [
+  { icon: '01', title: t('docs.landing.conceptsTitle'), desc: t('docs.landing.conceptsDescription'), to: '/docs/concepts/getting-started' },
+  { icon: '02', title: t('docs.landing.guidesTitle'), desc: t('docs.landing.guidesDescription'), to: '/docs/guides/schema-design' },
+  { icon: '03', title: t('docs.landing.referenceTitle'), desc: t('docs.landing.referenceDescription'), to: '/docs/reference/writing-a-plugin' },
+])
 
-const fullText = 'Generate an executable GraphQL schema automatically from your ORM models. Define your types once - GraphQL and TypeScript stay in sync.'
+const fullText = computed(() => t('docs.landing.heroSubtitle'))
 const typedText = ref('')
 const typingDone = ref(false)
+let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
-onMounted(() => {
+function startTyping() {
+  if (typingTimeout) {
+    clearTimeout(typingTimeout)
+  }
+
+  typedText.value = ''
+  typingDone.value = false
   let index = 0
 
-  setTimeout(function type() {
-    if (index < fullText.length) {
-      typedText.value += fullText[index++]
-      setTimeout(type, 20)
+  typingTimeout = setTimeout(function type() {
+    if (index < fullText.value.length) {
+      typedText.value += fullText.value[index++]
+      typingTimeout = setTimeout(type, 20)
     }
     else {
       typingDone.value = true
     }
   }, 500)
+}
+
+onMounted(() => {
+  startTyping()
+})
+
+watch(fullText, () => {
+  startTyping()
+})
+
+onBeforeUnmount(() => {
+  if (typingTimeout) {
+    clearTimeout(typingTimeout)
+  }
 })
 
 const featuresRef = ref<HTMLElement | null>(null)
@@ -142,7 +166,7 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
 .docs-layout {
   display: flex;
   min-height: 100vh;
-  padding-inline: 40px;
+  padding-inline: 60px;
   background: transparent;
   color: var(--text);
   font-family: "Space Grotesk", -apple-system, sans-serif;
@@ -152,19 +176,22 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
 .docs-main {
   flex: 1;
   min-width: 0;
-  padding: 0 0 4rem;
+  padding: 0.4rem 0 4rem;
   position: relative;
   z-index: 1;
 }
 
 .docs-main-shell {
-  max-width: 980px;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
 .docs-overview {
   min-width: 0;
   position: relative;
+  padding-top: 40px;
+  padding-inline: 2.5rem;
 }
 
 .blob {
@@ -567,7 +594,11 @@ useIntersectionObserver(sectionsRef, ([{ isIntersecting }]) => {
 
 @media (max-width: 640px) {
   .docs-main {
-    padding: 0 0 3rem;
+    padding: 0.4rem 0 3rem;
+  }
+
+  .docs-overview {
+    padding-inline: 1.25rem;
   }
 
   .docs-features {

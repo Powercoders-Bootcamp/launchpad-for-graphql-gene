@@ -2,10 +2,9 @@
   <main class="playground-page">
     <header class="playground-hero">
       <div class="playground-hero-copy">
-        <p class="playground-eyebrow">Interactive Playground</p>
         <h1>{{ activeScenarioTitle }}</h1>
         <p class="playground-lede">
-          {{ activeExample?.description ?? 'Run a scenario and inspect the generated output.' }}
+          {{ activeExample?.description ?? t('playground.defaultLead') }}
         </p>
       </div>
 
@@ -16,7 +15,7 @@
           type="button"
           @click="resetQueryToDefault"
         >
-          Reset query
+          {{ t('playground.resetQuery') }}
         </button>
 
         <button
@@ -25,14 +24,14 @@
           :disabled="state.isLoading"
           @click="run"
         >
-          {{ state.isLoading ? 'Refreshing...' : 'Refresh now' }}
+          {{ state.isLoading ? t('playground.refreshing') : t('playground.refreshNow') }}
         </button>
       </div>
     </header>
 
     <section class="playground-toolbar-shell">
       <div class="playground-toolbar">
-        <nav class="playground-scenarios" aria-label="Scenarios">
+        <nav class="playground-scenarios" :aria-label="t('playground.scenariosAria')">
           <button
             v-for="id in SCENARIO_IDS"
             :key="id"
@@ -49,7 +48,7 @@
           <select
             v-model="state.exampleId"
             class="playground-select"
-            aria-label="Example"
+            :aria-label="t('playground.exampleAria')"
             @change="selectExample(state.exampleId)"
           >
             <option v-for="example in scenarioExamples" :key="example.id" :value="example.id">
@@ -66,7 +65,7 @@
             {{ activeScenarioOverview.description }}
           </p>
           <div v-if="isQueryScenario" class="playground-overview-note">
-            <span class="playground-overview-note-label">Execution Notes</span>
+            <span class="playground-overview-note-label">{{ t('playground.executionNotes') }}</span>
             <p>{{ executionNotesSummary }}</p>
           </div>
         </div>
@@ -78,8 +77,8 @@
         <article ref="inputCardRef" class="playground-card playground-card--editor">
           <div class="playground-card-head">
             <div>
-              <p class="playground-section-label">{{ isQueryScenario ? 'Query' : 'Options' }}</p>
-              <strong>{{ isQueryScenario ? 'Editable request input' : 'Scenario configuration' }}</strong>
+              <p class="playground-section-label">{{ isQueryScenario ? t('playground.panels.query') : t('playground.panels.options') }}</p>
+              <strong>{{ isQueryScenario ? t('playground.panels.editableRequestInput') : t('playground.panels.scenarioConfiguration') }}</strong>
             </div>
           </div>
 
@@ -87,46 +86,45 @@
             v-if="isQueryScenario"
             v-model="state.query"
             class="playground-textarea"
-            placeholder="Enter your GraphQL query here..."
+            :placeholder="t('playground.placeholder')"
           />
 
           <div v-else-if="state.scenarioId === 'model-to-schema'" class="playground-control-stack">
             <label class="playground-toggle-card">
               <input v-model="state.generate.includeOrders" type="checkbox">
               <span>
-                <strong>Include orders</strong>
-                <small>Add the `orders` association to the generated schema.</small>
+                <strong>{{ t('playground.toggles.includeOrdersTitle') }}</strong>
+                <small>{{ t('playground.toggles.includeOrdersDescription') }}</small>
               </span>
             </label>
 
             <label class="playground-toggle-card">
               <input v-model="state.generate.includeAddress" type="checkbox">
               <span>
-                <strong>Include address</strong>
-                <small>Expose the `address` field in the generated type.</small>
+                <strong>{{ t('playground.toggles.includeAddressTitle') }}</strong>
+                <small>{{ t('playground.toggles.includeAddressDescription') }}</small>
               </span>
             </label>
 
             <label class="playground-toggle-card">
               <input v-model="state.generate.showTypeSummary" type="checkbox">
               <span>
-                <strong>Return type summary</strong>
-                <small>Keep the structural type map visible alongside the SDL.</small>
+                <strong>{{ t('playground.toggles.showTypeSummaryTitle') }}</strong>
+                <small>{{ t('playground.toggles.showTypeSummaryDescription') }}</small>
               </span>
             </label>
           </div>
 
           <div v-else class="playground-control-stack">
             <label class="playground-field">
-              <select v-model="state.directiveMode" class="playground-select" aria-label="Directive mode">
-                <option value="named">Named directive</option>
-                <option value="anonymous">Anonymous runtime middleware</option>
+              <select v-model="state.directiveMode" class="playground-select" :aria-label="t('playground.directiveModeAria')">
+                <option value="named">{{ t('playground.directiveModes.named') }}</option>
+                <option value="anonymous">{{ t('playground.directiveModes.anonymous') }}</option>
               </select>
             </label>
 
             <p class="playground-help-text">
-              Compare schema output when middleware is represented as a named directive versus an
-              anonymous runtime behavior.
+              {{ t('playground.directiveHelp') }}
             </p>
           </div>
         </article>
@@ -141,8 +139,8 @@
         <article v-if="state.scenarioId === 'model-to-schema'" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
-              <p class="playground-section-label">SDL</p>
-              <strong>Generated schema</strong>
+              <p class="playground-section-label">{{ t('playground.panels.sdl') }}</p>
+              <strong>{{ t('playground.panels.generatedSchema') }}</strong>
             </div>
 
             <button
@@ -151,7 +149,7 @@
               :disabled="!state.sdl"
               @click="copyText(state.sdl, 'sdl')"
             >
-              {{ copiedPanel === 'sdl' ? 'Copied' : 'Copy' }}
+              {{ copiedPanel === 'sdl' ? t('playground.copied') : t('playground.copy') }}
             </button>
           </div>
 
@@ -161,8 +159,8 @@
         <article v-if="isQueryScenario" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
-              <p class="playground-section-label">Result</p>
-              <strong>GraphQL response payload</strong>
+              <p class="playground-section-label">{{ t('playground.panels.result') }}</p>
+              <strong>{{ t('playground.panels.responsePayload') }}</strong>
             </div>
 
             <button
@@ -171,7 +169,7 @@
               :disabled="!resultJson"
               @click="copyText(resultJson, 'result')"
             >
-              {{ copiedPanel === 'result' ? 'Copied' : 'Copy' }}
+              {{ copiedPanel === 'result' ? t('playground.copied') : t('playground.copy') }}
             </button>
           </div>
 
@@ -181,8 +179,8 @@
         <article v-if="state.scenarioId === 'directive-middleware'" ref="primaryPanelRef" class="playground-card playground-panel">
           <div class="playground-card-head">
             <div>
-              <p class="playground-section-label">Directive SDL</p>
-              <strong>Schema excerpt</strong>
+              <p class="playground-section-label">{{ t('playground.panels.directiveSdl') }}</p>
+              <strong>{{ t('playground.panels.schemaExcerpt') }}</strong>
             </div>
 
             <button
@@ -191,7 +189,7 @@
               :disabled="!state.sdlExcerpt"
               @click="copyText(state.sdlExcerpt, 'directive-sdl')"
             >
-              {{ copiedPanel === 'directive-sdl' ? 'Copied' : 'Copy' }}
+              {{ copiedPanel === 'directive-sdl' ? t('playground.copied') : t('playground.copy') }}
             </button>
           </div>
 
@@ -207,8 +205,8 @@
         >
           <div class="playground-card-head">
             <div>
-              <p class="playground-section-label">Type Summary</p>
-              <strong>Generated type map</strong>
+              <p class="playground-section-label">{{ t('playground.panels.typeSummary') }}</p>
+              <strong>{{ t('playground.panels.generatedTypeMap') }}</strong>
             </div>
 
             <button
@@ -217,7 +215,7 @@
               :disabled="!typeSummaryText"
               @click="copyText(typeSummaryText, 'type-summary')"
             >
-              {{ copiedPanel === 'type-summary' ? 'Copied' : 'Copy' }}
+              {{ copiedPanel === 'type-summary' ? t('playground.copied') : t('playground.copy') }}
             </button>
           </div>
 
@@ -228,8 +226,8 @@
           <article ref="secondaryPanelRef" class="playground-card playground-panel">
             <div class="playground-card-head">
               <div>
-                <p class="playground-section-label">SQL</p>
-                <strong>Captured Sequelize statements</strong>
+                <p class="playground-section-label">{{ t('playground.panels.sql') }}</p>
+                <strong>{{ t('playground.panels.capturedSql') }}</strong>
               </div>
 
               <button
@@ -238,7 +236,7 @@
                 :disabled="!state.sql"
                 @click="copyText(state.sql, 'sql')"
               >
-                {{ copiedPanel === 'sql' ? 'Copied' : 'Copy' }}
+                {{ copiedPanel === 'sql' ? t('playground.copied') : t('playground.copy') }}
               </button>
             </div>
 
@@ -248,8 +246,8 @@
           <article class="playground-card playground-panel">
             <div class="playground-card-head">
               <div>
-                <p class="playground-section-label">Include Graph</p>
-                <strong>Requested association plan</strong>
+                <p class="playground-section-label">{{ t('playground.panels.includeGraph') }}</p>
+                <strong>{{ t('playground.panels.associationPlan') }}</strong>
               </div>
 
               <button
@@ -258,7 +256,7 @@
                 :disabled="!includeGraphText"
                 @click="copyText(includeGraphText, 'include-graph')"
               >
-                {{ copiedPanel === 'include-graph' ? 'Copied' : 'Copy' }}
+                {{ copiedPanel === 'include-graph' ? t('playground.copied') : t('playground.copy') }}
               </button>
             </div>
 
@@ -268,7 +266,7 @@
         </template>
 
         <details v-if="state.diagnostics.length" class="playground-card playground-diagnostics" open>
-          <summary>Diagnostics ({{ state.diagnostics.length }})</summary>
+          <summary>{{ t('playground.panels.diagnostics') }} ({{ state.diagnostics.length }})</summary>
           <ul class="playground-list">
             <li v-for="(diagnostic, index) in state.diagnostics" :key="`${diagnostic.message}-${index}`">
               <strong>{{ diagnostic.level.toUpperCase() }}:</strong> {{ diagnostic.message }}
@@ -286,39 +284,41 @@ import { useDebounceFn } from '@vueuse/core'
 import { SCENARIO_IDS, type ScenarioId } from '~/types'
 import { usePlayground } from '~/composables/usePlayground'
 
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Playground - graphql-gene',
-  description: 'Inspect SDL, SQL, result payloads, and directive behavior with the graphql-gene playground.',
+  title: () => t('playground.seo.title'),
+  description: () => t('playground.seo.description'),
 })
 
-const scenarioTitles: Record<ScenarioId, string> = {
-  'model-to-schema': 'Model to schema',
-  'query-lookahead': 'Query lookahead',
-  'polymorphic-blocks': 'Polymorphic blocks',
-  'directive-middleware': 'Directive middleware',
-}
+const scenarioTitles = computed<Record<ScenarioId, string>>(() => ({
+  'model-to-schema': t('playground.scenarioTitles.model-to-schema'),
+  'query-lookahead': t('playground.scenarioTitles.query-lookahead'),
+  'polymorphic-blocks': t('playground.scenarioTitles.polymorphic-blocks'),
+  'directive-middleware': t('playground.scenarioTitles.directive-middleware'),
+}))
 
-const scenarioOverviewMap: Record<ScenarioId, {
+const scenarioOverviewMap = computed<Record<ScenarioId, {
   title: string
   description: string
-}> = {
+}>>(() => ({
   'model-to-schema': {
-    title: 'Toggle the model shape and inspect the generated schema instantly.',
-    description: 'This scenario edits the example model definition, regenerates the SDL, and lets you compare the structural type map side by side.',
+    title: t('playground.scenarioOverview.model-to-schema.title'),
+    description: t('playground.scenarioOverview.model-to-schema.description'),
   },
   'query-lookahead': {
-    title: 'Edit a real query and watch the data path, include planning, and SQL stay in sync.',
-    description: 'This scenario runs the query against the example runtime and shows how graphql-gene shapes the GraphQL response, association graph, and final Sequelize statements.',
+    title: t('playground.scenarioOverview.query-lookahead.title'),
+    description: t('playground.scenarioOverview.query-lookahead.description'),
   },
   'polymorphic-blocks': {
-    title: 'Inspect a polymorphic page query from typed blocks down to include planning.',
-    description: 'This scenario shows how a query with unions and block variants resolves into a result payload, SQL statements, and an include plan you can read at a glance.',
+    title: t('playground.scenarioOverview.polymorphic-blocks.title'),
+    description: t('playground.scenarioOverview.polymorphic-blocks.description'),
   },
   'directive-middleware': {
-    title: 'Compare how directive middleware appears in the printed schema.',
-    description: 'This scenario flips between named and anonymous middleware modes so you can inspect the SDL excerpt that graphql-gene emits for each runtime contract.',
+    title: t('playground.scenarioOverview.directive-middleware.title'),
+    description: t('playground.scenarioOverview.directive-middleware.description'),
   },
-}
+}))
 
 const {
   state,
@@ -344,16 +344,22 @@ const primaryPanelRef = ref<HTMLElement | null>(null)
 const secondaryPanelRef = ref<HTMLElement | null>(null)
 
 const scenarioExamples = computed(() =>
-  state.examples.filter(example => example.scenario === state.scenarioId),
+  state.examples
+    .filter(example => example.scenario === state.scenarioId)
+    .map(example => ({
+      ...example,
+      title: t(`playground.examples.${example.id}.title`),
+      description: t(`playground.examples.${example.id}.description`),
+    })),
 )
 
 const activeExample = computed(() =>
   state.examples.find(example => example.id === state.exampleId && example.scenario === state.scenarioId),
 )
 
-const activeScenarioTitle = computed(() => scenarioTitles[state.scenarioId])
+const activeScenarioTitle = computed(() => scenarioTitles.value[state.scenarioId])
 
-const activeScenarioOverview = computed(() => scenarioOverviewMap[state.scenarioId])
+const activeScenarioOverview = computed(() => scenarioOverviewMap.value[state.scenarioId])
 
 const isQueryScenario = computed(() =>
   state.scenarioId === 'query-lookahead' || state.scenarioId === 'polymorphic-blocks',
@@ -366,7 +372,7 @@ const executionNotesSummary = computed(() => {
 
   return state.executionNotes.length
     ? state.executionNotes.join(' ')
-    : 'Edit the query to inspect runtime notes.'
+    : t('playground.executionFallback')
 })
 
 const resultJson = computed(() =>
@@ -721,7 +727,7 @@ onBeforeUnmount(() => {
   --playground-border-strong: var(--border-strong);
 
   min-height: 100vh;
-  padding: 1.25rem 40px;
+  padding: 1.25rem 60px;
 }
 
 .playground-hero {
@@ -732,6 +738,10 @@ onBeforeUnmount(() => {
   margin-bottom: 1.25rem;
 }
 
+.playground-hero-copy {
+  padding-top: 1.35rem;
+}
+
 .playground-hero-copy h1 {
   margin: 0;
   font-size: clamp(1.9rem, 4vw, 2.6rem);
@@ -739,7 +749,6 @@ onBeforeUnmount(() => {
   letter-spacing: -0.03em;
 }
 
-.playground-eyebrow,
 .playground-section-label {
   margin: 0 0 0.45rem;
   color: var(--muted);
@@ -1109,7 +1118,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 760px) {
   .playground-page {
-    padding: 1rem 40px;
+    padding: 1rem 60px;
   }
 
   .playground-hero,

@@ -1,14 +1,14 @@
 <template>
   <div class="docs-callout">
     <div>
-      <p class="docs-callout__title">Try it in the Playground</p>
+      <p class="docs-callout__title">{{ t('docs.tryInPlayground') }}</p>
       <p class="docs-callout__text">
-        {{ label ?? 'Run this example interactively.' }}
+        {{ label ?? t('docs.runExample') }}
       </p>
     </div>
 
     <NuxtLink :to="playgroundUrl" class="docs-callout__cta">
-      {{ label ?? 'Try in Playground' }}
+      {{ label ?? t('docs.openPlayground') }}
     </NuxtLink>
   </div>
 </template>
@@ -21,11 +21,13 @@ const props = defineProps<{
   example?: string
   label?: string
 }>()
+const localePath = useLocalePath()
+const { t } = useI18n()
 
 const playgroundUrl = computed(() => {
   const params = new URLSearchParams({ scenario: props.scenario })
   if (props.example) params.set('example', props.example)
-  return `/playground?${params}`
+  return localePath(`/playground?${params}`)
 })
 </script>
 

@@ -78,6 +78,7 @@ function getDefaultQuery(scenarioId: ScenarioId) {
 }
 
 export function usePlayground() {
+  const { t } = useI18n()
   let latestRequestToken = 0
 
   const state = reactive<PlaygroundState>({
@@ -137,7 +138,7 @@ export function usePlayground() {
       applyScenarioDefaults(state.scenarioId)
     }
     catch {
-      state.error = 'Failed to load examples.'
+      state.error = t('playground.errors.loadExamples')
     }
   }
 
@@ -216,7 +217,7 @@ export function usePlayground() {
     }
     catch (error) {
       if (isLatestRequest(token)) {
-        state.error = readFetchError(error, 'Schema generation failed. Please try again.')
+        state.error = readFetchError(error, t('playground.errors.generate'))
       }
     }
     finally {
@@ -252,7 +253,7 @@ export function usePlayground() {
     }
     catch (error) {
       if (isLatestRequest(token)) {
-        state.error = readFetchError(error, 'Query execution failed. Please try again.')
+        state.error = readFetchError(error, t('playground.errors.query'))
       }
     }
     finally {
@@ -285,7 +286,7 @@ export function usePlayground() {
     }
     catch (error) {
       if (isLatestRequest(token)) {
-        state.error = readFetchError(error, 'Directive scenario failed. Please try again.')
+        state.error = readFetchError(error, t('playground.errors.directives'))
       }
     }
     finally {

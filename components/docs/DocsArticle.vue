@@ -4,7 +4,7 @@
       <span
         v-if="status && status !== 'stable'"
         class="docs-article__badge"
-      >{{ status }}</span>
+      >{{ t(`docs.statuses.${status}`) }}</span>
       <h1 class="docs-article__title">{{ title }}</h1>
       <a
         v-if="editUrl"
@@ -12,7 +12,7 @@
         target="_blank"
         rel="noopener noreferrer"
         class="docs-article__edit"
-      >Edit on GitHub</a>
+      >{{ t('docs.editOnGitHub') }}</a>
     </header>
 
     <div class="docs-article__body">
@@ -22,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 defineProps<{
   title: string
   page: Record<string, unknown>
@@ -35,7 +37,7 @@ defineProps<{
   max-width: 100%;
   width: 100%;
   padding: 2rem 2.5rem;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 22px;
   background: color-mix(in srgb, var(--panel) 97%, transparent);
   box-shadow: 0 14px 36px color-mix(in srgb, var(--text) 6%, transparent);

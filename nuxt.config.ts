@@ -2,6 +2,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { docsConfig } from './content/graphql-gene/docs.config'
 import { validateDocsFrontmatter } from './server/utils/docs-validation'
 
+const siteUrl = (process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
+
 const docsValidation = validateDocsFrontmatter({
   docsDir: './content/graphql-gene/docs',
   docsConfig,
@@ -100,8 +102,28 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/content',
+    '@nuxtjs/i18n',
     'nuxt-monaco-editor',
   ],
+
+  i18n: {
+    strategy: 'prefix_except_default',
+    defaultLocale: 'en',
+    detectBrowserLanguage: false,
+    baseUrl: siteUrl,
+    vueI18n: './i18n.config.ts',
+    locales: [
+      { code: 'en', name: 'English', language: 'en-US', file: 'en.ts' },
+      { code: 'fr', name: 'Francais', language: 'fr-FR', file: 'fr.ts' },
+    ],
+    langDir: 'locales',
+  },
+
+  runtimeConfig: {
+    public: {
+      siteUrl,
+    },
+  },
 
   content: {
     sources: {
@@ -140,7 +162,6 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      htmlAttrs: { lang: 'en' },
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },

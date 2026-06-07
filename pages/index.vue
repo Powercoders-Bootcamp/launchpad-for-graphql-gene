@@ -3,17 +3,13 @@
 
     <!-- ─── Hero ──────────────────────────────────────────────────── -->
     <section class="hero">
-      <div class="hero-mark" aria-hidden="true">
-        <img src="/images/logo.svg" alt="" width="360" height="360">
-      </div>
-
       <div class="container-site hero-inner">
 
         <div class="hero-text">
-          <div class="hero-badge">TypeScript &middot; Sequelize &middot; GraphQL</div>
+          <div class="hero-badge">{{ ti('home.hero.badge') }}</div>
           <h1 class="hero-title">
-            The ORM-Native<br>
-            <span class="hero-title-accent">GraphQL Generator</span>
+            {{ ti('home.hero.titleLead') }}<br>
+            <span class="hero-title-accent">{{ ti('home.hero.titleAccent') }}</span>
           </h1>
           <p class="hero-desc">
             Stop writing resolvers by hand. graphql-gene reads your Sequelize models
@@ -21,11 +17,11 @@
             query lookahead built in.
           </p>
           <div class="hero-actions">
-            <NuxtLink to="/playground" class="btn-primary">Try the Playground</NuxtLink>
-            <NuxtLink to="/docs" class="btn-ghost">Read the Docs &rarr;</NuxtLink>
+            <NuxtLink :to="localePath('/playground')" class="btn-primary">{{ ti('home.hero.primaryCta') }}</NuxtLink>
+            <NuxtLink :to="localePath('/docs')" class="btn-ghost">{{ ti('home.hero.secondaryCta') }}</NuxtLink>
           </div>
           <div class="hero-npm">
-            <code class="npm-cmd">npm install graphql-gene</code>
+            <code class="npm-cmd">{{ ti('home.hero.install') }}</code>
           </div>
         </div>
 
@@ -52,8 +48,8 @@
     <!-- ─── Features ─────────────────────────────────────────────── -->
     <section class="features">
       <div class="container-site">
-        <h2 class="section-title">Everything you need, nothing you don't</h2>
-        <p class="section-sub">graphql-gene handles the schema so you can focus on product logic.</p>
+        <h2 class="section-title">{{ ti('home.features.title') }}</h2>
+        <p class="section-sub">{{ ti('home.features.subtitle') }}</p>
         <div class="features-grid">
 
           <div class="feature-card">
@@ -63,7 +59,7 @@
                 <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
               </svg>
             </div>
-            <h3 class="feature-title">ORM-Native</h3>
+            <h3 class="feature-title">{{ ti('home.features.ormNativeTitle') }}</h3>
             <p class="feature-desc">Define your Sequelize models once. graphql-gene generates types, queries, and mutations automatically — no hand-rolled resolvers.</p>
           </div>
 
@@ -73,7 +69,7 @@
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
             </div>
-            <h3 class="feature-title">Query Lookahead</h3>
+            <h3 class="feature-title">{{ ti('home.features.lookaheadTitle') }}</h3>
             <p class="feature-desc">Your resolvers know exactly which relations the query needs. Sequelize builds optimized JOINs automatically — zero N+1 problems.</p>
           </div>
 
@@ -83,7 +79,7 @@
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
             </div>
-            <h3 class="feature-title">Directive Middleware</h3>
+            <h3 class="feature-title">{{ ti('home.features.directivesTitle') }}</h3>
             <p class="feature-desc">Attach runtime behavior to any field with a decorator. Auth, validation, and rate-limiting as first-class schema citizens.</p>
           </div>
 
@@ -93,7 +89,7 @@
                 <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
               </svg>
             </div>
-            <h3 class="feature-title">TypeScript First</h3>
+            <h3 class="feature-title">{{ ti('home.features.typesTitle') }}</h3>
             <p class="feature-desc">Full type safety from model definition to resolver. Your IDE knows your schema before the server starts.</p>
           </div>
 
@@ -105,7 +101,7 @@
                 <path d="M22.54 6.38a15 15 0 0 1 0 11.24M1.46 17.62a15 15 0 0 1 0-11.24"/>
               </svg>
             </div>
-            <h3 class="feature-title">Plugin Ecosystem</h3>
+            <h3 class="feature-title">{{ ti('home.features.pluginsTitle') }}</h3>
             <p class="feature-desc">Drop in <code class="inline-code">@graphql-gene/plugin-sequelize</code> and get Sequelize support out of the box. More adapters on the way.</p>
           </div>
 
@@ -115,7 +111,7 @@
                 <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <h3 class="feature-title">Interactive Playground</h3>
+            <h3 class="feature-title">{{ ti('home.features.playgroundTitle') }}</h3>
             <p class="feature-desc">Try every scenario live — schema generation, query execution, SQL capture, and directive middleware — right in your browser.</p>
           </div>
 
@@ -126,18 +122,19 @@
     <!-- ─── Code showcase ─────────────────────────────────────────── -->
     <section class="showcase">
       <div class="container-site">
-        <h2 class="section-title">See it in action</h2>
+        <h2 class="section-title">{{ ti('home.showcase.title') }}</h2>
+        <p class="section-sub section-sub--showcase">{{ ti('home.showcase.subtitle') }}</p>
         <p class="section-sub">From Sequelize model to a working GraphQL API — no boilerplate, no drift.</p>
         <div class="showcase-grid">
 
           <div class="showcase-panel">
-            <div class="showcase-panel-label">Your model</div>
+            <div class="showcase-panel-label">{{ ti('home.showcase.queryLabel') }}</div>
             <div class="code-window">
               <div class="code-window-bar">
                 <span class="dot dot-r" /><span class="dot dot-y" /><span class="dot dot-g" />
-                <span class="code-window-label">models/user.ts</span>
+                <span class="code-window-label">page-blocks.query.graphql</span>
               </div>
-              <pre class="code-body"><code v-html="showcaseModel" /></pre>
+              <pre class="code-body"><code v-html="showcaseQuery" /></pre>
             </div>
           </div>
 
@@ -150,19 +147,19 @@
           </div>
 
           <div class="showcase-panel">
-            <div class="showcase-panel-label">Generated schema</div>
+            <div class="showcase-panel-label">{{ ti('home.showcase.resultLabel') }}</div>
             <div class="code-window">
               <div class="code-window-bar">
                 <span class="dot dot-r" /><span class="dot dot-y" /><span class="dot dot-g" />
-                <span class="code-window-label">schema.graphql</span>
+                <span class="code-window-label">response.json</span>
               </div>
-              <pre class="code-body"><code v-html="showcaseSdl" /></pre>
+              <pre class="code-body"><code v-html="showcaseResult" /></pre>
             </div>
           </div>
 
         </div>
         <div class="showcase-cta">
-          <NuxtLink to="/playground" class="btn-primary">Run this in the Playground</NuxtLink>
+          <NuxtLink :to="polymorphicPlaygroundPath" class="btn-primary">{{ ti('home.showcase.cta') }}</NuxtLink>
         </div>
       </div>
     </section>
@@ -170,11 +167,11 @@
     <!-- ─── Get started ───────────────────────────────────────────── -->
     <section class="get-started">
       <div class="container-site get-started-inner">
-        <h2 class="get-started-title">Ready to ship your GraphQL API?</h2>
-        <p class="get-started-sub">Drop graphql-gene into your existing Sequelize project and generate a production-ready schema in minutes.</p>
+        <h2 class="get-started-title">{{ ti('home.getStarted.title') }}</h2>
+        <p class="get-started-sub">{{ ti('home.getStarted.subtitle') }}</p>
         <div class="get-started-actions">
-          <NuxtLink to="/playground" class="btn-primary btn-lg">Open Playground</NuxtLink>
-          <NuxtLink to="/docs" class="btn-outline btn-lg">Read the Docs</NuxtLink>
+          <NuxtLink :to="localePath('/playground')" class="btn-primary btn-lg">{{ ti('home.getStarted.primaryCta') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs')" class="btn-outline btn-lg">{{ ti('home.getStarted.secondaryCta') }}</NuxtLink>
         </div>
         <div class="get-started-npm">
           <code class="npm-cmd">npm install graphql-gene @graphql-gene/plugin-sequelize</code>
@@ -188,9 +185,17 @@
 </template>
 
 <script setup lang="ts">
+const { t: ti } = useI18n()
+const localePath = useLocalePath()
+const polymorphicPlaygroundPath = `${localePath('/playground')}?scenario=polymorphic-blocks&example=page-blocks-basic`
 useSeoMeta({
   title: 'graphql-gene — ORM-native GraphQL generation',
   description: 'Generate production-ready GraphQL schemas from your Sequelize models. Smart query lookahead, directive middleware, and full TypeScript support.',
+})
+
+useSeoMeta({
+  title: () => ti('home.seo.title'),
+  description: () => ti('home.seo.description'),
 })
 
 const k = (s: string) => `<span class="t-k">${s}</span>`
@@ -224,44 +229,51 @@ const heroCodeSdl = [
   `}`,
 ].join('\n')
 
-const showcaseModel = [
-  `${k('import')} { Model, DataTypes } ${k('from')} ${s("'sequelize'")}`,
+const showcaseQuery = [
+  `${k('query')} ${t('PagePolymorphicBlocks')}($path: ${t('String!')}) {`,
+  `  pageByPath(`,
+  `    where: { path: { eq: $path } }`,
+  `  ) {`,
+  `    id`,
+  `    path`,
+  `    blocks {`,
+  `      id`,
+  `      __typename`,
   ``,
-  `${k('class')} ${t('User')} ${k('extends')} ${t('Model')} {`,
-  `  ${k('declare')} id: ${t('number')}`,
-  `  ${k('declare')} email: ${t('string')}`,
-  `  ${k('declare')} name: ${t('string')}`,
-  `  ${k('declare')} orders: ${t('Order')}[]`,
+  `      ... ${k('on')} ${t('HeroBlock')} {`,
+  `        title`,
+  `        subtitle`,
+  `      }`,
+  ``,
+  `      ... ${k('on')} ${t('TextBlock')} {`,
+  `        body`,
+  `      }`,
+  `    }`,
+  `  }`,
   `}`,
-  ``,
-  `${t('User')}.init({`,
-  `  id: { ${k('type')}: DataTypes.${t('INTEGER')}, primaryKey: ${k('true')} },`,
-  `  email: { ${k('type')}: DataTypes.${t('STRING')} },`,
-  `  name: { ${k('type')}: DataTypes.${t('STRING')} },`,
-  `}, { sequelize })`,
-  ``,
-  `${t('User')}.hasMany(${t('Order')}, { as: ${s("'orders'")} })`,
 ].join('\n')
 
-const showcaseSdl = [
-  `${k('type')} ${t('User')} {`,
-  `  id: ${t('ID!')}`,
-  `  email: ${t('String!')}`,
-  `  name: ${t('String!')}`,
-  `  orders: [${t('Order!')}]`,
-  `}`,
-  ``,
-  `${k('type')} ${t('Order')} {`,
-  `  id: ${t('ID!')}`,
-  `  status: ${t('String!')}`,
-  `  total: ${t('Float!')}`,
-  `  user: ${t('User')}`,
-  `}`,
-  ``,
-  `${k('type')} ${t('Query')} {`,
-  `  users: [${t('User!')}]!`,
-  `  user(id: ${t('ID!')}): ${t('User')}`,
-  `  orders: [${t('Order!')}]!`,
+const showcaseResult = [
+  `{`,
+  `  ${s('"data"')}: {`,
+  `    ${s('"pageByPath"')}: {`,
+  `      ${s('"id"')}: 1,`,
+  `      ${s('"path"')}: ${s('"/__polymorphic_demo_page__"')},`,
+  `      ${s('"blocks"')}: [`,
+  `        {`,
+  `          ${s('"id"')}: 101,`,
+  `          ${s('"__typename"')}: ${s('"HeroBlock"')},`,
+  `          ${s('"title"')}: ${s('"Hello"')},`,
+  `          ${s('"subtitle"')}: ${s('"Polymorphic demo hero"')}`,
+  `        },`,
+  `        {`,
+  `          ${s('"id"')}: 102,`,
+  `          ${s('"__typename"')}: ${s('"TextBlock"')},`,
+  `          ${s('"body"')}: ${s('"Plain text body."')}`,
+  `        }`,
+  `      ]`,
+  `    }`,
+  `  }`,
   `}`,
 ].join('\n')
 </script>
@@ -272,25 +284,6 @@ const showcaseSdl = [
   position: relative;
   padding: 6rem 0 5rem;
   overflow: clip;
-}
-
-.hero-mark {
-  position: absolute;
-  top: 2.5rem;
-  left: 50%;
-  width: clamp(74rem, 98vw, 112rem);
-  pointer-events: none;
-  opacity: 0.032;
-  transform: translateX(-50%) rotate(-20deg);
-  z-index: 0;
-}
-
-.hero-mark img {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter: sepia(0.18) saturate(1.2) hue-rotate(-14deg) brightness(1.46) contrast(0.9)
-    blur(0.5px);
 }
 
 .hero-inner {
@@ -569,6 +562,16 @@ const showcaseSdl = [
   border-top: 1px solid var(--border);
 }
 
+.showcase .section-sub:not(.section-sub--showcase) {
+  display: none;
+}
+
+.showcase .code-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+}
+
 .showcase-grid {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -646,10 +649,6 @@ const showcaseSdl = [
 
 /* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .hero-mark {
-    display: none;
-  }
-
   .hero-inner {
     gap: 3rem;
   }
@@ -674,14 +673,5 @@ const showcaseSdl = [
     font-size: 1.05rem;
     line-height: 1.65;
   }
-}
-
-html[data-theme="light"] .hero-mark {
-  opacity: 0.022;
-}
-
-html[data-theme="light"] .hero-mark img {
-  filter: sepia(0.14) saturate(1.12) hue-rotate(-10deg) brightness(0.79) contrast(0.88)
-    blur(0.5px);
 }
 </style>
