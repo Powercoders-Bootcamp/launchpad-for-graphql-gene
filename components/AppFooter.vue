@@ -1,34 +1,51 @@
 <template>
   <footer class="footer-root">
     <div class="container-site footer-inner">
-
-      <div class="footer-brand">
+      <section class="footer-brand">
         <div class="footer-logo">
           <img src="/images/logo.svg" width="28" height="28" alt="graphql-gene logo" />
-          <span class="footer-logo-text">graphql<span style="color: var(--color-pink)">-gene</span></span>
+          <span class="footer-logo-text">graphql<span class="footer-logo-accent">-gene</span></span>
         </div>
-        <p class="footer-tagline">ORM-native GraphQL generation for TypeScript.</p>
-      </div>
+
+        <p class="footer-tagline">
+          {{ t('footer.tagline') }}
+        </p>
+      </section>
 
       <div class="footer-links">
         <div class="footer-col">
-          <p class="footer-col-title">Product</p>
-          <NuxtLink to="/playground" class="footer-link">Playground</NuxtLink>
-          <NuxtLink to="/docs" class="footer-link">Documentation</NuxtLink>
+          <p class="footer-col-title">{{ t('footer.product') }}</p>
+          <NuxtLink :to="localePath('/playground')" class="footer-link">{{ t('footer.livePlayground') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs')" class="footer-link">{{ t('footer.documentation') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs/guides/schema-design')" class="footer-link">{{ t('footer.schemaDesign') }}</NuxtLink>
         </div>
+
         <div class="footer-col">
-          <p class="footer-col-title">Resources</p>
-          <a href="https://github.com/accesimpot/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
-          <a href="https://www.npmjs.com/package/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">npm</a>
+          <p class="footer-col-title">{{ t('footer.scenarios') }}</p>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'model-to-schema' } })" class="footer-link">{{ t('footer.modelToSchema') }}</NuxtLink>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'query-lookahead' } })" class="footer-link">{{ t('footer.queryLookahead') }}</NuxtLink>
+          <NuxtLink :to="localePath({ path: '/playground', query: { scenario: 'directive-middleware' } })" class="footer-link">{{ t('footer.directiveMiddleware') }}</NuxtLink>
+        </div>
+
+        <div class="footer-col">
+          <p class="footer-col-title">{{ t('footer.resources') }}</p>
+          <a href="https://github.com/accesimpot/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.github') }}</a>
+          <a href="https://www.npmjs.com/package/graphql-gene" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.npm') }}</a>
+          <a href="https://github.com/accesimpot/graphql-gene/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="footer-link">{{ t('footer.license') }}</a>
         </div>
       </div>
-
     </div>
+
     <div class="footer-bottom">
-      <p>Released under the MIT License. Built with Nuxt.</p>
+      <p>{{ t('footer.builtWith') }}</p>
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+const localePath = useLocalePath()
+const { t } = useI18n()
+</script>
 
 <style scoped>
 .footer-root {
@@ -37,24 +54,25 @@
 }
 
 .footer-inner {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
   align-items: flex-start;
-  gap: 3rem;
+  gap: 2rem 2.5rem;
   padding-top: 3rem;
   padding-bottom: 3rem;
-  flex-wrap: wrap;
 }
 
 .footer-brand {
-  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 320px;
 }
 
 .footer-logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
 }
 
 .footer-logo-text {
@@ -63,22 +81,30 @@
   color: var(--text);
 }
 
+.footer-logo-accent {
+  color: var(--color-pink);
+}
+
 .footer-tagline {
-  font-size: 0.875rem;
+  font-size: 0.92rem;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.7;
   margin: 0;
 }
 
 .footer-links {
-  display: flex;
-  gap: 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2.25rem;
+  align-items: flex-start;
+  padding-top: 0.15rem;
 }
 
 .footer-col {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 .footer-col-title {
@@ -91,14 +117,15 @@
 }
 
 .footer-link {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: var(--muted);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .footer-link:hover {
   color: var(--color-pink);
+  transform: translateX(2px);
 }
 
 .footer-bottom {
@@ -107,5 +134,23 @@
   text-align: center;
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+@media (max-width: 980px) {
+  .footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .footer-links {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
 }
 </style>

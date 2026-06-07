@@ -38,12 +38,14 @@ function buildGroups(pages: NavPage[]): NavGroup[] {
 }
 
 export async function useDocsNav(): Promise<NavSection[]> {
+  const { t, te } = useI18n()
   const pages = (await queryCollection('docs').all()) as unknown as NavPage[]
 
   return [...docsConfig.sections]
     .sort((a, b) => a.order - b.order)
     .map(section => ({
       ...section,
+      title: te(`docs.sections.${section.id}.title`) ? t(`docs.sections.${section.id}.title`) : section.title,
       groups: buildGroups(pages.filter(p => p.section === section.id)),
     }))
 }

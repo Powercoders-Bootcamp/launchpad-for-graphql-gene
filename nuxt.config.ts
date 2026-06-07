@@ -1,15 +1,98 @@
 import tailwindcss from '@tailwindcss/vite'
+import { docsConfig } from './content/graphql-gene/docs.config'
+import { validateDocsFrontmatter } from './server/utils/docs-validation'
 
-const REQUIRED_FRONTMATTER = ['title', 'description', 'section', 'order', 'slug'] as const
-const KNOWN_SECTIONS = ['concepts', 'guides', 'reference', 'examples', 'tutorials'] as const
-const KNOWN_STATUSES = ['stable', 'experimental', 'planned', 'deprecated'] as const
-const KNOWN_PLAYGROUND_SCENARIOS = ['model-to-schema', 'query-lookahead', 'polymorphic-blocks', 'directive-middleware'] as const
+const siteUrl = (process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '')
 
-// Collects slugs across all doc files during build for uniqueness check
-const _docsSlugs = new Map<string, string>() // slug → _path
+const docsValidation = validateDocsFrontmatter({
+  docsDir: './content/graphql-gene/docs',
+  docsConfig,
+})
+
+const docsCodeTheme = {
+  name: 'graphql-gene-code',
+  type: 'dark' as const,
+  fg: '#e9eefc',
+  bg: '#0d1323',
+  colors: {
+    'editor.background': '#0d1323',
+    'editor.foreground': '#e9eefc',
+    'editor.lineHighlightBackground': '#11192d',
+    'editor.selectionBackground': '#2a3553',
+    'editorLineNumber.foreground': '#66769a',
+  },
+  tokenColors: [
+    {
+      scope: ['comment', 'comment.block', 'comment.line', 'punctuation.definition.comment'],
+      settings: { foreground: '#7f8fb1', fontStyle: 'italic' },
+    },
+    {
+      scope: ['keyword', 'keyword.control', 'keyword.operator', 'storage', 'storage.modifier', 'storage.type'],
+      settings: { foreground: '#c4b5fd' },
+    },
+    {
+      scope: ['string', 'string.quoted', 'string.template', 'constant.other.symbol', 'markup.inline.raw.string'],
+      settings: { foreground: '#8df4c1' },
+    },
+    {
+      scope: ['entity.name.function', 'support.function', 'variable.function', 'meta.function-call', 'entity.name.method'],
+      settings: { foreground: '#7dd3fc' },
+    },
+    {
+      scope: [
+        'entity.name.type',
+        'entity.name.class',
+        'entity.name.namespace',
+        'support.type',
+        'support.class',
+        'support.type.primitive',
+        'constant.numeric',
+        'constant.language',
+        'constant.character.escape',
+      ],
+      settings: { foreground: '#f9a8d4' },
+    },
+    {
+      scope: [
+        'variable.parameter',
+        'meta.object-literal.key',
+        'entity.other.attribute-name',
+        'support.variable.property',
+        'variable.object.property',
+        'entity.name.field',
+      ],
+      settings: { foreground: '#f9a8d4' },
+    },
+    {
+      scope: ['punctuation', 'meta.brace', 'meta.delimiter'],
+      settings: { foreground: '#98a7c8' },
+    },
+    {
+      scope: ['variable', 'source', 'text'],
+      settings: { foreground: '#e9eefc' },
+    },
+  ],
+}
+
+for (const warning of docsValidation.warnings) {
+  console.warn('\x1b[33m[docs-val]\x1b[0m', warning)
+}
+
+if (docsValidation.errors.length) {
+  throw new Error(`\n[docs-val] Frontmatter validation failed:\n${docsValidation.errors.join('\n')}`)
+}
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
+
+  nitro: process.platform === 'win32'
+    ? {
+        externals: {
+          // Avoid a Windows-specific readlink failure from node-externals tracing.
+          trace: false,
+        },
+      }
+    : undefined,
 
   vite: {
     plugins: [tailwindcss()],
@@ -19,8 +102,28 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/content',
+    '@nuxtjs/i18n',
     'nuxt-monaco-editor',
   ],
+
+  i18n: {
+    strategy: 'prefix_except_default',
+    defaultLocale: 'en',
+    detectBrowserLanguage: false,
+    baseUrl: siteUrl,
+    vueI18n: './i18n.config.ts',
+    locales: [
+      { code: 'en', name: 'English', language: 'en-US', file: 'en.ts' },
+      { code: 'fr', name: 'Francais', language: 'fr-FR', file: 'fr.ts' },
+    ],
+    langDir: 'locales',
+  },
+
+  runtimeConfig: {
+    public: {
+      siteUrl,
+    },
+  },
 
   content: {
     sources: {
@@ -32,8 +135,8 @@ export default defineNuxtConfig({
     },
     highlight: {
       theme: {
-        dark: 'github-dark',
-        light: 'github-light',
+        default: docsCodeTheme,
+        dark: docsCodeTheme,
       },
       langs: ['typescript', 'graphql', 'sql', 'bash', 'json', 'yaml'],
     },
@@ -47,9 +150,18 @@ export default defineNuxtConfig({
     },
   },
 
+  mdc: {
+    highlight: {
+      theme: {
+        default: docsCodeTheme,
+        dark: docsCodeTheme,
+      },
+      langs: ['typescript', 'graphql', 'sql', 'bash', 'json', 'yaml'],
+    },
+  },
+
   app: {
     head: {
-      htmlAttrs: { lang: 'en' },
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
@@ -63,51 +175,5 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-  },
-
-  hooks: {
-    async 'content:file:afterParse'(file) {
-      if (!file._path?.startsWith('/docs')) return
-
-      const path = file._path as string
-      const errors: string[] = []
-      const warns: string[] = []
-
-      // Required fields — fail build if missing
-      for (const field of REQUIRED_FRONTMATTER) {
-        if (!file[field] && file[field] !== 0) {
-          errors.push(`[${path}] Missing required frontmatter field: "${field}"`)
-        }
-      }
-
-      // Section must be in known list — fail build if unknown
-      if (file.section && !KNOWN_SECTIONS.includes(file.section as typeof KNOWN_SECTIONS[number])) {
-        errors.push(`[${path}] Unknown section "${file.section}". Known: ${KNOWN_SECTIONS.join(', ')}`)
-      }
-
-      // Slug uniqueness — fail build if duplicate
-      if (file.slug) {
-        const existing = _docsSlugs.get(file.slug as string)
-        if (existing) {
-          errors.push(`[${path}] Duplicate slug "${file.slug}" (already used by ${existing})`)
-        }
-        else {
-          _docsSlugs.set(file.slug as string, path)
-        }
-      }
-
-      // Soft warnings — warn only, do not fail
-      if (!file.summary) warns.push(`[${path}] Missing optional "summary" field`)
-      if (!file.status) warns.push(`[${path}] Missing optional "status" field (defaults to stable)`)
-      if (file.status && !KNOWN_STATUSES.includes(file.status as typeof KNOWN_STATUSES[number])) {
-        warns.push(`[${path}] Unknown status "${file.status}". Known: ${KNOWN_STATUSES.join(', ')}`)
-      }
-      if (file.playgroundScenario && !KNOWN_PLAYGROUND_SCENARIOS.includes(file.playgroundScenario as typeof KNOWN_PLAYGROUND_SCENARIOS[number])) {
-        warns.push(`[${path}] Unknown playgroundScenario "${file.playgroundScenario}"`)
-      }
-
-      for (const msg of warns) console.warn('\x1b[33m[docs-val]\x1b[0m', msg)
-      if (errors.length) throw new Error(`\n[docs-val] Frontmatter validation failed:\n${errors.join('\n')}`)
-    },
   },
 })

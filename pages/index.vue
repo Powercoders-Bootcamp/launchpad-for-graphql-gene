@@ -6,10 +6,9 @@
       <div class="container-site hero-inner">
 
         <div class="hero-text">
-          <div class="hero-badge">TypeScript &middot; Sequelize &middot; GraphQL</div>
           <h1 class="hero-title">
-            The ORM-Native<br>
-            <span class="hero-title-accent">GraphQL Generator</span>
+            {{ ti('home.hero.titleLead') }}<br>
+            <span class="hero-title-accent">{{ ti('home.hero.titleAccent') }}</span>
           </h1>
           <p class="hero-desc">
             Stop writing resolvers by hand. graphql-gene reads your Sequelize models
@@ -17,11 +16,11 @@
             query lookahead built in.
           </p>
           <div class="hero-actions">
-            <NuxtLink to="/playground" class="btn-primary">Try the Playground</NuxtLink>
-            <NuxtLink to="/docs" class="btn-ghost">Read the Docs &rarr;</NuxtLink>
-          </div>
-          <div class="hero-npm">
-            <code class="npm-cmd">npm install graphql-gene</code>
+            <NuxtLink :to="localePath('/playground')" class="btn-primary">{{ ti('home.hero.primaryCta') }}</NuxtLink>
+            <NuxtLink :to="localePath('/docs')" class="btn-ghost">{{ ti('home.hero.secondaryCta') }}</NuxtLink>
+            <div class="hero-npm">
+              <code class="npm-cmd">{{ ti('home.hero.install') }}</code>
+            </div>
           </div>
         </div>
 
@@ -48,8 +47,8 @@
     <!-- ─── Features ─────────────────────────────────────────────── -->
     <section class="features">
       <div class="container-site">
-        <h2 class="section-title">Everything you need, nothing you don't</h2>
-        <p class="section-sub">graphql-gene handles the schema so you can focus on product logic.</p>
+        <h2 class="section-title">{{ ti('home.features.title') }}</h2>
+        <p class="section-sub">{{ ti('home.features.subtitle') }}</p>
         <div class="features-grid">
 
           <div class="feature-card">
@@ -59,7 +58,7 @@
                 <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
               </svg>
             </div>
-            <h3 class="feature-title">ORM-Native</h3>
+            <h3 class="feature-title">{{ ti('home.features.ormNativeTitle') }}</h3>
             <p class="feature-desc">Define your Sequelize models once. graphql-gene generates types, queries, and mutations automatically — no hand-rolled resolvers.</p>
           </div>
 
@@ -69,7 +68,7 @@
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
             </div>
-            <h3 class="feature-title">Query Lookahead</h3>
+            <h3 class="feature-title">{{ ti('home.features.lookaheadTitle') }}</h3>
             <p class="feature-desc">Your resolvers know exactly which relations the query needs. Sequelize builds optimized JOINs automatically — zero N+1 problems.</p>
           </div>
 
@@ -79,7 +78,7 @@
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
             </div>
-            <h3 class="feature-title">Directive Middleware</h3>
+            <h3 class="feature-title">{{ ti('home.features.directivesTitle') }}</h3>
             <p class="feature-desc">Attach runtime behavior to any field with a decorator. Auth, validation, and rate-limiting as first-class schema citizens.</p>
           </div>
 
@@ -89,7 +88,7 @@
                 <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
               </svg>
             </div>
-            <h3 class="feature-title">TypeScript First</h3>
+            <h3 class="feature-title">{{ ti('home.features.typesTitle') }}</h3>
             <p class="feature-desc">Full type safety from model definition to resolver. Your IDE knows your schema before the server starts.</p>
           </div>
 
@@ -101,7 +100,7 @@
                 <path d="M22.54 6.38a15 15 0 0 1 0 11.24M1.46 17.62a15 15 0 0 1 0-11.24"/>
               </svg>
             </div>
-            <h3 class="feature-title">Plugin Ecosystem</h3>
+            <h3 class="feature-title">{{ ti('home.features.pluginsTitle') }}</h3>
             <p class="feature-desc">Drop in <code class="inline-code">@graphql-gene/plugin-sequelize</code> and get Sequelize support out of the box. More adapters on the way.</p>
           </div>
 
@@ -111,7 +110,7 @@
                 <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <h3 class="feature-title">Interactive Playground</h3>
+            <h3 class="feature-title">{{ ti('home.features.playgroundTitle') }}</h3>
             <p class="feature-desc">Try every scenario live — schema generation, query execution, SQL capture, and directive middleware — right in your browser.</p>
           </div>
 
@@ -122,18 +121,19 @@
     <!-- ─── Code showcase ─────────────────────────────────────────── -->
     <section class="showcase">
       <div class="container-site">
-        <h2 class="section-title">See it in action</h2>
+        <h2 class="section-title">{{ ti('home.showcase.title') }}</h2>
+        <p class="section-sub section-sub--showcase">{{ ti('home.showcase.subtitle') }}</p>
         <p class="section-sub">From Sequelize model to a working GraphQL API — no boilerplate, no drift.</p>
         <div class="showcase-grid">
 
           <div class="showcase-panel">
-            <div class="showcase-panel-label">Your model</div>
+            <div class="showcase-panel-label">{{ ti('home.showcase.queryLabel') }}</div>
             <div class="code-window">
               <div class="code-window-bar">
                 <span class="dot dot-r" /><span class="dot dot-y" /><span class="dot dot-g" />
-                <span class="code-window-label">models/user.ts</span>
+                <span class="code-window-label">page-blocks.query.graphql</span>
               </div>
-              <pre class="code-body"><code v-html="showcaseModel" /></pre>
+              <pre class="code-body"><code v-html="showcaseQuery" /></pre>
             </div>
           </div>
 
@@ -146,19 +146,19 @@
           </div>
 
           <div class="showcase-panel">
-            <div class="showcase-panel-label">Generated schema</div>
+            <div class="showcase-panel-label">{{ ti('home.showcase.resultLabel') }}</div>
             <div class="code-window">
               <div class="code-window-bar">
                 <span class="dot dot-r" /><span class="dot dot-y" /><span class="dot dot-g" />
-                <span class="code-window-label">schema.graphql</span>
+                <span class="code-window-label">response.json</span>
               </div>
-              <pre class="code-body"><code v-html="showcaseSdl" /></pre>
+              <pre class="code-body"><code v-html="showcaseResult" /></pre>
             </div>
           </div>
 
         </div>
         <div class="showcase-cta">
-          <NuxtLink to="/playground" class="btn-primary">Run this in the Playground</NuxtLink>
+          <NuxtLink :to="polymorphicPlaygroundPath" class="btn-primary">{{ ti('home.showcase.cta') }}</NuxtLink>
         </div>
       </div>
     </section>
@@ -166,11 +166,11 @@
     <!-- ─── Get started ───────────────────────────────────────────── -->
     <section class="get-started">
       <div class="container-site get-started-inner">
-        <h2 class="get-started-title">Ready to ship your GraphQL API?</h2>
-        <p class="get-started-sub">Drop graphql-gene into your existing Sequelize project and generate a production-ready schema in minutes.</p>
+        <h2 class="get-started-title">{{ ti('home.getStarted.title') }}</h2>
+        <p class="get-started-sub">{{ ti('home.getStarted.subtitle') }}</p>
         <div class="get-started-actions">
-          <NuxtLink to="/playground" class="btn-primary btn-lg">Open Playground</NuxtLink>
-          <NuxtLink to="/docs" class="btn-outline btn-lg">Read the Docs</NuxtLink>
+          <NuxtLink :to="localePath('/playground')" class="btn-primary btn-lg">{{ ti('home.getStarted.primaryCta') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs')" class="btn-outline btn-lg">{{ ti('home.getStarted.secondaryCta') }}</NuxtLink>
         </div>
         <div class="get-started-npm">
           <code class="npm-cmd">npm install graphql-gene @graphql-gene/plugin-sequelize</code>
@@ -184,9 +184,17 @@
 </template>
 
 <script setup lang="ts">
+const { t: ti } = useI18n()
+const localePath = useLocalePath()
+const polymorphicPlaygroundPath = `${localePath('/playground')}?scenario=polymorphic-blocks&example=page-blocks-basic`
 useSeoMeta({
   title: 'graphql-gene — ORM-native GraphQL generation',
   description: 'Generate production-ready GraphQL schemas from your Sequelize models. Smart query lookahead, directive middleware, and full TypeScript support.',
+})
+
+useSeoMeta({
+  title: () => ti('home.seo.title'),
+  description: () => ti('home.seo.description'),
 })
 
 const k = (s: string) => `<span class="t-k">${s}</span>`
@@ -220,44 +228,51 @@ const heroCodeSdl = [
   `}`,
 ].join('\n')
 
-const showcaseModel = [
-  `${k('import')} { Model, DataTypes } ${k('from')} ${s("'sequelize'")}`,
+const showcaseQuery = [
+  `${k('query')} ${t('PagePolymorphicBlocks')}($path: ${t('String!')}) {`,
+  `  pageByPath(`,
+  `    where: { path: { eq: $path } }`,
+  `  ) {`,
+  `    id`,
+  `    path`,
+  `    blocks {`,
+  `      id`,
+  `      __typename`,
   ``,
-  `${k('class')} ${t('User')} ${k('extends')} ${t('Model')} {`,
-  `  ${k('declare')} id: ${t('number')}`,
-  `  ${k('declare')} email: ${t('string')}`,
-  `  ${k('declare')} name: ${t('string')}`,
-  `  ${k('declare')} orders: ${t('Order')}[]`,
+  `      ... ${k('on')} ${t('HeroBlock')} {`,
+  `        title`,
+  `        subtitle`,
+  `      }`,
+  ``,
+  `      ... ${k('on')} ${t('TextBlock')} {`,
+  `        body`,
+  `      }`,
+  `    }`,
+  `  }`,
   `}`,
-  ``,
-  `${t('User')}.init({`,
-  `  id: { ${k('type')}: DataTypes.${t('INTEGER')}, primaryKey: ${k('true')} },`,
-  `  email: { ${k('type')}: DataTypes.${t('STRING')} },`,
-  `  name: { ${k('type')}: DataTypes.${t('STRING')} },`,
-  `}, { sequelize })`,
-  ``,
-  `${t('User')}.hasMany(${t('Order')}, { as: ${s("'orders'")} })`,
 ].join('\n')
 
-const showcaseSdl = [
-  `${k('type')} ${t('User')} {`,
-  `  id: ${t('ID!')}`,
-  `  email: ${t('String!')}`,
-  `  name: ${t('String!')}`,
-  `  orders: [${t('Order!')}]`,
-  `}`,
-  ``,
-  `${k('type')} ${t('Order')} {`,
-  `  id: ${t('ID!')}`,
-  `  status: ${t('String!')}`,
-  `  total: ${t('Float!')}`,
-  `  user: ${t('User')}`,
-  `}`,
-  ``,
-  `${k('type')} ${t('Query')} {`,
-  `  users: [${t('User!')}]!`,
-  `  user(id: ${t('ID!')}): ${t('User')}`,
-  `  orders: [${t('Order!')}]!`,
+const showcaseResult = [
+  `{`,
+  `  ${s('"data"')}: {`,
+  `    ${s('"pageByPath"')}: {`,
+  `      ${s('"id"')}: 1,`,
+  `      ${s('"path"')}: ${s('"/__polymorphic_demo_page__"')},`,
+  `      ${s('"blocks"')}: [`,
+  `        {`,
+  `          ${s('"id"')}: 101,`,
+  `          ${s('"__typename"')}: ${s('"HeroBlock"')},`,
+  `          ${s('"title"')}: ${s('"Hello"')},`,
+  `          ${s('"subtitle"')}: ${s('"Polymorphic demo hero"')}`,
+  `        },`,
+  `        {`,
+  `          ${s('"id"')}: 102,`,
+  `          ${s('"__typename"')}: ${s('"TextBlock"')},`,
+  `          ${s('"body"')}: ${s('"Plain text body."')}`,
+  `        }`,
+  `      ]`,
+  `    }`,
+  `  }`,
   `}`,
 ].join('\n')
 </script>
@@ -265,38 +280,35 @@ const showcaseSdl = [
 <style scoped>
 /* ─── Hero ──────────────────────────────────────────────────────── */
 .hero {
+  position: relative;
   padding: 6rem 0 5rem;
+  overflow: clip;
 }
 
 .hero-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4rem;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 1;
 }
 
-.hero-badge {
-  display: inline-flex;
+.hero-text {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--color-pink) 8%, transparent);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-pink);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 1.5rem;
+  text-align: center;
+  max-width: 46rem;
 }
 
 .hero-title {
-  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-size: clamp(3.15rem, 7vw, 4.75rem);
   font-weight: 700;
-  line-height: 1.12;
+  line-height: 1.02;
   letter-spacing: -0.02em;
   color: var(--text);
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
 }
 
 .hero-title-accent {
@@ -307,23 +319,24 @@ const showcaseSdl = [
 }
 
 .hero-desc {
-  font-size: 1.05rem;
-  line-height: 1.7;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1.5;
   color: var(--muted);
   margin: 0 0 2rem;
-  max-width: 480px;
+  max-width: 40rem;
 }
 
 .hero-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
 }
 
 .hero-npm {
-  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 .npm-cmd {
@@ -337,9 +350,11 @@ const showcaseSdl = [
 }
 
 .hero-code-wrap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  width: min(100%, 68rem);
+  align-items: stretch;
 }
 
 /* ─── Buttons ───────────────────────────────────────────────────── */
@@ -401,10 +416,11 @@ const showcaseSdl = [
 
 /* ─── Code window ───────────────────────────────────────────────── */
 .code-window {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--code-shell) 0%, var(--code-bg) 100%);
+  border: 1px solid var(--code-border);
   border-radius: var(--radius-site-lg);
   overflow: hidden;
+  box-shadow: var(--code-shadow);
 }
 
 .code-window-bar {
@@ -412,8 +428,8 @@ const showcaseSdl = [
   align-items: center;
   gap: 0.4rem;
   padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel-soft);
+  border-bottom: 1px solid var(--code-border);
+  background: color-mix(in srgb, var(--code-shell) 92%, #fff 8%);
 }
 
 .dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -425,7 +441,7 @@ const showcaseSdl = [
   margin-left: 0.5rem;
   font-family: var(--font-family-mono);
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--code-muted);
 }
 
 .code-body {
@@ -434,14 +450,15 @@ const showcaseSdl = [
   font-family: var(--font-family-mono);
   font-size: 0.82rem;
   line-height: 1.75;
-  color: var(--text);
+  color: var(--code-text);
+  background: transparent;
   overflow-x: auto;
 }
 
-:deep(.t-k) { color: var(--color-lavender); }
-:deep(.t-t) { color: var(--color-pink); }
-:deep(.t-s) { color: var(--color-emerald); }
-:deep(.t-c) { color: var(--muted); font-style: italic; }
+:deep(.t-k) { color: var(--code-keyword); }
+:deep(.t-t) { color: var(--code-type); }
+:deep(.t-s) { color: var(--code-string); }
+:deep(.t-c) { color: var(--code-comment); font-style: italic; }
 
 /* ─── Features ──────────────────────────────────────────────────── */
 .features {
@@ -514,16 +531,27 @@ const showcaseSdl = [
 .inline-code {
   font-family: var(--font-family-mono);
   font-size: 0.8em;
-  color: var(--color-emerald);
-  background: var(--panel);
-  padding: 0.1em 0.35em;
-  border-radius: 4px;
+  color: var(--muted-strong);
+  background: color-mix(in srgb, var(--panel-soft) 88%, var(--bg-elevated) 12%);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  padding: 0.14em 0.45em;
+  border-radius: 999px;
 }
 
 /* ─── Showcase ──────────────────────────────────────────────────── */
 .showcase {
   padding: 5rem 0;
   border-top: 1px solid var(--border);
+}
+
+.showcase .section-sub:not(.section-sub--showcase) {
+  display: none;
+}
+
+.showcase .code-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
 }
 
 .showcase-grid {
@@ -604,20 +632,31 @@ const showcaseSdl = [
 /* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-inner {
-    grid-template-columns: 1fr;
     gap: 3rem;
   }
-  .hero-code-wrap { order: -1; }
+  .hero-code-wrap {
+    grid-template-columns: 1fr;
+  }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .showcase-grid { grid-template-columns: 1fr; }
   .showcase-arrow {
-    flex-direction: row;
+    flex-direction: column;
     margin: 0 auto;
+  }
+  .showcase-arrow svg {
+    transform: rotate(90deg);
   }
 }
 
 @media (max-width: 600px) {
   .features-grid { grid-template-columns: 1fr; }
   .hero { padding: 3.5rem 0 3rem; }
+  .hero-title {
+    font-size: clamp(2.7rem, 14vw, 3.4rem);
+  }
+  .hero-desc {
+    font-size: 1.05rem;
+    line-height: 1.65;
+  }
 }
 </style>

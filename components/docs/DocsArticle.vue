@@ -4,7 +4,7 @@
       <span
         v-if="status && status !== 'stable'"
         class="docs-article__badge"
-      >{{ status }}</span>
+      >{{ t(`docs.statuses.${status}`) }}</span>
       <h1 class="docs-article__title">{{ title }}</h1>
       <a
         v-if="editUrl"
@@ -12,7 +12,7 @@
         target="_blank"
         rel="noopener noreferrer"
         class="docs-article__edit"
-      >Edit on GitHub ↗</a>
+      >{{ t('docs.editOnGitHub') }}</a>
     </header>
 
     <div class="docs-article__body">
@@ -22,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 defineProps<{
   title: string
   page: Record<string, unknown>
@@ -32,9 +34,13 @@ defineProps<{
 
 <style scoped>
 .docs-article {
-  max-width: 720px;
-  padding: 2rem 2.5rem;
+  max-width: 100%;
   width: 100%;
+  padding: 2rem 2.5rem;
+  border: 0;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--panel) 97%, transparent);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .docs-article__header {
@@ -79,12 +85,11 @@ defineProps<{
   color: var(--text);
 }
 
-/* Force readable colors for ContentRenderer output on dark backgrounds */
 .docs-article__body :deep(p),
 .docs-article__body :deep(li),
 .docs-article__body :deep(td),
 .docs-article__body :deep(th) {
-  color: var(--text);
+  color: var(--muted-strong);
 }
 
 .docs-article__body :deep(h1),
@@ -95,6 +100,7 @@ defineProps<{
   font-weight: 600;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
+  scroll-margin-top: 5.6rem;
 }
 
 .docs-article__body :deep(h1) { font-size: 1.5rem; }
@@ -106,7 +112,6 @@ defineProps<{
   text-decoration: underline;
 }
 
-/* Heading anchor tags must not look like links */
 .docs-article__body :deep(h1 a),
 .docs-article__body :deep(h2 a),
 .docs-article__body :deep(h3 a),
@@ -115,18 +120,8 @@ defineProps<{
   text-decoration: none;
 }
 
-.docs-article__body :deep(code):not(pre code) {
-  background: var(--panel-soft);
-  color: var(--text);
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.875em;
-}
-
-.docs-article__body :deep(pre) {
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 1.25rem 0;
+.docs-article__body :deep(.prose-code-block) {
+  margin-inline: 0;
 }
 
 .docs-article__body :deep(hr) {
@@ -146,11 +141,20 @@ defineProps<{
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   text-align: left;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
 }
 
 .docs-article__body :deep(th) {
   font-weight: 600;
   background: var(--panel-soft);
+}
+
+.docs-article__body :deep(blockquote) {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--color-pink);
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  color: var(--muted-strong);
 }
 
 .docs-article__body :deep(ul),
@@ -161,5 +165,11 @@ defineProps<{
 
 .docs-article__body :deep(li) {
   margin: 0.3rem 0;
+}
+
+@media (max-width: 720px) {
+  .docs-article {
+    padding: 1.25rem;
+  }
 }
 </style>
