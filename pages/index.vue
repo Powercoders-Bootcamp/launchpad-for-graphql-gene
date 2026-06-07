@@ -6,7 +6,6 @@
       <div class="container-site hero-inner">
 
         <div class="hero-text">
-          <div class="hero-badge">{{ ti('home.hero.badge') }}</div>
           <h1 class="hero-title">
             {{ ti('home.hero.titleLead') }}<br>
             <span class="hero-title-accent">{{ ti('home.hero.titleAccent') }}</span>
@@ -19,9 +18,9 @@
           <div class="hero-actions">
             <NuxtLink :to="localePath('/playground')" class="btn-primary">{{ ti('home.hero.primaryCta') }}</NuxtLink>
             <NuxtLink :to="localePath('/docs')" class="btn-ghost">{{ ti('home.hero.secondaryCta') }}</NuxtLink>
-          </div>
-          <div class="hero-npm">
-            <code class="npm-cmd">{{ ti('home.hero.install') }}</code>
+            <div class="hero-npm">
+              <code class="npm-cmd">{{ ti('home.hero.install') }}</code>
+            </div>
           </div>
         </div>
 
@@ -303,21 +302,6 @@ const showcaseResult = [
   max-width: 46rem;
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--color-pink) 8%, transparent);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-pink);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 1.5rem;
-}
-
 .hero-title {
   font-size: clamp(3.15rem, 7vw, 4.75rem);
   font-weight: 700;
@@ -348,13 +332,11 @@ const showcaseResult = [
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
 }
 
 .hero-npm {
-  margin-top: 0.5rem;
-  display: flex;
-  justify-content: center;
+  display: inline-flex;
+  align-items: center;
 }
 
 .npm-cmd {
@@ -658,8 +640,11 @@ const showcaseResult = [
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .showcase-grid { grid-template-columns: 1fr; }
   .showcase-arrow {
-    flex-direction: row;
+    flex-direction: column;
     margin: 0 auto;
+  }
+  .showcase-arrow svg {
+    transform: rotate(90deg);
   }
 }
 
