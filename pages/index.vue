@@ -276,15 +276,21 @@ const showcaseSdl = [
 
 .hero-mark {
   position: absolute;
-  left: max(-1rem, 2vw);
-  top: 0.5rem;
-  opacity: 0.08;
+  top: 2.5rem;
+  left: 50%;
+  width: clamp(74rem, 98vw, 112rem);
   pointer-events: none;
-  transform: rotate(-14deg);
+  opacity: 0.032;
+  transform: translateX(-50%) rotate(-20deg);
+  z-index: 0;
 }
 
 .hero-mark img {
   display: block;
+  width: 100%;
+  height: auto;
+  filter: sepia(0.18) saturate(1.2) hue-rotate(-14deg) brightness(1.46) contrast(0.9)
+    blur(0.5px);
 }
 
 .hero-inner {
@@ -292,6 +298,8 @@ const showcaseSdl = [
   flex-direction: column;
   align-items: center;
   gap: 2.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-text {
@@ -639,9 +647,7 @@ const showcaseSdl = [
 /* ─── Responsive ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-mark {
-    left: -4rem;
-    top: -1rem;
-    opacity: 0.05;
+    display: none;
   }
 
   .hero-inner {
@@ -668,5 +674,14 @@ const showcaseSdl = [
     font-size: 1.05rem;
     line-height: 1.65;
   }
+}
+
+html[data-theme="light"] .hero-mark {
+  opacity: 0.022;
+}
+
+html[data-theme="light"] .hero-mark img {
+  filter: sepia(0.14) saturate(1.12) hue-rotate(-10deg) brightness(0.79) contrast(0.88)
+    blur(0.5px);
 }
 </style>
