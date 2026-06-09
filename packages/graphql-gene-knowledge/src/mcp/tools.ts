@@ -1,4 +1,5 @@
 import { searchKnowledgeCatalog } from '../query/search'
+import type { DocKnowledgeEntry, ExampleKnowledgeEntry } from '../contracts'
 import type { McpDomainContext, McpToolDescriptor } from './contracts'
 
 const TOOLS: McpToolDescriptor[] = [
@@ -103,8 +104,12 @@ function runExplainFeatureTool(context: McpDomainContext, input: Record<string, 
     limit: 5,
   })
 
-  const docs = matches.filter(match => match.entry.kind === 'doc').slice(0, 3)
-  const examples = matches.filter(match => match.entry.kind === 'example').slice(0, 2)
+  const docs = matches
+    .filter((match): match is typeof match & { entry: DocKnowledgeEntry } => match.entry.kind === 'doc')
+    .slice(0, 3)
+  const examples = matches
+    .filter((match): match is typeof match & { entry: ExampleKnowledgeEntry } => match.entry.kind === 'example')
+    .slice(0, 2)
 
   return {
     feature,
@@ -131,7 +136,9 @@ function runRecommendIntegrationTool(context: McpDomainContext, input: Record<st
     query: recommendedQuery,
     kind: 'doc',
     limit: 3,
-  }).map(match => ({
+  })
+    .filter((match): match is typeof match & { entry: DocKnowledgeEntry } => match.entry.kind === 'doc')
+    .map(match => ({
     id: match.entry.id,
     title: match.entry.title,
     slug: match.entry.slug,
@@ -141,7 +148,9 @@ function runRecommendIntegrationTool(context: McpDomainContext, input: Record<st
     query: recommendedQuery,
     kind: 'example',
     limit: 2,
-  }).map(match => ({
+  })
+    .filter((match): match is typeof match & { entry: ExampleKnowledgeEntry } => match.entry.kind === 'example')
+    .map(match => ({
     id: match.entry.id,
     title: match.entry.title,
     scenario: match.entry.scenario,

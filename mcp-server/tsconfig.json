@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "rootDir": "..",
+    "outDir": "./dist",
+    "types": ["node"],
+    "paths": {
+      "~/*": [
+        "../*"
+      ]
+    }
+  },
+  "include": [
+    "./src/**/*.ts",
+    "../packages/graphql-gene-knowledge/src/**/*.ts",
+    "../content/graphql-gene/docs.config.ts",
+    "../server/utils/playground/registry.ts",
+    "../types/**/*.ts"
+  ]
+}

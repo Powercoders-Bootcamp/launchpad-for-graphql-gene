@@ -8,12 +8,16 @@
     "generate": "nuxt generate",
     "generate:full": "nuxt generate && pagefind --source .output/public",
     "preview": "nuxt preview",
+    "mcp:dev": "npm --prefix mcp-server run dev",
+    "mcp:build": "npm --prefix mcp-server run build",
+    "mcp:start": "npm --prefix mcp-server run start",
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:api": "node --test tests/api/playground.mjs"
   },
   "dependencies": {
     "@graphql-gene/plugin-sequelize": "^1.2.6",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@nuxt/content": "^3.14.0",
     "@nuxtjs/i18n": "^10.4.0",
     "@vueuse/core": "^14.3.0",

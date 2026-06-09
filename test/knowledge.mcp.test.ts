@@ -125,6 +125,14 @@ describe('knowledge MCP domain', () => {
     const capabilities = readKnowledgeMcpResource(createContext(), 'capabilities://server')
     const payload = JSON.parse(capabilities.text)
 
-    expect(payload.resources).toEqual(listKnowledgeMcpResources())
+    expect(payload.resources).toEqual(listKnowledgeMcpResources(createContext()))
+  })
+
+  it('exposes individual doc resources for targeted retrieval', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'docs://docs/guides/directives')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.id).toBe('doc:/docs/guides/directives')
+    expect(payload.playgroundScenario).toBe('directive-middleware')
   })
 })
