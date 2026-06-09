@@ -114,6 +114,21 @@ describe('GET /api/playground/examples', () => {
   })
 })
 
+describe('GET /api/knowledge/catalog', () => {
+  it('returns a linked canonical knowledge catalog', async () => {
+    const res = await api('/api/knowledge/catalog')
+    expect(res.status).toBe('ok')
+    expect(res.requestId).toBeTypeOf('string')
+    expect(res.knowledge.counts.docs).toBe(5)
+    expect(res.knowledge.counts.examples).toBe(4)
+    expect(res.knowledge.byId['doc:/docs/guides/directives']).toBeDefined()
+    expect(res.knowledge.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
+    expect(res.knowledge.byId['doc:/docs/guides/directives'].relatedIds).toContain(
+      'example:directive-middleware:user-auth-directive',
+    )
+  })
+})
+
 describe('POST /api/playground/generate', () => {
   it('returns real SDL for user-orders-basic', async () => {
     const res = await post('/api/playground/generate', {
