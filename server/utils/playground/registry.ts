@@ -1,5 +1,8 @@
 import type { ScenarioId, Example } from '~/types'
-import { getSitePlaygroundExample, getSitePlaygroundExamples } from '~/packages/graphql-gene-knowledge/src'
+import {
+  getSitePlaygroundExample,
+  getSitePlaygroundExamples,
+} from '~/packages/graphql-gene-knowledge/src/site/playground-examples'
 
 const CATALOG: Example[] = getSitePlaygroundExamples() as Example[]
 
