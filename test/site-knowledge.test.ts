@@ -26,7 +26,7 @@ describe('site knowledge seeds', () => {
       versionRange: '^1.3.7',
     })
 
-    expect(catalog.counts.docs).toBe(5)
+    expect(catalog.counts.docs).toBe(6)
     expect(catalog.counts.examples).toBe(4)
     expect(catalog.byId['doc:/docs/guides/directives']).toBeDefined()
     expect(catalog.byId['example:directive-middleware:user-auth-directive']).toBeDefined()

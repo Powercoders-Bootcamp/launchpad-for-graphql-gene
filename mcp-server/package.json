@@ -6,6 +6,7 @@
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-entry.ts",
     "build": "tsc -p tsconfig.json",
+    "print-config": "node scripts/print-config.mjs",
     "start": "node dist/mcp-server/src/index.js",
     "start:http": "node dist/mcp-server/src/http-entry.js"
   },

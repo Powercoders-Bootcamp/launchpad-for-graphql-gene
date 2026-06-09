@@ -1,0 +1,8 @@
+{
+  "transport": "stdio",
+  "command": "<command>",
+  "args": [
+    "<args>"
+  ],
+  "cwd": "<workspace-root>"
+}

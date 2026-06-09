@@ -36,6 +36,12 @@ For Streamable HTTP mode:
 GRAPHQL_GENE_MCP_PORT=3001 npm run start:http
 ```
 
+To print local registration snippets:
+
+```bash
+npm run print-config
+```
+
 Optional environment variables:
 
 - `GRAPHQL_GENE_MCP_HOST`

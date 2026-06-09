@@ -11,6 +11,7 @@
     "mcp:dev": "npm --prefix mcp-server run dev",
     "mcp:dev:http": "npm --prefix mcp-server run dev:http",
     "mcp:build": "npm --prefix mcp-server run build",
+    "mcp:print-config": "npm --prefix mcp-server run print-config",
     "mcp:start": "npm --prefix mcp-server run start",
     "mcp:start:http": "npm --prefix mcp-server run start:http",
     "postinstall": "nuxt prepare",

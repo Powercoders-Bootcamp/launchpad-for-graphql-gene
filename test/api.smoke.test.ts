@@ -119,7 +119,7 @@ describe('GET /api/knowledge/catalog', () => {
     const res = await api('/api/knowledge/catalog')
     expect(res.status).toBe('ok')
     expect(res.requestId).toBeTypeOf('string')
-    expect(res.knowledge.counts.docs).toBe(5)
+    expect(res.knowledge.counts.docs).toBe(6)
     expect(res.knowledge.counts.examples).toBe(4)
     expect(res.knowledge.byId['doc:/docs/guides/directives']).toBeDefined()
     expect(res.knowledge.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
@@ -133,11 +133,11 @@ describe('GET /api/knowledge/overview', () => {
   it('returns section and scenario summaries', async () => {
     const res = await api('/api/knowledge/overview')
     expect(res.status).toBe('ok')
-    expect(res.overview.counts.docs).toBe(5)
+    expect(res.overview.counts.docs).toBe(6)
     expect(res.overview.counts.examples).toBe(4)
 
     const guidesSection = res.overview.sections.find((section: { id: string }) => section.id === 'guides')
-    expect(guidesSection.docCount).toBe(3)
+    expect(guidesSection.docCount).toBe(4)
 
     const directiveScenario = res.overview.scenarios.find((scenario: { id: string }) => scenario.id === 'directive-middleware')
     expect(directiveScenario.linkedDocCount).toBe(1)
