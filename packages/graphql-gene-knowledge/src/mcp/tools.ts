@@ -1,5 +1,13 @@
 import { searchKnowledgeCatalog } from '../query/search'
-import type { DocKnowledgeEntry, ExampleKnowledgeEntry } from '../contracts'
+import type {
+  DocKnowledgeEntry,
+  ExampleKnowledgeEntry,
+  KnowledgeEntry,
+  KnowledgeKind,
+  PluginKnowledgeEntry,
+  RecipeKnowledgeEntry,
+  TroubleshootingKnowledgeEntry,
+} from '../contracts'
 import type { McpDomainContext, McpToolDescriptor } from './contracts'
 
 const TOOLS: McpToolDescriptor[] = [
@@ -10,7 +18,7 @@ const TOOLS: McpToolDescriptor[] = [
       type: 'object',
       properties: {
         query: { type: 'string', minLength: 2 },
-        kind: { type: 'string', enum: ['doc', 'example'] },
+        kind: { type: 'string', enum: ['doc', 'example', 'plugin', 'recipe', 'troubleshooting'] },
         section: { type: 'string' },
         scenario: { type: 'string' },
         limit: { type: 'integer', minimum: 1, maximum: 25 },
@@ -21,7 +29,7 @@ const TOOLS: McpToolDescriptor[] = [
   },
   {
     name: 'explain_graphql_gene_feature',
-    description: 'Summarize a GraphQL Gene feature and point to the most relevant canonical docs and examples.',
+    description: 'Summarize a GraphQL Gene feature and point to the most relevant canonical docs, examples, plugins, recipes, and troubleshooting entries.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -58,7 +66,7 @@ const TOOLS: McpToolDescriptor[] = [
   },
   {
     name: 'plan_graphql_gene_integration',
-    description: 'Produce an actionable GraphQL Gene integration plan with docs, examples, and plugin guidance.',
+    description: 'Produce an actionable GraphQL Gene integration plan with docs, examples, recipes, and plugin guidance.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -123,7 +131,7 @@ export function invokeKnowledgeMcpTool(
 function runSearchTool(context: McpDomainContext, input: Record<string, unknown>) {
   const query = typeof input.query === 'string' ? input.query : ''
   const limit = typeof input.limit === 'number' ? input.limit : undefined
-  const kind = input.kind === 'doc' || input.kind === 'example' ? input.kind : undefined
+  const kind = asKnowledgeKind(input.kind)
   const section = typeof input.section === 'string' ? input.section : undefined
   const scenario = typeof input.scenario === 'string' ? input.scenario : undefined
 
@@ -141,7 +149,10 @@ function runSearchTool(context: McpDomainContext, input: Record<string, unknown>
     score: hit.score,
     matchedFields: hit.matchedFields,
     slug: hit.entry.kind === 'doc' ? hit.entry.slug : undefined,
-    scenario: hit.entry.kind === 'example' ? hit.entry.scenario : hit.entry.playgroundScenario,
+    scenario: extractScenario(hit.entry),
+    packageName: hit.entry.kind === 'plugin' ? hit.entry.packageName ?? null : undefined,
+    recipeId: hit.entry.kind === 'recipe' ? hit.entry.recipeId : undefined,
+    issueId: hit.entry.kind === 'troubleshooting' ? hit.entry.issueId : undefined,
   }))
 
   return {
@@ -153,33 +164,27 @@ function runSearchTool(context: McpDomainContext, input: Record<string, unknown>
 
 function runExplainFeatureTool(context: McpDomainContext, input: Record<string, unknown>) {
   const feature = typeof input.feature === 'string' ? input.feature : ''
-  const matches = searchKnowledgeCatalog(context.catalog, {
-    query: feature,
-    limit: 5,
-  })
-
-  const docs = matches
-    .filter((match): match is typeof match & { entry: DocKnowledgeEntry } => match.entry.kind === 'doc')
-    .slice(0, 3)
-  const examples = matches
-    .filter((match): match is typeof match & { entry: ExampleKnowledgeEntry } => match.entry.kind === 'example')
-    .slice(0, 2)
+  const docs = searchDocs(context, feature, 3)
+  const examples = searchExamples(context, feature, 2)
+  const plugins = searchPlugins(context, feature, 2)
+  const recipes = searchRecipes(context, feature, 2)
+  const troubleshooting = searchTroubleshooting(context, feature, 2)
 
   return {
     feature,
-    summary: buildFeatureSummary(feature, docs.map(match => match.entry.title), examples.map(match => match.entry.title)),
-    docs: docs.map(match => ({
-      id: match.entry.id,
-      title: match.entry.title,
-      slug: match.entry.slug,
-      summary: match.entry.summary,
-    })),
-    examples: examples.map(match => ({
-      id: match.entry.id,
-      title: match.entry.title,
-      scenario: match.entry.scenario,
-      summary: match.entry.summary,
-    })),
+    summary: buildFeatureSummary({
+      feature,
+      docs: docs.map(match => match.title),
+      examples: examples.map(match => match.title),
+      plugins: plugins.map(match => match.title),
+      recipes: recipes.map(match => match.title),
+      troubleshooting: troubleshooting.map(match => match.title),
+    }),
+    docs,
+    examples,
+    plugins,
+    recipes,
+    troubleshooting,
   }
 }
 
@@ -188,6 +193,8 @@ function runRecommendIntegrationTool(context: McpDomainContext, input: Record<st
   const recommendedQuery = inferRecommendationQuery(goal)
   const docs = searchDocs(context, recommendedQuery, 3)
   const examples = searchExamples(context, recommendedQuery, 2)
+  const recipes = searchRecipes(context, recommendedQuery, 2)
+  const plugins = searchPlugins(context, recommendedQuery, 2)
 
   return {
     goal,
@@ -195,6 +202,8 @@ function runRecommendIntegrationTool(context: McpDomainContext, input: Record<st
     recommendedQuery,
     docs,
     examples,
+    recipes,
+    plugins,
   }
 }
 
@@ -205,6 +214,8 @@ function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<st
   const strategy = choosePluginStrategy(orm, goal, wantsCustomPlugin)
   const docs = searchDocs(context, strategy.query, 3)
   const examples = searchExamples(context, strategy.query, 2)
+  const plugins = searchPlugins(context, strategy.query, 2)
+  const recipes = searchRecipes(context, strategy.query, 2)
 
   return {
     orm: orm ?? null,
@@ -216,6 +227,8 @@ function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<st
     nextSteps: strategy.nextSteps,
     docs,
     examples,
+    plugins,
+    recipes,
   }
 }
 
@@ -230,6 +243,8 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
   const pluginStrategy = choosePluginStrategy(orm, goal, false)
   const docs = searchDocs(context, focusArea, 4)
   const examples = searchExamples(context, focusArea, 3)
+  const recipes = searchRecipes(context, focusArea, 3)
+  const plugins = searchPlugins(context, focusArea, 2)
 
   return {
     goal,
@@ -252,6 +267,8 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
     }),
     docs,
     examples,
+    recipes,
+    plugins,
   }
 }
 
@@ -262,6 +279,8 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
   const recommendedQuery = inferDiagnosisQuery(symptom, issueContext, stage)
   const docs = searchDocs(context, recommendedQuery, 3)
   const examples = searchExamples(context, recommendedQuery, 2)
+  const troubleshooting = searchTroubleshooting(context, recommendedQuery, 3)
+  const recipes = searchRecipes(context, recommendedQuery, 2)
 
   return {
     symptom,
@@ -272,17 +291,32 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
     recommendedChecks: buildRecommendedChecks(recommendedQuery),
     docs,
     examples,
+    troubleshooting,
+    recipes,
   }
 }
 
-function buildFeatureSummary(feature: string, docs: string[], examples: string[]) {
-  const docText = docs.length ? docs.join(', ') : 'No strong doc matches yet'
-  const exampleText = examples.length ? examples.join(', ') : 'No strong example matches yet'
+function buildFeatureSummary(options: {
+  feature: string
+  docs: string[]
+  examples: string[]
+  plugins: string[]
+  recipes: string[]
+  troubleshooting: string[]
+}) {
+  const docText = options.docs.length ? options.docs.join(', ') : 'No strong doc matches yet'
+  const exampleText = options.examples.length ? options.examples.join(', ') : 'No strong example matches yet'
+  const pluginText = options.plugins.length ? options.plugins.join(', ') : 'No strong plugin matches yet'
+  const recipeText = options.recipes.length ? options.recipes.join(', ') : 'No strong recipe matches yet'
+  const issueText = options.troubleshooting.length ? options.troubleshooting.join(', ') : 'No strong troubleshooting matches yet'
 
   return [
-    `Feature: ${feature}`,
+    `Feature: ${options.feature}`,
     `Relevant docs: ${docText}`,
     `Relevant examples: ${exampleText}`,
+    `Relevant plugins: ${pluginText}`,
+    `Relevant recipes: ${recipeText}`,
+    `Relevant troubleshooting: ${issueText}`,
     'Use the docs as the primary source of truth and treat adapted playground examples as supporting guidance.',
   ].join(' ')
 }
@@ -498,4 +532,74 @@ function searchExamples(context: McpDomainContext, query: string, limit: number)
       scenario: match.entry.scenario,
       summary: match.entry.summary,
     }))
+}
+
+function searchPlugins(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'plugin',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: PluginKnowledgeEntry } => match.entry.kind === 'plugin')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      packageName: match.entry.packageName ?? null,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchRecipes(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'recipe',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: RecipeKnowledgeEntry } => match.entry.kind === 'recipe')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      recipeId: match.entry.recipeId,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchTroubleshooting(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'troubleshooting',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: TroubleshootingKnowledgeEntry } => match.entry.kind === 'troubleshooting')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      issueId: match.entry.issueId,
+      summary: match.entry.summary,
+    }))
+}
+
+function asKnowledgeKind(value: unknown): KnowledgeKind | undefined {
+  return value === 'doc'
+    || value === 'example'
+    || value === 'plugin'
+    || value === 'recipe'
+    || value === 'troubleshooting'
+    ? value
+    : undefined
+}
+
+function extractScenario(entry: KnowledgeEntry) {
+  switch (entry.kind) {
+    case 'doc':
+      return entry.playgroundScenario
+    case 'example':
+      return entry.scenario
+    case 'plugin':
+    case 'recipe':
+    case 'troubleshooting':
+      return entry.scenarios[0]
+    default:
+      return undefined
+  }
 }

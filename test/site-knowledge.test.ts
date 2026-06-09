@@ -3,8 +3,11 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   buildSiteKnowledgeCatalog,
+  getSitePluginKnowledge,
   getSitePlaygroundExample,
   getSitePlaygroundExamples,
+  getSiteRecipeKnowledge,
+  getSiteTroubleshootingKnowledge,
   siteDocsConfig,
 } from '../packages/graphql-gene-knowledge/src'
 
@@ -15,6 +18,9 @@ describe('site knowledge seeds', () => {
   it('exports the shared docs config and playground examples', () => {
     expect(siteDocsConfig.sections.length).toBe(5)
     expect(getSitePlaygroundExamples().length).toBe(4)
+    expect(getSitePluginKnowledge().length).toBe(2)
+    expect(getSiteRecipeKnowledge().length).toBe(5)
+    expect(getSiteTroubleshootingKnowledge().length).toBe(5)
     expect(getSitePlaygroundExample('directive-middleware', 'user-auth-directive')?.title).toBe('Auth Directive')
   })
 
@@ -28,7 +34,13 @@ describe('site knowledge seeds', () => {
 
     expect(catalog.counts.docs).toBe(6)
     expect(catalog.counts.examples).toBe(4)
+    expect(catalog.counts.plugins).toBe(2)
+    expect(catalog.counts.recipes).toBe(5)
+    expect(catalog.counts.troubleshooting).toBe(5)
     expect(catalog.byId['doc:/docs/guides/directives']).toBeDefined()
     expect(catalog.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
+    expect(catalog.byId['plugin:sequelize']).toBeDefined()
+    expect(catalog.byId['recipe:sequelize-bootstrap']).toBeDefined()
+    expect(catalog.byId['troubleshooting:missing-types-in-generated-schema']).toBeDefined()
   })
 })

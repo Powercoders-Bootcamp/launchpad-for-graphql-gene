@@ -1,7 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { buildKnowledgeCatalog } from '../packages/graphql-gene-knowledge/src'
+import {
+  buildKnowledgeCatalog,
+  getSitePluginKnowledge,
+  getSiteRecipeKnowledge,
+  getSiteTroubleshootingKnowledge,
+} from '../packages/graphql-gene-knowledge/src'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const workspaceRoot = path.resolve(__dirname, '..')
@@ -56,6 +61,9 @@ describe('buildKnowledgeCatalog', () => {
       docsRoot,
       docsConfig,
       examples,
+      plugins: getSitePluginKnowledge(),
+      recipes: getSiteRecipeKnowledge(),
+      troubleshooting: getSiteTroubleshootingKnowledge(),
       sourceRepo: 'graphql-gene-site',
       sourceRef: 'workspace',
       versionRange: '^1.3.7',
@@ -63,16 +71,24 @@ describe('buildKnowledgeCatalog', () => {
 
     expect(catalog.counts.docs).toBe(6)
     expect(catalog.counts.examples).toBe(4)
-    expect(catalog.counts.entries).toBe(10)
+    expect(catalog.counts.plugins).toBe(2)
+    expect(catalog.counts.recipes).toBe(5)
+    expect(catalog.counts.troubleshooting).toBe(5)
+    expect(catalog.counts.entries).toBe(22)
 
     const directivesDoc = catalog.byId['doc:/docs/guides/directives']
     const directivesExample = catalog.byId['example:directive-middleware:user-auth-directive']
+    const directiveRecipe = catalog.byId['recipe:directive-middleware-auth']
 
     expect(directivesDoc).toBeDefined()
     expect(directivesExample).toBeDefined()
+    expect(directiveRecipe).toBeDefined()
     expect(directivesDoc.relatedIds).toContain('example:directive-middleware:user-auth-directive')
+    expect(directivesDoc.relatedIds).toContain('recipe:directive-middleware-auth')
     expect(directivesExample.relatedIds).toContain('doc:/docs/guides/directives')
+    expect(directiveRecipe.relatedIds).toContain('doc:/docs/guides/directives')
     expect(catalog.examples.every(example => example.executionMode === 'adapted')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_RUNTIME_NOT_CANONICAL')).toBe(true)
+    expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'CURATED_KNOWLEDGE_NORMALIZED')).toBe(true)
   })
 })

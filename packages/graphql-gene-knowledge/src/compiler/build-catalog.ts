@@ -1,3 +1,6 @@
+import { loadCuratedKnowledgeEntries } from '../adapters/curated'
+import { loadDocKnowledgeEntries } from '../adapters/docs'
+import { createExampleId, loadPlaygroundKnowledgeEntries } from '../adapters/playground'
 import type {
   BuildKnowledgeCatalogOptions,
   DocKnowledgeEntry,
@@ -5,9 +8,10 @@ import type {
   KnowledgeCatalog,
   KnowledgeDiagnostic,
   KnowledgeEntry,
+  PluginKnowledgeEntry,
+  RecipeKnowledgeEntry,
+  TroubleshootingKnowledgeEntry,
 } from '../contracts'
-import { createExampleId, loadPlaygroundKnowledgeEntries } from '../adapters/playground'
-import { loadDocKnowledgeEntries } from '../adapters/docs'
 
 export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): KnowledgeCatalog {
   const docDrafts = loadDocKnowledgeEntries(options)
@@ -30,7 +34,6 @@ export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): Kn
       })
     })
     .map(({ relatedSlugs: _relatedSlugs, ...doc }) => doc)
-    .sort((left, right) => sortDocs(left, right, options))
 
   const recommendedDocIdsByScenario = groupDocIdsByScenario(docs)
 
@@ -44,21 +47,68 @@ export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): Kn
         recommendedDocIds,
       })
     })
+
+  const curated = loadCuratedKnowledgeEntries(options)
+
+  const linkedEntries = createBidirectionalKnowledgeGraph([
+    ...docs,
+    ...normalizedExamples,
+    ...curated.plugins,
+    ...curated.recipes,
+    ...curated.troubleshooting,
+  ])
+
+  const normalizedDocs = linkedEntries
+    .filter((entry): entry is DocKnowledgeEntry => entry.kind === 'doc')
+    .sort((left, right) => sortDocs(left, right, options))
+
+  const normalizedPluginEntries = linkedEntries
+    .filter((entry): entry is PluginKnowledgeEntry => entry.kind === 'plugin')
+    .sort(sortNamedEntries)
+
+  const normalizedRecipeEntries = linkedEntries
+    .filter((entry): entry is RecipeKnowledgeEntry => entry.kind === 'recipe')
+    .sort(sortNamedEntries)
+
+  const normalizedTroubleshootingEntries = linkedEntries
+    .filter((entry): entry is TroubleshootingKnowledgeEntry => entry.kind === 'troubleshooting')
+    .sort(sortNamedEntries)
+
+  const normalizedExampleEntries = linkedEntries
+    .filter((entry): entry is ExampleKnowledgeEntry => entry.kind === 'example')
     .sort(sortExamples)
 
-  const entries = [...docs, ...normalizedExamples].sort(sortEntries)
+  const entries = [
+    ...normalizedDocs,
+    ...normalizedExampleEntries,
+    ...normalizedPluginEntries,
+    ...normalizedRecipeEntries,
+    ...normalizedTroubleshootingEntries,
+  ].sort(sortEntries)
+
   const byId = Object.fromEntries(entries.map(entry => [entry.id, entry]))
-  const diagnostics = buildDiagnostics(normalizedExamples)
+  const diagnostics = buildDiagnostics({
+    examples: normalizedExampleEntries,
+    plugins: normalizedPluginEntries,
+    recipes: normalizedRecipeEntries,
+    troubleshooting: normalizedTroubleshootingEntries,
+  })
 
   return {
     generatedAt: new Date().toISOString(),
     counts: {
-      docs: docs.length,
-      examples: normalizedExamples.length,
+      docs: normalizedDocs.length,
+      examples: normalizedExampleEntries.length,
+      plugins: normalizedPluginEntries.length,
+      recipes: normalizedRecipeEntries.length,
+      troubleshooting: normalizedTroubleshootingEntries.length,
       entries: entries.length,
     },
-    docs,
-    examples: normalizedExamples,
+    docs: normalizedDocs,
+    examples: normalizedExampleEntries,
+    plugins: normalizedPluginEntries,
+    recipes: normalizedRecipeEntries,
+    troubleshooting: normalizedTroubleshootingEntries,
     entries,
     byId,
     diagnostics,
@@ -93,16 +143,53 @@ function groupDocIdsByScenario(docs: DocKnowledgeEntry[]) {
   return grouped
 }
 
-function buildDiagnostics(examples: ExampleKnowledgeEntry[]): KnowledgeDiagnostic[] {
+function createBidirectionalKnowledgeGraph(entries: KnowledgeEntry[]) {
+  const idSet = new Set(entries.map(entry => entry.id))
+  const relations = new Map(entries.map(entry => [entry.id, new Set<string>()]))
+
+  for (const entry of entries) {
+    const entryRelations = relations.get(entry.id)
+    if (!entryRelations) {
+      continue
+    }
+
+    for (const relatedId of entry.relatedIds) {
+      if (!idSet.has(relatedId) || relatedId === entry.id) {
+        continue
+      }
+
+      entryRelations.add(relatedId)
+      relations.get(relatedId)?.add(entry.id)
+    }
+  }
+
+  return entries.map((entry) => ({
+    ...entry,
+    relatedIds: [...(relations.get(entry.id) ?? new Set<string>())].sort((left, right) => left.localeCompare(right)),
+  }))
+}
+
+function buildDiagnostics(options: {
+  examples: ExampleKnowledgeEntry[]
+  plugins: PluginKnowledgeEntry[]
+  recipes: RecipeKnowledgeEntry[]
+  troubleshooting: TroubleshootingKnowledgeEntry[]
+}): KnowledgeDiagnostic[] {
   const diagnostics: KnowledgeDiagnostic[] = []
 
   diagnostics.push({
     level: 'info',
     code: 'PLAYGROUND_CATALOG_NORMALIZED',
-    message: `Normalized ${examples.length} playground examples into canonical entries.`,
+    message: `Normalized ${options.examples.length} playground examples into canonical entries.`,
   })
 
-  for (const example of examples) {
+  diagnostics.push({
+    level: 'info',
+    code: 'CURATED_KNOWLEDGE_NORMALIZED',
+    message: `Normalized ${options.plugins.length + options.recipes.length + options.troubleshooting.length} curated knowledge entries for plugins, recipes, and troubleshooting.`,
+  })
+
+  for (const example of options.examples) {
     if (example.executionMode !== 'canonical') {
       diagnostics.push({
         level: 'warning',
@@ -137,6 +224,13 @@ function sortExamples(left: ExampleKnowledgeEntry, right: ExampleKnowledgeEntry)
     return left.scenario.localeCompare(right.scenario)
   }
 
+  return left.title.localeCompare(right.title)
+}
+
+function sortNamedEntries(
+  left: PluginKnowledgeEntry | RecipeKnowledgeEntry | TroubleshootingKnowledgeEntry,
+  right: PluginKnowledgeEntry | RecipeKnowledgeEntry | TroubleshootingKnowledgeEntry,
+) {
   return left.title.localeCompare(right.title)
 }
 

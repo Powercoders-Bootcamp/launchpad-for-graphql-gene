@@ -19,6 +19,7 @@ The GraphQL Gene MCP server is a separate package in this repository. Its job is
 Use it when you want an agent to:
 
 - search canonical GraphQL Gene docs and examples
+- inspect curated plugin, recipe, and troubleshooting guidance
 - choose a plugin strategy
 - plan an integration path
 - diagnose GraphQL Gene issues
@@ -122,7 +123,7 @@ npm run mcp:doctor -- --json
 
 The most useful MCP capabilities right now are:
 
-- resources for overview, docs catalogs, examples catalogs, and single doc/example records
+- resources for overview, docs catalogs, examples catalogs, plugin catalogs, recipe catalogs, troubleshooting catalogs, and single entry records
 - prompts for integration framing and plugin authoring
 - tools such as `search_knowledge`, `choose_plugin_strategy`, `plan_graphql_gene_integration`, and `diagnose_graphql_gene_issue`
 
@@ -130,6 +131,6 @@ The most useful MCP capabilities right now are:
 
 The MCP server is backed by the canonical knowledge layer in this repo. That means:
 
-- docs and examples are linked through shared normalized entries
+- docs, examples, plugins, recipes, and troubleshooting entries are linked through one normalized graph
 - playground examples are still marked when they are adapted rather than canonical runtime behavior
 - if a demo surface and upstream-aligned docs disagree, prefer the docs and source-backed examples

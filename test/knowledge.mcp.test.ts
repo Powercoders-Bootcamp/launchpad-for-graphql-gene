@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildKnowledgeCatalog,
   createKnowledgeMcpManifest,
+  getSitePluginKnowledge,
+  getSiteRecipeKnowledge,
+  getSiteTroubleshootingKnowledge,
   invokeKnowledgeMcpTool,
   listKnowledgeMcpResources,
   readKnowledgeMcpResource,
@@ -63,6 +66,9 @@ function createContext() {
       docsRoot,
       docsConfig,
       examples,
+      plugins: getSitePluginKnowledge(),
+      recipes: getSiteRecipeKnowledge(),
+      troubleshooting: getSiteTroubleshootingKnowledge(),
       sourceRepo: 'graphql-gene-site',
       sourceRef: 'workspace',
       versionRange: '^1.3.7',
@@ -88,6 +94,9 @@ describe('knowledge MCP domain', () => {
     expect(resource.mimeType).toBe('application/json')
     expect(payload.counts.docs).toBe(6)
     expect(payload.counts.examples).toBe(4)
+    expect(payload.counts.plugins).toBe(2)
+    expect(payload.counts.recipes).toBe(5)
+    expect(payload.counts.troubleshooting).toBe(5)
   })
 
   it('renders prompts with caller context', () => {
@@ -129,6 +138,7 @@ describe('knowledge MCP domain', () => {
 
     expect(result.recommendedQuery).toBe('directive')
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/directives')).toBe(true)
+    expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:directive-middleware-auth')).toBe(true)
   })
 
   it('chooses the Sequelize plugin strategy when the ORM is Sequelize', () => {
@@ -139,6 +149,7 @@ describe('knowledge MCP domain', () => {
 
     expect(result.strategy).toBe('plugin-sequelize')
     expect(result.recommendedPlugin).toBe('@graphql-gene/plugin-sequelize')
+    expect(result.plugins.some((plugin: { id: string }) => plugin.id === 'plugin:sequelize')).toBe(true)
   })
 
   it('builds an actionable integration plan', () => {
@@ -153,6 +164,7 @@ describe('knowledge MCP domain', () => {
     expect(Array.isArray(result.steps)).toBe(true)
     expect(result.steps.length).toBeGreaterThan(3)
     expect(result.pluginStrategy.strategy).toBe('plugin-sequelize')
+    expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:directive-middleware-auth')).toBe(true)
   })
 
   it('diagnoses directive-oriented issues with focused checks', () => {
@@ -164,6 +176,7 @@ describe('knowledge MCP domain', () => {
     expect(result.diagnosisArea).toBe('directive')
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/directives')).toBe(true)
     expect(result.recommendedChecks.length).toBeGreaterThan(1)
+    expect(result.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:directive-not-printed-in-sdl')).toBe(true)
   })
 
   it('keeps the capabilities resource aligned with the resource manifest', () => {
@@ -179,5 +192,13 @@ describe('knowledge MCP domain', () => {
 
     expect(payload.id).toBe('doc:/docs/guides/directives')
     expect(payload.playgroundScenario).toBe('directive-middleware')
+  })
+
+  it('exposes curated plugin resources for targeted retrieval', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'plugins://plugin/sequelize')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.id).toBe('plugin:sequelize')
+    expect(payload.packageName).toBe('@graphql-gene/plugin-sequelize')
   })
 })

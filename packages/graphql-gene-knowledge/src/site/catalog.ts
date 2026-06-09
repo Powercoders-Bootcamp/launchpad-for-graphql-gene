@@ -1,6 +1,11 @@
 import { resolve } from 'node:path'
 import { buildKnowledgeCatalog } from '../compiler/build-catalog'
 import type { BuildKnowledgeCatalogOptions } from '../contracts'
+import {
+  getSitePluginKnowledge,
+  getSiteRecipeKnowledge,
+  getSiteTroubleshootingKnowledge,
+} from './curated-knowledge'
 import { siteDocsConfig } from './docs-config'
 import { getSitePlaygroundExamples } from './playground-examples'
 
@@ -24,6 +29,9 @@ export function buildSiteKnowledgeCatalog(options: BuildSiteKnowledgeCatalogOpti
     docsRoot: resolve(options.workspaceRoot, options.docsRootRelativePath ?? SITE_DOCS_ROOT_RELATIVE_PATH),
     docsConfig: siteDocsConfig,
     examples: getSitePlaygroundExamples(),
+    plugins: getSitePluginKnowledge(),
+    recipes: getSiteRecipeKnowledge(),
+    troubleshooting: getSiteTroubleshootingKnowledge(),
     sourceRepo: options.sourceRepo ?? 'graphql-gene-site',
     sourceRef: options.sourceRef ?? 'workspace',
     versionRange: options.versionRange,

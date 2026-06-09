@@ -34,7 +34,7 @@ export default defineEventHandler((event) => {
 
   const results = searchKnowledge({
     query: searchQuery,
-    kind: kind === 'doc' || kind === 'example' ? kind : undefined,
+    kind: asKnowledgeKind(kind),
     section,
     scenario,
     limit,
@@ -72,4 +72,14 @@ function normalizeLimit(value: unknown) {
   }
 
   return Math.min(Math.max(Math.trunc(parsed), 1), 25)
+}
+
+function asKnowledgeKind(value?: string) {
+  return value === 'doc'
+    || value === 'example'
+    || value === 'plugin'
+    || value === 'recipe'
+    || value === 'troubleshooting'
+    ? value
+    : undefined
 }

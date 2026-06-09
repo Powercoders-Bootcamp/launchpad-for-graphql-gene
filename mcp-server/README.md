@@ -13,6 +13,7 @@ This wrapper is responsible for:
 
 - loading the canonical knowledge catalog
 - exposing resources, prompts, and tools through MCP
+- surfacing docs, examples, plugins, recipes, and troubleshooting guidance from one shared graph
 - running over stdio so local coding agents can attach directly
 - optionally running over Streamable HTTP for separate deployment
 - generating client-ready adoption presets

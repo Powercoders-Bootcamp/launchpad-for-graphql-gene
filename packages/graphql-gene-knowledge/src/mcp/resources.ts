@@ -26,6 +26,24 @@ const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
     description: 'Returns the canonical GraphQL Gene example catalog with parity metadata.',
     mimeType: 'application/json',
   },
+  {
+    uri: 'plugins://catalog',
+    name: 'Plugin Catalog',
+    description: 'Returns curated plugin guidance entries backed by the canonical GraphQL Gene knowledge graph.',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'recipes://catalog',
+    name: 'Recipe Catalog',
+    description: 'Returns curated integration recipes backed by the canonical GraphQL Gene knowledge graph.',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'troubleshooting://catalog',
+    name: 'Troubleshooting Catalog',
+    description: 'Returns common GraphQL Gene troubleshooting entries backed by canonical guidance.',
+    mimeType: 'application/json',
+  },
 ]
 
 export function listKnowledgeMcpResources(context?: McpDomainContext): McpResourceDescriptor[] {
@@ -47,6 +65,24 @@ export function listKnowledgeMcpResources(context?: McpDomainContext): McpResour
       description: `Canonical example entry for ${example.scenario}/${example.exampleId}.`,
       mimeType: 'application/json' as const,
     })),
+    ...context.catalog.plugins.map(plugin => ({
+      uri: toPluginResourceUri(plugin.pluginId),
+      name: `Plugin: ${plugin.title}`,
+      description: `Curated plugin guidance entry for ${plugin.pluginId}.`,
+      mimeType: 'application/json' as const,
+    })),
+    ...context.catalog.recipes.map(recipe => ({
+      uri: toRecipeResourceUri(recipe.recipeId),
+      name: `Recipe: ${recipe.title}`,
+      description: `Curated integration recipe for ${recipe.recipeId}.`,
+      mimeType: 'application/json' as const,
+    })),
+    ...context.catalog.troubleshooting.map(issue => ({
+      uri: toTroubleshootingResourceUri(issue.issueId),
+      name: `Troubleshooting: ${issue.title}`,
+      description: `Curated troubleshooting entry for ${issue.issueId}.`,
+      mimeType: 'application/json' as const,
+    })),
   ]
 }
 
@@ -66,22 +102,39 @@ export function readKnowledgeMcpResource(context: McpDomainContext, uri: string)
       return jsonResource(uri, context.catalog.docs)
     case 'examples://catalog':
       return jsonResource(uri, context.catalog.examples)
+    case 'plugins://catalog':
+      return jsonResource(uri, context.catalog.plugins)
+    case 'recipes://catalog':
+      return jsonResource(uri, context.catalog.recipes)
+    case 'troubleshooting://catalog':
+      return jsonResource(uri, context.catalog.troubleshooting)
     default:
       return readEntryResource(context, uri)
   }
 }
 
 function buildOverviewPayload(catalog: KnowledgeCatalog) {
-  const scenarios = [...new Set(catalog.examples.map(example => example.scenario))]
+  const scenarios = [...new Set([
+    ...catalog.examples.map(example => example.scenario),
+    ...catalog.plugins.flatMap(plugin => plugin.scenarios),
+    ...catalog.recipes.flatMap(recipe => recipe.scenarios),
+    ...catalog.troubleshooting.flatMap(issue => issue.scenarios),
+  ])]
     .sort()
     .map((scenario) => {
       const scenarioExamples = catalog.examples.filter(example => example.scenario === scenario)
       const linkedDocs = catalog.docs.filter(doc => doc.playgroundScenario === scenario)
+      const linkedPlugins = catalog.plugins.filter(plugin => plugin.scenarios.includes(scenario))
+      const linkedRecipes = catalog.recipes.filter(recipe => recipe.scenarios.includes(scenario))
+      const linkedIssues = catalog.troubleshooting.filter(issue => issue.scenarios.includes(scenario))
 
       return {
         id: scenario,
         exampleCount: scenarioExamples.length,
         linkedDocCount: linkedDocs.length,
+        pluginCount: linkedPlugins.length,
+        recipeCount: linkedRecipes.length,
+        troubleshootingCount: linkedIssues.length,
         executionModes: [...new Set(scenarioExamples.map(example => example.executionMode ?? 'unknown'))].sort(),
       }
     })
@@ -115,6 +168,23 @@ function readEntryResource(context: McpDomainContext, uri: string): McpResourceD
     return jsonResource(uri, example)
   }
 
+  const plugin = context.catalog.plugins.find(entry => toPluginResourceUri(entry.pluginId) === uri)
+  if (plugin) {
+    return jsonResource(uri, plugin)
+  }
+
+  const recipe = context.catalog.recipes.find(entry => toRecipeResourceUri(entry.recipeId) === uri)
+  if (recipe) {
+    return jsonResource(uri, recipe)
+  }
+
+  const troubleshooting = context.catalog.troubleshooting.find(
+    entry => toTroubleshootingResourceUri(entry.issueId) === uri,
+  )
+  if (troubleshooting) {
+    return jsonResource(uri, troubleshooting)
+  }
+
   throw new Error(`Unknown MCP resource URI "${uri}".`)
 }
 
@@ -124,4 +194,16 @@ function toDocResourceUri(slug: string) {
 
 function toExampleResourceUri(scenario: string, exampleId: string) {
   return `examples://${scenario}/${exampleId}`
+}
+
+function toPluginResourceUri(pluginId: string) {
+  return `plugins://plugin/${pluginId}`
+}
+
+function toRecipeResourceUri(recipeId: string) {
+  return `recipes://recipe/${recipeId}`
+}
+
+function toTroubleshootingResourceUri(issueId: string) {
+  return `troubleshooting://issue/${issueId}`
 }

@@ -8,6 +8,9 @@ describe('mcp-server wrapper', () => {
 
     expect(context.catalog.counts.docs).toBe(6)
     expect(context.catalog.counts.examples).toBe(4)
+    expect(context.catalog.counts.plugins).toBe(2)
+    expect(context.catalog.counts.recipes).toBe(5)
+    expect(context.catalog.counts.troubleshooting).toBe(5)
     expect(context.serverVersion).toBeTypeOf('string')
   })
 
@@ -15,7 +18,7 @@ describe('mcp-server wrapper', () => {
     const manifest = createKnowledgeManifest()
 
     expect(manifest.server.name).toBe('graphql-gene-mcp')
-    expect(manifest.resources.length).toBeGreaterThanOrEqual(4)
+    expect(manifest.resources.length).toBeGreaterThanOrEqual(7)
     expect(manifest.prompts.length).toBeGreaterThanOrEqual(2)
     expect(manifest.tools.length).toBeGreaterThanOrEqual(3)
   })

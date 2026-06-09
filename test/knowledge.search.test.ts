@@ -1,7 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { buildKnowledgeCatalog, searchKnowledgeCatalog } from '../packages/graphql-gene-knowledge/src'
+import {
+  buildKnowledgeCatalog,
+  getSitePluginKnowledge,
+  getSiteRecipeKnowledge,
+  getSiteTroubleshootingKnowledge,
+  searchKnowledgeCatalog,
+} from '../packages/graphql-gene-knowledge/src'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const workspaceRoot = path.resolve(__dirname, '..')
@@ -55,6 +61,9 @@ function buildCatalog() {
     docsRoot,
     docsConfig,
     examples,
+    plugins: getSitePluginKnowledge(),
+    recipes: getSiteRecipeKnowledge(),
+    troubleshooting: getSiteTroubleshootingKnowledge(),
     sourceRepo: 'graphql-gene-site',
     sourceRef: 'workspace',
     versionRange: '^1.3.7',
@@ -67,7 +76,7 @@ describe('searchKnowledgeCatalog', () => {
 
     expect(results.length).toBeGreaterThan(1)
     expect(results[0].entry.id).toBe('doc:/docs/guides/directives')
-    expect(results[1].entry.id).toBe('example:directive-middleware:user-auth-directive')
+    expect(results.some(result => result.entry.id === 'example:directive-middleware:user-auth-directive')).toBe(true)
   })
 
   it('supports doc-only section filtering', () => {
@@ -91,5 +100,17 @@ describe('searchKnowledgeCatalog', () => {
 
     expect(results.map(result => result.entry.id)).toContain('doc:/docs/guides/polymorphic-blocks')
     expect(results.map(result => result.entry.id)).toContain('example:polymorphic-blocks:page-blocks-basic')
+    expect(results.map(result => result.entry.id)).toContain('recipe:polymorphic-content-blocks')
+  })
+
+  it('finds curated troubleshooting guidance by symptom keywords', () => {
+    const results = searchKnowledgeCatalog(buildCatalog(), {
+      query: 'missing types schema',
+      kind: 'troubleshooting',
+      limit: 5,
+    })
+
+    expect(results.length).toBeGreaterThan(0)
+    expect(results[0].entry.id).toBe('troubleshooting:missing-types-in-generated-schema')
   })
 })

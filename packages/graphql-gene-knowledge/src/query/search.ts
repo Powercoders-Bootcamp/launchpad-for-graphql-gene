@@ -1,4 +1,12 @@
-import type { ExampleKnowledgeEntry, KnowledgeCatalog, KnowledgeEntry, KnowledgeKind } from '../contracts'
+import type {
+  ExampleKnowledgeEntry,
+  KnowledgeCatalog,
+  KnowledgeEntry,
+  KnowledgeKind,
+  PluginKnowledgeEntry,
+  RecipeKnowledgeEntry,
+  TroubleshootingKnowledgeEntry,
+} from '../contracts'
 
 export interface SearchKnowledgeOptions {
   query: string
@@ -62,15 +70,26 @@ function matchesFilters(entry: KnowledgeEntry, options: SearchKnowledgeOptions) 
     return false
   }
 
-  if (options.scenario && entry.kind === 'example' && entry.scenario !== options.scenario) {
-    return false
-  }
-
-  if (options.scenario && entry.kind === 'doc' && entry.playgroundScenario !== options.scenario) {
+  if (options.scenario && !entryHasScenario(entry, options.scenario)) {
     return false
   }
 
   return true
+}
+
+function entryHasScenario(entry: KnowledgeEntry, scenario: string) {
+  switch (entry.kind) {
+    case 'doc':
+      return entry.playgroundScenario === scenario
+    case 'example':
+      return entry.scenario === scenario
+    case 'plugin':
+    case 'recipe':
+    case 'troubleshooting':
+      return entry.scenarios.includes(scenario)
+    default:
+      return false
+  }
 }
 
 function scoreEntry(entry: KnowledgeEntry, rawQuery: string, tokens: string[]) {
@@ -114,56 +133,25 @@ function scoreEntry(entry: KnowledgeEntry, rawQuery: string, tokens: string[]) {
     }
   }
 
-  if (entry.kind === 'doc') {
-    const normalizedSlug = normalize(entry.slug)
-    const normalizedBody = normalize(entry.body)
-    const normalizedDescription = normalize(entry.description)
-
-    if (normalizedSlug.includes(normalizedQuery)) {
-      score += 10
-      matchedFields.add('slug')
-    }
-
-    for (const token of tokens) {
-      if (normalizedDescription.includes(token)) {
-        score += 4
-        matchedFields.add('description')
-      }
-
-      if (normalizedBody.includes(token)) {
-        score += 2
-        matchedFields.add('body')
-      }
-    }
+  switch (entry.kind) {
+    case 'doc':
+      score += scoreDocEntry(entry, normalizedQuery, tokens, matchedFields)
+      break
+    case 'example':
+      score += scoreExampleEntry(entry, normalizedQuery, tokens, matchedFields)
+      break
+    case 'plugin':
+      score += scorePluginEntry(entry, normalizedQuery, tokens, matchedFields)
+      break
+    case 'recipe':
+      score += scoreRecipeEntry(entry, normalizedQuery, tokens, matchedFields)
+      break
+    case 'troubleshooting':
+      score += scoreTroubleshootingEntry(entry, normalizedQuery, tokens, matchedFields)
+      break
   }
-  else {
-    const example = entry as ExampleKnowledgeEntry
-    const normalizedScenario = normalize(example.scenario)
-    const normalizedDescription = normalize(example.description)
-    const normalizedEditableFields = example.editableFields.map(field => normalize(field))
 
-    if (normalizedScenario.includes(normalizedQuery)) {
-      score += 12
-      matchedFields.add('scenario')
-    }
-
-    for (const token of tokens) {
-      if (normalizedScenario.includes(token)) {
-        score += 6
-        matchedFields.add('scenario')
-      }
-
-      if (normalizedDescription.includes(token)) {
-        score += 4
-        matchedFields.add('description')
-      }
-
-      if (normalizedEditableFields.some(field => field.includes(token))) {
-        score += 3
-        matchedFields.add('editableFields')
-      }
-    }
-  }
+  score += kindBias(entry.kind)
 
   if (score === 0) {
     return null
@@ -173,6 +161,217 @@ function scoreEntry(entry: KnowledgeEntry, rawQuery: string, tokens: string[]) {
     score,
     matchedFields: [...matchedFields].sort((left, right) => left.localeCompare(right)),
   }
+}
+
+function scoreDocEntry(
+  entry: Extract<KnowledgeEntry, { kind: 'doc' }>,
+  normalizedQuery: string,
+  tokens: string[],
+  matchedFields: Set<string>,
+) {
+  let score = 0
+  const normalizedSlug = normalize(entry.slug)
+  const normalizedBody = normalize(entry.body)
+  const normalizedDescription = normalize(entry.description)
+
+  if (normalizedSlug.includes(normalizedQuery)) {
+    score += 10
+    matchedFields.add('slug')
+  }
+
+  for (const token of tokens) {
+    if (normalizedDescription.includes(token)) {
+      score += 4
+      matchedFields.add('description')
+    }
+
+    if (normalizedBody.includes(token)) {
+      score += 2
+      matchedFields.add('body')
+    }
+  }
+
+  return score
+}
+
+function scoreExampleEntry(
+  example: ExampleKnowledgeEntry,
+  normalizedQuery: string,
+  tokens: string[],
+  matchedFields: Set<string>,
+) {
+  let score = 0
+  const normalizedScenario = normalize(example.scenario)
+  const normalizedDescription = normalize(example.description)
+  const normalizedEditableFields = example.editableFields.map(field => normalize(field))
+
+  if (normalizedScenario.includes(normalizedQuery)) {
+    score += 12
+    matchedFields.add('scenario')
+  }
+
+  for (const token of tokens) {
+    if (normalizedScenario.includes(token)) {
+      score += 6
+      matchedFields.add('scenario')
+    }
+
+    if (normalizedDescription.includes(token)) {
+      score += 4
+      matchedFields.add('description')
+    }
+
+    if (normalizedEditableFields.some(field => field.includes(token))) {
+      score += 3
+      matchedFields.add('editableFields')
+    }
+  }
+
+  return score
+}
+
+function scorePluginEntry(
+  entry: PluginKnowledgeEntry,
+  normalizedQuery: string,
+  tokens: string[],
+  matchedFields: Set<string>,
+) {
+  let score = 0
+  const normalizedDescription = normalize(entry.description)
+  const normalizedPackageName = normalize(entry.packageName ?? '')
+  const normalizedOrms = entry.supportedOrms.map(value => normalize(value))
+  const normalizedWhenToUse = entry.whenToUse.map(value => normalize(value))
+  const normalizedWhenNotToUse = entry.whenNotToUse.map(value => normalize(value))
+
+  if (normalizedPackageName && normalizedPackageName.includes(normalizedQuery)) {
+    score += 14
+    matchedFields.add('packageName')
+  }
+
+  for (const token of tokens) {
+    if (normalizedDescription.includes(token)) {
+      score += 4
+      matchedFields.add('description')
+    }
+
+    if (normalizedPackageName.includes(token)) {
+      score += 7
+      matchedFields.add('packageName')
+    }
+
+    if (normalizedOrms.some(value => value.includes(token))) {
+      score += 5
+      matchedFields.add('supportedOrms')
+    }
+
+    if (normalizedWhenToUse.some(value => value.includes(token))) {
+      score += 3
+      matchedFields.add('whenToUse')
+    }
+
+    if (normalizedWhenNotToUse.some(value => value.includes(token))) {
+      score += 2
+      matchedFields.add('whenNotToUse')
+    }
+  }
+
+  return score
+}
+
+function scoreRecipeEntry(
+  entry: RecipeKnowledgeEntry,
+  normalizedQuery: string,
+  tokens: string[],
+  matchedFields: Set<string>,
+) {
+  let score = 0
+  const normalizedDescription = normalize(entry.description)
+  const normalizedGoal = normalize(entry.goal)
+  const normalizedServerStacks = entry.serverStacks.map(value => normalize(value))
+  const normalizedOrms = entry.orms.map(value => normalize(value))
+  const normalizedSteps = entry.steps.map(value => normalize(value))
+
+  if (normalizedGoal.includes(normalizedQuery)) {
+    score += 14
+    matchedFields.add('goal')
+  }
+
+  for (const token of tokens) {
+    if (normalizedDescription.includes(token)) {
+      score += 4
+      matchedFields.add('description')
+    }
+
+    if (normalizedGoal.includes(token)) {
+      score += 6
+      matchedFields.add('goal')
+    }
+
+    if (normalizedServerStacks.some(value => value.includes(token))) {
+      score += 4
+      matchedFields.add('serverStacks')
+    }
+
+    if (normalizedOrms.some(value => value.includes(token))) {
+      score += 4
+      matchedFields.add('orms')
+    }
+
+    if (normalizedSteps.some(value => value.includes(token))) {
+      score += 2
+      matchedFields.add('steps')
+    }
+  }
+
+  return score
+}
+
+function scoreTroubleshootingEntry(
+  entry: TroubleshootingKnowledgeEntry,
+  normalizedQuery: string,
+  tokens: string[],
+  matchedFields: Set<string>,
+) {
+  let score = 0
+  const normalizedDescription = normalize(entry.description)
+  const normalizedSymptoms = entry.symptoms.map(value => normalize(value))
+  const normalizedLikelyCauses = entry.likelyCauses.map(value => normalize(value))
+  const normalizedRecommendedChecks = entry.recommendedChecks.map(value => normalize(value))
+  const normalizedStages = entry.stages.map(value => normalize(value))
+
+  if (normalizedSymptoms.some(value => value.includes(normalizedQuery))) {
+    score += 14
+    matchedFields.add('symptoms')
+  }
+
+  for (const token of tokens) {
+    if (normalizedDescription.includes(token)) {
+      score += 4
+      matchedFields.add('description')
+    }
+
+    if (normalizedSymptoms.some(value => value.includes(token))) {
+      score += 6
+      matchedFields.add('symptoms')
+    }
+
+    if (normalizedLikelyCauses.some(value => value.includes(token))) {
+      score += 4
+      matchedFields.add('likelyCauses')
+    }
+
+    if (normalizedRecommendedChecks.some(value => value.includes(token))) {
+      score += 3
+      matchedFields.add('recommendedChecks')
+    }
+
+    if (normalizedStages.some(value => value.includes(token))) {
+      score += 5
+      matchedFields.add('stages')
+    }
+  }
+
+  return score
 }
 
 function tokenize(value: string) {
@@ -189,4 +388,21 @@ function normalize(value: string) {
 function normalizeLimit(limit?: number) {
   const value = Number.isFinite(limit) ? Number(limit) : 10
   return Math.min(Math.max(Math.trunc(value), 1), 25)
+}
+
+function kindBias(kind: KnowledgeKind) {
+  switch (kind) {
+    case 'doc':
+      return 40
+    case 'example':
+      return 15
+    case 'plugin':
+      return 8
+    case 'recipe':
+      return 5
+    case 'troubleshooting':
+      return 0
+    default:
+      return 0
+  }
 }
