@@ -53,6 +53,33 @@ export interface RecommendIntegrationPathInput {
   goal: string
 }
 
+export interface ChoosePluginStrategyInput {
+  orm?: string
+  goal?: string
+  wantsCustomPlugin?: boolean
+}
+
+export interface PlanGraphqlGeneIntegrationInput {
+  goal: string
+  serverStack?: string
+  orm?: string
+  concerns?: string[]
+}
+
+export type DiagnoseIssueStage =
+  | 'install'
+  | 'schema'
+  | 'runtime'
+  | 'plugin'
+  | 'query'
+  | 'directive'
+
+export interface DiagnoseGraphqlGeneIssueInput {
+  symptom: string
+  context?: string
+  stage?: DiagnoseIssueStage
+}
+
 export interface KnowledgeMcpManifest {
   server: {
     name: string

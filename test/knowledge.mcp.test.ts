@@ -77,8 +77,8 @@ describe('knowledge MCP domain', () => {
 
     expect(manifest.server.name).toBe('graphql-gene-mcp')
     expect(manifest.resources.length).toBeGreaterThanOrEqual(4)
-    expect(manifest.prompts.length).toBeGreaterThanOrEqual(2)
-    expect(manifest.tools.length).toBeGreaterThanOrEqual(3)
+    expect(manifest.prompts.length).toBeGreaterThanOrEqual(4)
+    expect(manifest.tools.length).toBeGreaterThanOrEqual(6)
   })
 
   it('reads the overview resource', () => {
@@ -102,6 +102,16 @@ describe('knowledge MCP domain', () => {
     expect(prompt.text).toContain('Sequelize')
   })
 
+  it('renders the plugin authoring prompt', () => {
+    const prompt = renderKnowledgeMcpPrompt('author_graphql_gene_plugin', {
+      orm: 'Prisma',
+      capability: 'derive GraphQL fields from models',
+    })
+
+    expect(prompt.text).toContain('Prisma')
+    expect(prompt.text).toContain('derive GraphQL fields from models')
+  })
+
   it('runs the search tool against the canonical catalog', () => {
     const result = invokeKnowledgeMcpTool(createContext(), 'search_knowledge', {
       query: 'directive',
@@ -119,6 +129,41 @@ describe('knowledge MCP domain', () => {
 
     expect(result.recommendedQuery).toBe('directive')
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/directives')).toBe(true)
+  })
+
+  it('chooses the Sequelize plugin strategy when the ORM is Sequelize', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'choose_plugin_strategy', {
+      orm: 'Sequelize',
+      goal: 'Generate schema from my SQL models',
+    })
+
+    expect(result.strategy).toBe('plugin-sequelize')
+    expect(result.recommendedPlugin).toBe('@graphql-gene/plugin-sequelize')
+  })
+
+  it('builds an actionable integration plan', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'plan_graphql_gene_integration', {
+      goal: 'Add GraphQL Gene to my API',
+      serverStack: 'Apollo Server',
+      orm: 'Sequelize',
+      concerns: ['directives', 'query lookahead'],
+    })
+
+    expect(result.focusArea).toBe('directive')
+    expect(Array.isArray(result.steps)).toBe(true)
+    expect(result.steps.length).toBeGreaterThan(3)
+    expect(result.pluginStrategy.strategy).toBe('plugin-sequelize')
+  })
+
+  it('diagnoses directive-oriented issues with focused checks', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'diagnose_graphql_gene_issue', {
+      symptom: 'my auth directive is not appearing in SDL',
+      stage: 'directive',
+    })
+
+    expect(result.diagnosisArea).toBe('directive')
+    expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/directives')).toBe(true)
+    expect(result.recommendedChecks.length).toBeGreaterThan(1)
   })
 
   it('keeps the capabilities resource aligned with the resource manifest', () => {

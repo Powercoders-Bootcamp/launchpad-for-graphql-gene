@@ -18,6 +18,23 @@ const PROMPTS: McpPromptDescriptor[] = [
       { name: 'context', description: 'Optional surrounding context such as plugin, server, or model setup.', required: false },
     ],
   },
+  {
+    name: 'choose_integration_recipe',
+    description: 'Pick the most relevant GraphQL Gene integration recipe for the current stack.',
+    arguments: [
+      { name: 'goal', description: 'What the developer is trying to build.', required: true },
+      { name: 'server_stack', description: 'GraphQL server or application framework in use.', required: false },
+      { name: 'orm', description: 'ORM or persistence layer in use.', required: false },
+    ],
+  },
+  {
+    name: 'author_graphql_gene_plugin',
+    description: 'Frame a custom GraphQL Gene plugin implementation task.',
+    arguments: [
+      { name: 'orm', description: 'The ORM or backend system that needs a plugin.', required: true },
+      { name: 'capability', description: 'What the plugin must support.', required: false },
+    ],
+  },
 ]
 
 export function listKnowledgeMcpPrompts(): McpPromptDescriptor[] {
@@ -52,6 +69,31 @@ export function renderKnowledgeMcpPrompt(
           `Context: ${args.context ?? 'Not provided'}`,
           'Prioritize source-backed explanations, likely causes, and the next concrete checks.',
           'Reference canonical GraphQL Gene docs and examples where possible.',
+        ].join('\n'),
+      }
+    case 'choose_integration_recipe':
+      return {
+        name,
+        description: 'GraphQL Gene integration recipe selection prompt.',
+        text: [
+          'Choose the best GraphQL Gene integration recipe for the developer context below.',
+          `Goal: ${args.goal ?? 'Not provided'}`,
+          `Server stack: ${args.server_stack ?? 'Unknown'}`,
+          `ORM/data layer: ${args.orm ?? 'Unknown'}`,
+          'Recommend the most suitable plugin strategy, the first implementation steps,',
+          'and the canonical docs/examples the developer should inspect first.',
+        ].join('\n'),
+      }
+    case 'author_graphql_gene_plugin':
+      return {
+        name,
+        description: 'GraphQL Gene custom plugin authoring prompt.',
+        text: [
+          'Help the developer design a custom GraphQL Gene plugin.',
+          `Target ORM/backend: ${args.orm ?? 'Not provided'}`,
+          `Required capability: ${args.capability ?? 'Not provided'}`,
+          'Explain the plugin strategy, what to study in the reference implementation,',
+          'and the minimum milestones for a safe first version.',
         ].join('\n'),
       }
     default:

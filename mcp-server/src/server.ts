@@ -137,6 +137,55 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
         )
         break
+
+      case 'choose_plugin_strategy':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              orm: z.string().optional(),
+              goal: z.string().optional(),
+              wantsCustomPlugin: z.boolean().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'plan_graphql_gene_integration':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              goal: z.string().min(2),
+              serverStack: z.string().optional(),
+              orm: z.string().optional(),
+              concerns: z.array(z.string()).optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'diagnose_graphql_gene_issue':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              symptom: z.string().min(2),
+              context: z.string().optional(),
+              stage: z.enum(['install', 'schema', 'runtime', 'plugin', 'query', 'directive']).optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
     }
   }
 }
