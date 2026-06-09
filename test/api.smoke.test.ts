@@ -129,6 +129,66 @@ describe('GET /api/knowledge/catalog', () => {
   })
 })
 
+describe('GET /api/knowledge/overview', () => {
+  it('returns section and scenario summaries', async () => {
+    const res = await api('/api/knowledge/overview')
+    expect(res.status).toBe('ok')
+    expect(res.overview.counts.docs).toBe(5)
+    expect(res.overview.counts.examples).toBe(4)
+
+    const guidesSection = res.overview.sections.find((section: { id: string }) => section.id === 'guides')
+    expect(guidesSection.docCount).toBe(3)
+
+    const directiveScenario = res.overview.scenarios.find((scenario: { id: string }) => scenario.id === 'directive-middleware')
+    expect(directiveScenario.linkedDocCount).toBe(1)
+    expect(directiveScenario.executionModes).toContain('adapted')
+  })
+})
+
+describe('GET /api/knowledge/docs', () => {
+  it('supports scenario filtering', async () => {
+    const res = await api('/api/knowledge/docs?scenario=directive-middleware')
+    expect(res.status).toBe('ok')
+    expect(res.docs.length).toBe(1)
+    expect(res.docs[0].slug).toBe('/docs/guides/directives')
+  })
+})
+
+describe('GET /api/knowledge/examples', () => {
+  it('supports scenario filtering', async () => {
+    const res = await api('/api/knowledge/examples?scenario=directive-middleware')
+    expect(res.status).toBe('ok')
+    expect(res.examples.length).toBe(1)
+    expect(res.examples[0].id).toBe('example:directive-middleware:user-auth-directive')
+    expect(res.examples[0].executionMode).toBe('adapted')
+  })
+})
+
+describe('GET /api/knowledge/search', () => {
+  it('returns ranked results for a query', async () => {
+    const res = await api('/api/knowledge/search?q=directive')
+    expect(res.status).toBe('ok')
+    expect(res.results.length).toBeGreaterThan(1)
+    expect(res.results[0].id).toBe('doc:/docs/guides/directives')
+    expect(res.results[1].id).toBe('example:directive-middleware:user-auth-directive')
+  })
+
+  it('applies doc filters', async () => {
+    const res = await api('/api/knowledge/search?q=plugin&kind=doc&section=reference')
+    expect(res.status).toBe('ok')
+    expect(res.results.length).toBe(1)
+    expect(res.results[0].id).toBe('doc:/docs/reference/writing-a-plugin')
+  })
+
+  it('rejects too-short queries', async () => {
+    const response = await fetch(`${BASE}/api/knowledge/search?q=a`)
+    const json = await response.json()
+    expect(response.status).toBe(400)
+    expect(json.status).toBe('error')
+    expect(json.error.code).toBe('VALIDATION_ERROR')
+  })
+})
+
 describe('POST /api/playground/generate', () => {
   it('returns real SDL for user-orders-basic', async () => {
     const res = await post('/api/playground/generate', {
