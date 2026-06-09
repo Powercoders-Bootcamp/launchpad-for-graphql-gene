@@ -36,13 +36,13 @@ npm run mcp:build
 The repository includes a helper that prints local registration snippets based on your actual workspace path:
 
 ```bash
-node mcp-server/scripts/print-config.mjs
+npm run mcp:print-config
 ```
 
 For machine-readable output:
 
 ```bash
-node mcp-server/scripts/print-config.mjs --json
+npm run mcp:print-config -- --json
 ```
 
 ## Option 1: stdio transport
@@ -56,6 +56,21 @@ npm run mcp:start
 ```
 
 Or register the printed command snippet in any MCP client that supports spawned stdio servers.
+
+### Ready-to-use client presets
+
+The printed config payload also includes client wrappers for:
+
+- Claude Desktop style `mcpServers` config
+- Cursor style `mcpServers` config
+- a generic `mcpServers` wrapper
+- generic transport-first stdio and HTTP registrations
+
+Template files also live in:
+
+- `mcp-server/examples/claude-desktop-config.json`
+- `mcp-server/examples/cursor-mcp.json`
+- `mcp-server/examples/generic-stdio-config.json`
 
 ## Option 2: Streamable HTTP transport
 
@@ -80,6 +95,28 @@ The repository also includes:
 - `mcp-server/examples/http.env.example`
 - `mcp-server/examples/generic-stdio-config.json`
 - `mcp-server/examples/generic-http-config.json`
+
+## Verify the installation
+
+Before handing this MCP server to an agent or IDE, run:
+
+```bash
+npm run mcp:doctor
+```
+
+This checks:
+
+- build artifacts for the production stdio and HTTP entrypoints
+- generated client preset payloads
+- a real stdio MCP handshake
+- a real Streamable HTTP MCP handshake
+- tool/resource listing plus knowledge resource reads
+
+For machine-readable output:
+
+```bash
+npm run mcp:doctor -- --json
+```
 
 ## What clients should use
 

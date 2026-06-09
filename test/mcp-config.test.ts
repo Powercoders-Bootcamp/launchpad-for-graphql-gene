@@ -18,9 +18,12 @@ describe('mcp config printer', () => {
 
     const payload = JSON.parse(result.stdout)
     expect(payload.workspaceRoot).toBe(workspaceRoot)
+    expect(payload.serverId).toBe('graphql-gene')
     expect(payload.stdio.windows.command).toBe('cmd')
     expect(payload.http.url).toContain('/mcp')
     expect(payload.genericRegistration.stdio.transport).toBe('stdio')
     expect(payload.genericRegistration.http.transport).toBe('streamable-http')
+    expect(payload.clientPresets.claudeDesktop.mcpServers['graphql-gene']).toBeDefined()
+    expect(payload.clientPresets.cursor.mcpServers['graphql-gene']).toBeDefined()
   })
 })

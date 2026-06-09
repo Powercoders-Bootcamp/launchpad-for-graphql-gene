@@ -15,6 +15,8 @@ This wrapper is responsible for:
 - exposing resources, prompts, and tools through MCP
 - running over stdio so local coding agents can attach directly
 - optionally running over Streamable HTTP for separate deployment
+- generating client-ready adoption presets
+- verifying runtime health with a doctor command
 
 ## Commands
 
@@ -42,8 +44,21 @@ To print local registration snippets:
 npm run print-config
 ```
 
+To verify build outputs plus stdio/HTTP runtime handshakes:
+
+```bash
+npm run doctor
+```
+
 Optional environment variables:
 
 - `GRAPHQL_GENE_MCP_HOST`
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
+
+Example preset templates live in:
+
+- `examples/claude-desktop-config.json`
+- `examples/cursor-mcp.json`
+- `examples/generic-stdio-config.json`
+- `examples/generic-http-config.json`
