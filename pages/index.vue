@@ -45,6 +45,30 @@
     </section>
 
     <!-- ─── Features ─────────────────────────────────────────────── -->
+    <section class="mcp-strip">
+      <div class="container-site">
+        <div class="mcp-strip-card">
+          <div class="mcp-strip-copy">
+            <p class="mcp-strip-eyebrow">For coding agents and IDE workflows</p>
+            <h2 class="mcp-strip-title">GraphQL Gene now ships with a developer MCP server.</h2>
+            <p class="mcp-strip-desc">
+              Give Claude Desktop, Cursor, and other MCP clients source-backed GraphQL Gene guidance for docs search,
+              plugin strategy, integration planning, and issue diagnosis.
+            </p>
+          </div>
+          <div class="mcp-strip-meta">
+            <div class="mcp-strip-command-list">
+              <code class="npm-cmd">npm run mcp:print-config</code>
+              <code class="npm-cmd">npm run mcp:doctor</code>
+            </div>
+            <div class="mcp-strip-actions">
+              <NuxtLink :to="mcpSetupPath" class="btn-primary">MCP setup guide</NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="features">
       <div class="container-site">
         <h2 class="section-title">{{ ti('home.features.title') }}</h2>
@@ -110,8 +134,8 @@
                 <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </div>
-            <h3 class="feature-title">{{ ti('home.features.playgroundTitle') }}</h3>
-            <p class="feature-desc">Try every scenario live — schema generation, query execution, SQL capture, and directive middleware — right in your browser.</p>
+            <h3 class="feature-title">Developer MCP Server</h3>
+            <p class="feature-desc">Connect Claude Desktop, Cursor, and other MCP clients to source-backed GraphQL Gene tools for docs search, plugin strategy, integration planning, and issue diagnosis.</p>
           </div>
 
         </div>
@@ -187,6 +211,7 @@
 const { t: ti } = useI18n()
 const localePath = useLocalePath()
 const polymorphicPlaygroundPath = `${localePath('/playground')}?scenario=polymorphic-blocks&example=page-blocks-basic`
+const mcpSetupPath = localePath('/docs/guides/mcp-server-setup')
 useSeoMeta({
   title: 'graphql-gene — ORM-native GraphQL generation',
   description: 'Generate production-ready GraphQL schemas from your Sequelize models. Smart query lookahead, directive middleware, and full TypeScript support.',
@@ -460,6 +485,69 @@ const showcaseResult = [
 :deep(.t-s) { color: var(--code-string); }
 :deep(.t-c) { color: var(--code-comment); font-style: italic; }
 
+.mcp-strip {
+  padding: 0 0 5rem;
+}
+
+.mcp-strip-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.95fr);
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-site-lg);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-pink) 14%, transparent) 0, transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 90%, var(--panel-soft) 10%) 0%, var(--panel-soft) 100%);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--color-pink) 8%, transparent);
+}
+
+.mcp-strip-copy {
+  max-width: 42rem;
+}
+
+.mcp-strip-eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-pink);
+}
+
+.mcp-strip-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.mcp-strip-desc {
+  margin: 0;
+  font-size: 0.97rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.mcp-strip-meta {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.mcp-strip-command-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.mcp-strip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 /* ─── Features ──────────────────────────────────────────────────── */
 .features {
   padding: 5rem 0;
@@ -637,6 +725,9 @@ const showcaseResult = [
   .hero-code-wrap {
     grid-template-columns: 1fr;
   }
+  .mcp-strip-card {
+    grid-template-columns: 1fr;
+  }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .showcase-grid { grid-template-columns: 1fr; }
   .showcase-arrow {
@@ -651,6 +742,12 @@ const showcaseResult = [
 @media (max-width: 600px) {
   .features-grid { grid-template-columns: 1fr; }
   .hero { padding: 3.5rem 0 3rem; }
+  .mcp-strip {
+    padding-bottom: 3.5rem;
+  }
+  .mcp-strip-card {
+    padding: 1.25rem;
+  }
   .hero-title {
     font-size: clamp(2.7rem, 14vw, 3.4rem);
   }

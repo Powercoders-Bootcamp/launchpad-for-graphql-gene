@@ -857,3 +857,9 @@ Deferred:
 - advanced upgrade diff tools
 - public registry publication
 - any local-filesystem-aware capability beyond host-agent summaries
+
+## Active Backlog
+
+The current implementation backlog lives in:
+
+- [docs/09-mcp-server-open-todos.md](C:/Users/yusBug/Desktop/GraphQL%20Gene/docs/09-mcp-server-open-todos.md)
