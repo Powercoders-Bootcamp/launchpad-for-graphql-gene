@@ -207,6 +207,9 @@ function toToolResult(payload: unknown) {
         text: formatJson(payload),
       },
     ],
+    structuredContent: isStructuredContent(payload)
+      ? payload
+      : { value: payload },
   }
 }
 
@@ -214,4 +217,8 @@ function toResourceName(uri: string) {
   return uri
     .replace(/:\/\//g, '-')
     .replace(/[^a-zA-Z0-9-_]/g, '-')
+}
+
+function isStructuredContent(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }

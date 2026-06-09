@@ -14,6 +14,7 @@ This wrapper is responsible for:
 - loading the canonical knowledge catalog
 - exposing resources, prompts, and tools through MCP
 - running over stdio so local coding agents can attach directly
+- optionally running over Streamable HTTP for separate deployment
 
 ## Commands
 
@@ -28,3 +29,15 @@ For development:
 ```bash
 npm run dev
 ```
+
+For Streamable HTTP mode:
+
+```bash
+GRAPHQL_GENE_MCP_PORT=3001 npm run start:http
+```
+
+Optional environment variables:
+
+- `GRAPHQL_GENE_MCP_HOST`
+- `GRAPHQL_GENE_MCP_PORT`
+- `GRAPHQL_GENE_MCP_PATH`

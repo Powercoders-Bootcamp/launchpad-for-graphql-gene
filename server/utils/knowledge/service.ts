@@ -1,28 +1,22 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { docsConfig } from '~/content/graphql-gene/docs.config'
 import {
-  buildKnowledgeCatalog,
+  buildSiteKnowledgeCatalog,
   searchKnowledgeCatalog,
   type DocKnowledgeEntry,
   type ExampleKnowledgeEntry,
   type KnowledgeKind,
+  siteDocsConfig,
 } from '~/packages/graphql-gene-knowledge/src'
-import { getAllExamples } from '~/server/utils/playground/registry'
 
 export function getKnowledgeCatalog() {
   const workspaceRoot = process.cwd()
 
-  return buildKnowledgeCatalog({
+  return buildSiteKnowledgeCatalog({
     workspaceRoot,
-    docsRoot: resolve(workspaceRoot, 'content/graphql-gene/docs'),
-    docsConfig,
-    examples: getAllExamples(),
     sourceRepo: 'graphql-gene-site',
     sourceRef: 'workspace',
     versionRange: readGraphqlGeneVersionRange(workspaceRoot),
-    exampleCatalogSourcePath: 'server/utils/playground/registry.ts',
-    exampleRuntimeSourcePath: 'server/utils/playground/engine.ts',
   })
 }
 
@@ -32,7 +26,7 @@ export function getKnowledgeOverview() {
   return {
     generatedAt: catalog.generatedAt,
     counts: catalog.counts,
-    sections: docsConfig.sections
+    sections: siteDocsConfig.sections
       .map(section => ({
         ...section,
         docCount: catalog.docs.filter(doc => doc.section === section.id).length,

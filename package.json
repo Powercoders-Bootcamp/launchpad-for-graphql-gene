@@ -9,8 +9,10 @@
     "generate:full": "nuxt generate && pagefind --source .output/public",
     "preview": "nuxt preview",
     "mcp:dev": "npm --prefix mcp-server run dev",
+    "mcp:dev:http": "npm --prefix mcp-server run dev:http",
     "mcp:build": "npm --prefix mcp-server run build",
     "mcp:start": "npm --prefix mcp-server run start",
+    "mcp:start:http": "npm --prefix mcp-server run start:http",
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:api": "node --test tests/api/playground.mjs"
