@@ -1,0 +1,24 @@
+{
+  "name": "graphql-gene-mcp-server",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "dev:http": "tsx src/http-entry.ts",
+    "build": "tsc -p tsconfig.json",
+    "doctor": "node scripts/doctor.mjs",
+    "print-config": "node scripts/print-config.mjs",
+    "start": "node dist/mcp-server/src/index.js",
+    "start:http": "node dist/mcp-server/src/http-entry.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "yaml": "^2.8.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.20.6",
+    "typescript": "^6.0.3"
+  }
+}

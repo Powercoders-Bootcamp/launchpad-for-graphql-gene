@@ -1,0 +1,733 @@
+import type {
+  DocKnowledgeEntry,
+  ExampleKnowledgeEntry,
+  KnowledgeEntry,
+  KnowledgeKind,
+  PluginKnowledgeEntry,
+  RecipeKnowledgeEntry,
+  TroubleshootingKnowledgeEntry,
+} from '../contracts'
+import {
+  findDocsByIds,
+  findExamplesByIds,
+  findPluginsByIds,
+  findRecipesByIds,
+  inferFocusArea,
+  selectPluginEntries,
+  selectRecipeEntries,
+  selectTroubleshootingEntries,
+} from './decision'
+import type { McpDomainContext, McpToolDescriptor } from './contracts'
+import { searchKnowledgeCatalog } from '../query/search'
+
+const TOOLS: McpToolDescriptor[] = [
+  {
+    name: 'search_knowledge',
+    description: 'Search the canonical GraphQL Gene knowledge catalog by keyword, kind, section, or scenario.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', minLength: 2 },
+        kind: { type: 'string', enum: ['doc', 'example', 'plugin', 'recipe', 'troubleshooting'] },
+        section: { type: 'string' },
+        scenario: { type: 'string' },
+        limit: { type: 'integer', minimum: 1, maximum: 25 },
+      },
+      required: ['query'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'explain_graphql_gene_feature',
+    description: 'Summarize a GraphQL Gene feature and point to the most relevant canonical docs, examples, plugins, recipes, and troubleshooting entries.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        feature: { type: 'string', minLength: 2 },
+      },
+      required: ['feature'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'recommend_integration_path',
+    description: 'Recommend a likely GraphQL Gene integration path based on the developer goal.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        goal: { type: 'string', minLength: 2 },
+      },
+      required: ['goal'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'choose_plugin_strategy',
+    description: 'Choose between the Sequelize plugin path and a custom plugin path for GraphQL Gene.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        orm: { type: 'string' },
+        goal: { type: 'string' },
+        wantsCustomPlugin: { type: 'boolean' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'plan_graphql_gene_integration',
+    description: 'Produce an actionable GraphQL Gene integration plan with docs, examples, recipes, and plugin guidance.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        goal: { type: 'string', minLength: 2 },
+        serverStack: { type: 'string' },
+        orm: { type: 'string' },
+        concerns: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+      required: ['goal'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'diagnose_graphql_gene_issue',
+    description: 'Diagnose a GraphQL Gene problem and return likely causes plus concrete next checks.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        symptom: { type: 'string', minLength: 2 },
+        context: { type: 'string' },
+        stage: {
+          type: 'string',
+          enum: ['install', 'schema', 'runtime', 'plugin', 'query', 'directive'],
+        },
+      },
+      required: ['symptom'],
+      additionalProperties: false,
+    },
+  },
+]
+
+export function listKnowledgeMcpTools(): McpToolDescriptor[] {
+  return TOOLS
+}
+
+export function invokeKnowledgeMcpTool(
+  context: McpDomainContext,
+  name: string,
+  input: Record<string, unknown>,
+) {
+  switch (name) {
+    case 'search_knowledge':
+      return runSearchTool(context, input)
+    case 'explain_graphql_gene_feature':
+      return runExplainFeatureTool(context, input)
+    case 'recommend_integration_path':
+      return runRecommendIntegrationTool(context, input)
+    case 'choose_plugin_strategy':
+      return runChoosePluginStrategyTool(context, input)
+    case 'plan_graphql_gene_integration':
+      return runPlanIntegrationTool(context, input)
+    case 'diagnose_graphql_gene_issue':
+      return runDiagnoseIssueTool(context, input)
+    default:
+      throw new Error(`Unknown MCP tool "${name}".`)
+  }
+}
+
+function runSearchTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const query = typeof input.query === 'string' ? input.query : ''
+  const limit = typeof input.limit === 'number' ? input.limit : undefined
+  const kind = asKnowledgeKind(input.kind)
+  const section = typeof input.section === 'string' ? input.section : undefined
+  const scenario = typeof input.scenario === 'string' ? input.scenario : undefined
+
+  const results = searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind,
+    section,
+    scenario,
+    limit,
+  }).map(hit => serializeSearchHit(hit.entry, hit.score, hit.matchedFields))
+
+  return {
+    query,
+    resultCount: results.length,
+    results,
+  }
+}
+
+function runExplainFeatureTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const feature = typeof input.feature === 'string' ? input.feature : ''
+  const docs = searchDocs(context, feature, 3)
+  const examples = searchExamples(context, feature, 2)
+  const plugins = searchPlugins(context, feature, 2)
+  const recipes = searchRecipes(context, feature, 2)
+  const troubleshooting = searchTroubleshooting(context, feature, 2)
+
+  return {
+    feature,
+    summary: buildFeatureSummary({
+      feature,
+      docs: docs.map(match => match.title),
+      examples: examples.map(match => match.title),
+      plugins: plugins.map(match => match.title),
+      recipes: recipes.map(match => match.title),
+      troubleshooting: troubleshooting.map(match => match.title),
+    }),
+    docs,
+    examples,
+    plugins,
+    recipes,
+    troubleshooting,
+  }
+}
+
+function runRecommendIntegrationTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const goal = typeof input.goal === 'string' ? input.goal : ''
+  const recipes = selectRecipeEntries(context.catalog, { goal }, 2)
+  const primaryRecipe = recipes[0]
+  const plugins = primaryRecipe?.recommendedPluginIds.length
+    ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)
+    : selectPluginEntries(context.catalog, { goal }, 2)
+  const primaryDocs = primaryRecipe
+    ? findDocsByIds(context.catalog, primaryRecipe.recommendedDocIds)
+    : searchDocs(context, goal, 3)
+  const primaryExamples = primaryRecipe
+    ? findExamplesByIds(context.catalog, primaryRecipe.recommendedExampleIds)
+    : searchExamples(context, goal, 2)
+
+  return {
+    goal,
+    selectedRecipeId: primaryRecipe?.id ?? null,
+    recommendedQuery: inferFocusArea([goal, primaryRecipe?.title, primaryRecipe?.goal].filter(Boolean).join(' ')),
+    recommendation: buildIntegrationRecommendation(goal, primaryRecipe),
+    docs: mapDocs(primaryDocs).slice(0, 3),
+    examples: mapExamples(primaryExamples).slice(0, 2),
+    recipes: mapRecipes(recipes),
+    plugins: mapPlugins(plugins).slice(0, 2),
+  }
+}
+
+function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const orm = typeof input.orm === 'string' ? input.orm : undefined
+  const goal = typeof input.goal === 'string' ? input.goal : undefined
+  const wantsCustomPlugin = input.wantsCustomPlugin === true
+  const plugins = selectPluginEntries(context.catalog, {
+    orm,
+    goal,
+    wantsCustomPlugin,
+  }, 2)
+  const primaryPlugin = plugins[0]
+  const recipes = primaryPlugin?.recommendedRecipeIds.length
+    ? findRecipesByIds(context.catalog, primaryPlugin.recommendedRecipeIds)
+    : selectRecipeEntries(context.catalog, {
+      goal: [goal, orm].filter(Boolean).join(' ') || 'plugin',
+      orm,
+    }, 2)
+  const docs = primaryPlugin
+    ? findDocsByIds(context.catalog, primaryPlugin.recommendedDocIds)
+    : searchDocs(context, 'plugin', 3)
+  const examples = primaryPlugin
+    ? findExamplesByIds(context.catalog, primaryPlugin.recommendedExampleIds)
+    : searchExamples(context, 'plugin', 2)
+
+  return {
+    orm: orm ?? null,
+    goal: goal ?? null,
+    wantsCustomPlugin,
+    strategy: derivePluginStrategyId(primaryPlugin),
+    recommendedPlugin: primaryPlugin?.packageName ?? null,
+    rationale: buildPluginRationale(primaryPlugin, orm, wantsCustomPlugin),
+    nextSteps: buildPluginNextSteps(primaryPlugin, recipes[0]),
+    docs: mapDocs(docs).slice(0, 3),
+    examples: mapExamples(examples).slice(0, 2),
+    plugins: mapPlugins(plugins),
+    recipes: mapRecipes(recipes).slice(0, 2),
+  }
+}
+
+function runPlanIntegrationTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const goal = typeof input.goal === 'string' ? input.goal : ''
+  const serverStack = typeof input.serverStack === 'string' ? input.serverStack : undefined
+  const orm = typeof input.orm === 'string' ? input.orm : undefined
+  const concerns = Array.isArray(input.concerns)
+    ? input.concerns.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    : []
+
+  const recipes = selectRecipeEntries(context.catalog, {
+    goal,
+    serverStack,
+    orm,
+    concerns,
+  }, 3)
+  const primaryRecipe = recipes[0]
+  const candidatePlugins = primaryRecipe?.recommendedPluginIds.length
+    ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)
+    : selectPluginEntries(context.catalog, { goal, orm }, 2)
+  const primaryPlugin = candidatePlugins[0]
+  const docs = primaryRecipe
+    ? dedupeById([
+        ...findDocsByIds(context.catalog, primaryRecipe.recommendedDocIds),
+        ...findDocsByIds(context.catalog, primaryPlugin?.recommendedDocIds ?? []),
+      ])
+    : searchDocs(context, goal, 4)
+  const examples = primaryRecipe
+    ? dedupeById([
+        ...findExamplesByIds(context.catalog, primaryRecipe.recommendedExampleIds),
+        ...findExamplesByIds(context.catalog, primaryPlugin?.recommendedExampleIds ?? []),
+      ])
+    : searchExamples(context, goal, 3)
+
+  return {
+    goal,
+    serverStack: serverStack ?? null,
+    orm: orm ?? null,
+    concerns,
+    selectedRecipeId: primaryRecipe?.id ?? null,
+    focusArea: inferFocusArea([
+      goal,
+      primaryRecipe?.title,
+      primaryRecipe?.goal,
+      ...concerns,
+    ].filter(Boolean).join(' ')),
+    pluginStrategy: {
+      strategy: derivePluginStrategyId(primaryPlugin),
+      recommendedPlugin: primaryPlugin?.packageName ?? null,
+      rationale: buildPluginRationale(primaryPlugin, orm, false),
+    },
+    steps: buildStructuredPlanSteps(primaryRecipe, primaryPlugin, serverStack, concerns),
+    docs: mapDocs(docs).slice(0, 4),
+    examples: mapExamples(examples).slice(0, 3),
+    recipes: mapRecipes(recipes),
+    plugins: mapPlugins(candidatePlugins).slice(0, 2),
+  }
+}
+
+function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const symptom = typeof input.symptom === 'string' ? input.symptom : ''
+  const issueContext = typeof input.context === 'string' ? input.context : undefined
+  const stage = typeof input.stage === 'string' ? input.stage : undefined
+  const troubleshooting = selectTroubleshootingEntries(context.catalog, {
+    symptom,
+    context: issueContext,
+    stage,
+  }, 3)
+  const primaryIssue = troubleshooting[0]
+  const docs = primaryIssue
+    ? findDocsByIds(context.catalog, primaryIssue.recommendedDocIds)
+    : searchDocs(context, [symptom, issueContext, stage].filter(Boolean).join(' '), 3)
+  const examples = primaryIssue
+    ? findExamplesByIds(context.catalog, primaryIssue.recommendedExampleIds)
+    : searchExamples(context, [symptom, issueContext, stage].filter(Boolean).join(' '), 2)
+  const recipes = primaryIssue
+    ? findRecipesByIds(context.catalog, primaryIssue.recommendedRecipeIds)
+    : selectRecipeEntries(context.catalog, {
+      goal: [symptom, issueContext, stage].filter(Boolean).join(' '),
+    }, 2)
+
+  return {
+    symptom,
+    context: issueContext ?? null,
+    stage: stage ?? null,
+    selectedIssueId: primaryIssue?.id ?? null,
+    diagnosisArea: stage ?? inferFocusArea([symptom, issueContext].filter(Boolean).join(' ')),
+    likelyCauses: primaryIssue?.likelyCauses ?? buildFallbackLikelyCauses(stage),
+    recommendedChecks: primaryIssue?.recommendedChecks ?? buildFallbackRecommendedChecks(stage),
+    docs: mapDocs(docs).slice(0, 3),
+    examples: mapExamples(examples).slice(0, 2),
+    troubleshooting: mapTroubleshooting(troubleshooting),
+    recipes: mapRecipes(recipes).slice(0, 2),
+  }
+}
+
+function buildFeatureSummary(options: {
+  feature: string
+  docs: string[]
+  examples: string[]
+  plugins: string[]
+  recipes: string[]
+  troubleshooting: string[]
+}) {
+  const docText = options.docs.length ? options.docs.join(', ') : 'No strong doc matches yet'
+  const exampleText = options.examples.length ? options.examples.join(', ') : 'No strong example matches yet'
+  const pluginText = options.plugins.length ? options.plugins.join(', ') : 'No strong plugin matches yet'
+  const recipeText = options.recipes.length ? options.recipes.join(', ') : 'No strong recipe matches yet'
+  const issueText = options.troubleshooting.length ? options.troubleshooting.join(', ') : 'No strong troubleshooting matches yet'
+
+  return [
+    `Feature: ${options.feature}`,
+    `Relevant docs: ${docText}`,
+    `Relevant examples: ${exampleText}`,
+    `Relevant plugins: ${pluginText}`,
+    `Relevant recipes: ${recipeText}`,
+    `Relevant troubleshooting: ${issueText}`,
+    'Use the docs as the primary source of truth and treat adapted playground examples as supporting guidance.',
+  ].join(' ')
+}
+
+function buildIntegrationRecommendation(goal: string, primaryRecipe?: RecipeKnowledgeEntry) {
+  if (!primaryRecipe) {
+    return [
+      `Goal: ${goal}`,
+      'No strong structured recipe match was found yet.',
+      'Start from the highest-ranked canonical docs, then validate with the closest example scenario.',
+    ].join(' ')
+  }
+
+  return [
+    `Goal: ${goal}`,
+    `Recommended recipe: ${primaryRecipe.title}`,
+    `Why: ${primaryRecipe.summary}`,
+    'Start from the canonical docs linked to that recipe, then validate with the recommended example.',
+  ].join(' ')
+}
+
+function buildPluginRationale(
+  plugin?: PluginKnowledgeEntry,
+  orm?: string,
+  wantsCustomPlugin = false,
+) {
+  if (!plugin) {
+    return 'No structured plugin recommendation was strong enough yet, so review the plugin docs and recipes first.'
+  }
+
+  if (wantsCustomPlugin) {
+    return `Custom plugin preference is enabled, so "${plugin.title}" is the strongest structured match.`
+  }
+
+  if (orm) {
+    return `For ORM "${orm}", the strongest structured plugin match is "${plugin.title}". ${plugin.summary}`
+  }
+
+  return plugin.summary
+}
+
+function buildPluginNextSteps(plugin?: PluginKnowledgeEntry, recipe?: RecipeKnowledgeEntry) {
+  if (recipe) {
+    return recipe.steps
+  }
+
+  if (!plugin) {
+    return [
+      'Review the GraphQL Gene plugin docs.',
+      'Decide whether the project fits the Sequelize path or needs a custom plugin.',
+    ]
+  }
+
+  return [
+    ...plugin.whenToUse.slice(0, 2),
+    'Open the linked docs and examples before implementing the plugin path.',
+  ]
+}
+
+function buildStructuredPlanSteps(
+  recipe: RecipeKnowledgeEntry | undefined,
+  plugin: PluginKnowledgeEntry | undefined,
+  serverStack?: string,
+  concerns: string[] = [],
+) {
+  const baseSteps = recipe?.steps.length
+    ? [...recipe.steps]
+    : [
+        'Install GraphQL Gene and align the plugin choice with the target ORM.',
+        'Export all GraphQL Gene types from a single module so schema generation has one canonical input.',
+        'Generate the schema and inspect the SDL before expanding runtime behavior.',
+      ]
+
+  if (plugin?.packageName && !baseSteps.some(step => step.includes(plugin.packageName))) {
+    baseSteps.unshift(`Adopt the recommended plugin path: ${plugin.packageName}.`)
+  }
+
+  if (serverStack) {
+    baseSteps.push(`Attach the generated schema to ${serverStack} once the core GraphQL Gene setup is stable.`)
+  }
+
+  if (concerns.length) {
+    baseSteps.push(`Validate the highest-risk concerns next: ${concerns.join(', ')}.`)
+  }
+
+  return dedupeStrings(baseSteps)
+}
+
+function buildFallbackLikelyCauses(stage?: string) {
+  switch (stage) {
+    case 'install':
+      return [
+        'The core package or plugin package is missing or version-misaligned.',
+        'The initial setup drifted from the documented bootstrap flow.',
+      ]
+    case 'schema':
+      return [
+        'The GraphQL type exports are incomplete or inconsistent.',
+        'The generated schema input does not match the intended model graph.',
+      ]
+    case 'plugin':
+      return [
+        'The chosen plugin strategy does not match the target ORM behavior.',
+        'The project likely needs the custom plugin path instead of the Sequelize reference path.',
+      ]
+    case 'query':
+      return [
+        'The query shape does not align with the generated associations.',
+        'Lookahead expectations differ from the current runtime adapter behavior.',
+      ]
+    case 'directive':
+      return [
+        'Directive middleware is attached at the wrong level.',
+        'Runtime-only directive behavior was mistaken for SDL-visible behavior.',
+      ]
+    default:
+      return [
+        'The current GraphQL Gene setup is not aligned with the documented integration path.',
+        'The issue may sit at the boundary between schema generation and runtime wiring.',
+      ]
+  }
+}
+
+function buildFallbackRecommendedChecks(stage?: string) {
+  switch (stage) {
+    case 'install':
+      return [
+        'Verify graphql-gene and plugin package installation.',
+        'Compare the setup against the Getting Started doc.',
+      ]
+    case 'schema':
+      return [
+        'Inspect the exported types module and confirm every intended type is re-exported.',
+        'Print or inspect the generated schema before debugging downstream server behavior.',
+      ]
+    case 'plugin':
+      return [
+        'Check whether the target ORM truly maps to the recommended plugin.',
+        'Review the plugin docs before widening custom behavior.',
+      ]
+    case 'query':
+      return [
+        'Compare the requested fields with the documented query/lookahead example.',
+        'Inspect whether the runtime path is canonical or adapted.',
+      ]
+    case 'directive':
+      return [
+        'Check whether the directive should print into SDL or remain runtime-only.',
+        'Verify handler placement on the relevant type or field.',
+      ]
+    default:
+      return [
+        'Start from the closest canonical doc and example, then narrow the mismatch.',
+        'Prefer upstream-aligned docs over adapted playground behavior when they differ.',
+      ]
+  }
+}
+
+function searchDocs(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'doc',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: DocKnowledgeEntry } => match.entry.kind === 'doc')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      slug: match.entry.slug,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchExamples(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'example',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: ExampleKnowledgeEntry } => match.entry.kind === 'example')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      scenario: match.entry.scenario,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchPlugins(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'plugin',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: PluginKnowledgeEntry } => match.entry.kind === 'plugin')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      packageName: match.entry.packageName ?? null,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchRecipes(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'recipe',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: RecipeKnowledgeEntry } => match.entry.kind === 'recipe')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      recipeId: match.entry.recipeId,
+      summary: match.entry.summary,
+    }))
+}
+
+function searchTroubleshooting(context: McpDomainContext, query: string, limit: number) {
+  return searchKnowledgeCatalog(context.catalog, {
+    query,
+    kind: 'troubleshooting',
+    limit,
+  })
+    .filter((match): match is typeof match & { entry: TroubleshootingKnowledgeEntry } => match.entry.kind === 'troubleshooting')
+    .map(match => ({
+      id: match.entry.id,
+      title: match.entry.title,
+      issueId: match.entry.issueId,
+      summary: match.entry.summary,
+    }))
+}
+
+function mapDocs(docs: DocKnowledgeEntry[] | ReturnType<typeof searchDocs>) {
+  return docs.map((doc) => {
+    if ('slug' in doc) {
+      return {
+        id: doc.id,
+        title: doc.title,
+        slug: doc.slug,
+        summary: doc.summary,
+      }
+    }
+
+    return doc
+  })
+}
+
+function mapExamples(examples: ExampleKnowledgeEntry[] | ReturnType<typeof searchExamples>) {
+  return examples.map((example) => {
+    if ('scenario' in example && 'exampleId' in example) {
+      return {
+        id: example.id,
+        title: example.title,
+        scenario: example.scenario,
+        summary: example.summary,
+      }
+    }
+
+    return example
+  })
+}
+
+function mapPlugins(plugins: PluginKnowledgeEntry[]) {
+  return plugins.map(plugin => ({
+    id: plugin.id,
+    title: plugin.title,
+    packageName: plugin.packageName ?? null,
+    summary: plugin.summary,
+  }))
+}
+
+function mapRecipes(recipes: RecipeKnowledgeEntry[]) {
+  return recipes.map(recipe => ({
+    id: recipe.id,
+    title: recipe.title,
+    recipeId: recipe.recipeId,
+    summary: recipe.summary,
+  }))
+}
+
+function mapTroubleshooting(issues: TroubleshootingKnowledgeEntry[]) {
+  return issues.map(issue => ({
+    id: issue.id,
+    title: issue.title,
+    issueId: issue.issueId,
+    summary: issue.summary,
+  }))
+}
+
+function serializeSearchHit(entry: KnowledgeEntry, score: number, matchedFields: string[]) {
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    title: entry.title,
+    summary: entry.summary,
+    score,
+    matchedFields,
+    slug: entry.kind === 'doc' ? entry.slug : undefined,
+    scenario: extractScenario(entry),
+    packageName: entry.kind === 'plugin' ? entry.packageName ?? null : undefined,
+    recipeId: entry.kind === 'recipe' ? entry.recipeId : undefined,
+    issueId: entry.kind === 'troubleshooting' ? entry.issueId : undefined,
+  }
+}
+
+function derivePluginStrategyId(plugin?: PluginKnowledgeEntry) {
+  if (!plugin) {
+    return 'evaluate-plugin-surface'
+  }
+
+  if (plugin.pluginId === 'custom-plugin') {
+    return 'custom-plugin'
+  }
+
+  if (plugin.packageName === '@graphql-gene/plugin-sequelize') {
+    return 'plugin-sequelize'
+  }
+
+  return 'evaluate-plugin-surface'
+}
+
+function asKnowledgeKind(value: unknown): KnowledgeKind | undefined {
+  return value === 'doc'
+    || value === 'example'
+    || value === 'plugin'
+    || value === 'recipe'
+    || value === 'troubleshooting'
+    ? value
+    : undefined
+}
+
+function extractScenario(entry: KnowledgeEntry) {
+  switch (entry.kind) {
+    case 'doc':
+      return entry.playgroundScenario
+    case 'example':
+      return entry.scenario
+    case 'plugin':
+    case 'recipe':
+    case 'troubleshooting':
+      return entry.scenarios[0]
+    default:
+      return undefined
+  }
+}
+
+function dedupeById<T extends { id: string }>(entries: T[]) {
+  const seen = new Set<string>()
+  const deduped: T[] = []
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) {
+      continue
+    }
+
+    seen.add(entry.id)
+    deduped.push(entry)
+  }
+
+  return deduped
+}
+
+function dedupeStrings(values: string[]) {
+  return [...new Set(values)]
+}

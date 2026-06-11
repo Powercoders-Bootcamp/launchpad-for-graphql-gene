@@ -1,0 +1,52 @@
+name: MCP Server CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'feat/**'
+      - 'codex/**'
+  pull_request:
+
+jobs:
+  verify-mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install mcp-server dependencies
+        run: npm ci --prefix mcp-server
+
+      - name: Build MCP server
+        run: npm run mcp:build
+
+      - name: Build website
+        run: npm run build
+
+      - name: Run MCP-focused tests
+        run: npm run mcp:test
+
+      - name: Run MCP evaluation harness
+        run: npm run mcp:eval
+
+      - name: Run MCP doctor JSON report
+        run: npm run mcp:doctor:json > mcp-doctor-report.json
+
+      - name: Upload MCP doctor report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-doctor-report
+          path: mcp-doctor-report.json

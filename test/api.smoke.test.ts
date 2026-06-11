@@ -114,6 +114,122 @@ describe('GET /api/playground/examples', () => {
   })
 })
 
+describe('GET /api/knowledge/catalog', () => {
+  it('returns a linked canonical knowledge catalog', async () => {
+    const res = await api('/api/knowledge/catalog')
+    expect(res.status).toBe('ok')
+    expect(res.requestId).toBeTypeOf('string')
+    expect(res.knowledge.counts.docs).toBe(8)
+    expect(res.knowledge.counts.examples).toBe(4)
+    expect(res.knowledge.counts.plugins).toBe(2)
+    expect(res.knowledge.counts.recipes).toBe(5)
+    expect(res.knowledge.counts.troubleshooting).toBe(5)
+    expect(res.knowledge.byId['doc:/docs/guides/directives']).toBeDefined()
+    expect(res.knowledge.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
+    expect(res.knowledge.byId['plugin:sequelize']).toBeDefined()
+    expect(res.knowledge.byId['doc:/docs/guides/directives'].relatedIds).toContain(
+      'example:directive-middleware:user-auth-directive',
+    )
+  })
+})
+
+describe('GET /api/knowledge/overview', () => {
+  it('returns section and scenario summaries', async () => {
+    const res = await api('/api/knowledge/overview')
+    expect(res.status).toBe('ok')
+    expect(res.overview.counts.docs).toBe(8)
+    expect(res.overview.counts.examples).toBe(4)
+    expect(res.overview.counts.plugins).toBe(2)
+
+    const guidesSection = res.overview.sections.find((section: { id: string }) => section.id === 'guides')
+    expect(guidesSection.docCount).toBe(5)
+
+    const directiveScenario = res.overview.scenarios.find((scenario: { id: string }) => scenario.id === 'directive-middleware')
+    expect(directiveScenario.linkedDocCount).toBe(1)
+    expect(directiveScenario.recipeCount).toBeGreaterThanOrEqual(1)
+    expect(directiveScenario.executionModes).toContain('adapted')
+  })
+})
+
+describe('GET /api/knowledge/docs', () => {
+  it('supports scenario filtering', async () => {
+    const res = await api('/api/knowledge/docs?scenario=directive-middleware')
+    expect(res.status).toBe('ok')
+    expect(res.docs.length).toBe(1)
+    expect(res.docs[0].slug).toBe('/docs/guides/directives')
+  })
+})
+
+describe('GET /api/knowledge/examples', () => {
+  it('supports scenario filtering', async () => {
+    const res = await api('/api/knowledge/examples?scenario=directive-middleware')
+    expect(res.status).toBe('ok')
+    expect(res.examples.length).toBe(1)
+    expect(res.examples[0].id).toBe('example:directive-middleware:user-auth-directive')
+    expect(res.examples[0].executionMode).toBe('adapted')
+  })
+})
+
+describe('GET /api/knowledge/plugins', () => {
+  it('supports ORM filtering', async () => {
+    const res = await api('/api/knowledge/plugins?orm=sequelize')
+    expect(res.status).toBe('ok')
+    expect(res.plugins.length).toBeGreaterThanOrEqual(1)
+    expect(res.plugins[0].kind).toBe('plugin')
+  })
+})
+
+describe('GET /api/knowledge/recipes', () => {
+  it('supports scenario filtering', async () => {
+    const res = await api('/api/knowledge/recipes?scenario=polymorphic-blocks')
+    expect(res.status).toBe('ok')
+    expect(res.recipes.length).toBeGreaterThanOrEqual(1)
+    expect(res.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:polymorphic-content-blocks')).toBe(true)
+  })
+})
+
+describe('GET /api/knowledge/troubleshooting', () => {
+  it('supports stage filtering', async () => {
+    const res = await api('/api/knowledge/troubleshooting?stage=directive')
+    expect(res.status).toBe('ok')
+    expect(res.troubleshooting.length).toBeGreaterThanOrEqual(1)
+    expect(res.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:directive-not-printed-in-sdl')).toBe(true)
+  })
+})
+
+describe('GET /api/knowledge/search', () => {
+  it('returns ranked results for a query', async () => {
+    const res = await api('/api/knowledge/search?q=directive')
+    expect(res.status).toBe('ok')
+    expect(res.results.length).toBeGreaterThan(1)
+    expect(res.results[0].id).toBe('doc:/docs/guides/directives')
+    expect(res.results.some((result: { id: string }) => result.id === 'example:directive-middleware:user-auth-directive')).toBe(true)
+  })
+
+  it('applies doc filters', async () => {
+    const res = await api('/api/knowledge/search?q=plugin&kind=doc&section=reference')
+    expect(res.status).toBe('ok')
+    expect(res.results.length).toBeGreaterThanOrEqual(1)
+    expect(res.results[0].id).toBe('doc:/docs/reference/writing-a-plugin')
+    expect(res.results.some((result: { id: string }) => result.id === 'doc:/docs/reference/mcp-version-contract')).toBe(true)
+  })
+
+  it('supports curated kind filters', async () => {
+    const res = await api('/api/knowledge/search?q=sequelize&kind=plugin')
+    expect(res.status).toBe('ok')
+    expect(res.results.length).toBeGreaterThanOrEqual(1)
+    expect(res.results[0].id).toBe('plugin:sequelize')
+  })
+
+  it('rejects too-short queries', async () => {
+    const response = await fetch(`${BASE}/api/knowledge/search?q=a`)
+    const json = await response.json()
+    expect(response.status).toBe(400)
+    expect(json.status).toBe('error')
+    expect(json.error.code).toBe('VALIDATION_ERROR')
+  })
+})
+
 describe('POST /api/playground/generate', () => {
   it('returns real SDL for user-orders-basic', async () => {
     const res = await post('/api/playground/generate', {
