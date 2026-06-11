@@ -47,12 +47,29 @@ describe('mcp-server streamable HTTP wrapper', () => {
   it('lists and reads MCP resources through HTTP', async () => {
     const resources = await client!.listResources()
     expect(resources.resources.some(resource => resource.uri === 'knowledge://overview')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'plugins://catalog')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'recipes://catalog')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'troubleshooting://catalog')).toBe(true)
 
     const readResult = await client!.readResource({ uri: 'docs://docs/guides/directives' })
     const firstContent = readResult.contents[0]
 
     expect(firstContent).toBeDefined()
     expect('text' in firstContent && firstContent.text.includes('directive-middleware')).toBe(true)
+  })
+
+  it('reads curated recipe and troubleshooting resources through HTTP', async () => {
+    const recipeResult = await client!.readResource({ uri: 'recipes://recipe/polymorphic-content-blocks' })
+    const recipeContent = recipeResult.contents[0]
+    expect(recipeContent).toBeDefined()
+    expect('text' in recipeContent && recipeContent.text.includes('polymorphic-content-blocks')).toBe(true)
+
+    const troubleshootingResult = await client!.readResource({
+      uri: 'troubleshooting://issue/directive-not-printed-in-sdl',
+    })
+    const troubleshootingContent = troubleshootingResult.contents[0]
+    expect(troubleshootingContent).toBeDefined()
+    expect('text' in troubleshootingContent && troubleshootingContent.text.includes('directive-not-printed-in-sdl')).toBe(true)
   })
 
   it('calls a structured knowledge tool over HTTP', async () => {

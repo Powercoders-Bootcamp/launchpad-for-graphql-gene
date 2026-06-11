@@ -35,6 +35,24 @@ const PROMPTS: McpPromptDescriptor[] = [
       { name: 'capability', description: 'What the plugin must support.', required: false },
     ],
   },
+  {
+    name: 'plan_graphql_gene_upgrade',
+    description: 'Plan a GraphQL Gene migration or upgrade path with source-backed checks.',
+    arguments: [
+      { name: 'current_state', description: 'Short description of the current project setup.', required: true },
+      { name: 'target_state', description: 'What the developer wants the upgraded setup to look like.', required: false },
+      { name: 'risk_area', description: 'The most likely upgrade risk such as plugins, directives, or schema generation.', required: false },
+    ],
+  },
+  {
+    name: 'triage_graphql_gene_issue',
+    description: 'Frame a GraphQL Gene troubleshooting triage flow before deeper debugging.',
+    arguments: [
+      { name: 'symptom', description: 'Short description of the observed issue.', required: true },
+      { name: 'stage', description: 'Where the issue appears, such as install, schema, plugin, query, or directive.', required: false },
+      { name: 'context', description: 'Optional plugin, ORM, or server context.', required: false },
+    ],
+  },
 ]
 
 export function listKnowledgeMcpPrompts(): McpPromptDescriptor[] {
@@ -94,6 +112,32 @@ export function renderKnowledgeMcpPrompt(
           `Required capability: ${args.capability ?? 'Not provided'}`,
           'Explain the plugin strategy, what to study in the reference implementation,',
           'and the minimum milestones for a safe first version.',
+        ].join('\n'),
+      }
+    case 'plan_graphql_gene_upgrade':
+      return {
+        name,
+        description: 'GraphQL Gene migration and upgrade planning prompt.',
+        text: [
+          'Plan a safe GraphQL Gene migration or upgrade path for the developer context below.',
+          `Current state: ${args.current_state ?? 'Not provided'}`,
+          `Target state: ${args.target_state ?? 'Not provided'}`,
+          `Primary risk area: ${args.risk_area ?? 'Not provided'}`,
+          'Prioritize canonical docs, plugin notes, recipes, and troubleshooting entries that reduce upgrade risk.',
+          'Call out the first validations to run before changing runtime behavior.',
+        ].join('\n'),
+      }
+    case 'triage_graphql_gene_issue':
+      return {
+        name,
+        description: 'GraphQL Gene troubleshooting triage prompt.',
+        text: [
+          'Triage a GraphQL Gene issue before suggesting deeper fixes.',
+          `Symptom: ${args.symptom ?? 'Not provided'}`,
+          `Stage: ${args.stage ?? 'Not provided'}`,
+          `Context: ${args.context ?? 'Not provided'}`,
+          'Identify the most likely knowledge area to inspect first, then reference the best supporting docs, recipes, examples, or troubleshooting entries.',
+          'Keep the triage source-backed and biased toward canonical guidance over adapted runtime demos.',
         ].join('\n'),
       }
     default:

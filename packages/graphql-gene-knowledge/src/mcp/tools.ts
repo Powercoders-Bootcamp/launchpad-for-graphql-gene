@@ -1,4 +1,3 @@
-import { searchKnowledgeCatalog } from '../query/search'
 import type {
   DocKnowledgeEntry,
   ExampleKnowledgeEntry,
@@ -8,7 +7,18 @@ import type {
   RecipeKnowledgeEntry,
   TroubleshootingKnowledgeEntry,
 } from '../contracts'
+import {
+  findDocsByIds,
+  findExamplesByIds,
+  findPluginsByIds,
+  findRecipesByIds,
+  inferFocusArea,
+  selectPluginEntries,
+  selectRecipeEntries,
+  selectTroubleshootingEntries,
+} from './decision'
 import type { McpDomainContext, McpToolDescriptor } from './contracts'
+import { searchKnowledgeCatalog } from '../query/search'
 
 const TOOLS: McpToolDescriptor[] = [
   {
@@ -141,19 +151,7 @@ function runSearchTool(context: McpDomainContext, input: Record<string, unknown>
     section,
     scenario,
     limit,
-  }).map(hit => ({
-    id: hit.entry.id,
-    kind: hit.entry.kind,
-    title: hit.entry.title,
-    summary: hit.entry.summary,
-    score: hit.score,
-    matchedFields: hit.matchedFields,
-    slug: hit.entry.kind === 'doc' ? hit.entry.slug : undefined,
-    scenario: extractScenario(hit.entry),
-    packageName: hit.entry.kind === 'plugin' ? hit.entry.packageName ?? null : undefined,
-    recipeId: hit.entry.kind === 'recipe' ? hit.entry.recipeId : undefined,
-    issueId: hit.entry.kind === 'troubleshooting' ? hit.entry.issueId : undefined,
-  }))
+  }).map(hit => serializeSearchHit(hit.entry, hit.score, hit.matchedFields))
 
   return {
     query,
@@ -190,20 +188,27 @@ function runExplainFeatureTool(context: McpDomainContext, input: Record<string, 
 
 function runRecommendIntegrationTool(context: McpDomainContext, input: Record<string, unknown>) {
   const goal = typeof input.goal === 'string' ? input.goal : ''
-  const recommendedQuery = inferRecommendationQuery(goal)
-  const docs = searchDocs(context, recommendedQuery, 3)
-  const examples = searchExamples(context, recommendedQuery, 2)
-  const recipes = searchRecipes(context, recommendedQuery, 2)
-  const plugins = searchPlugins(context, recommendedQuery, 2)
+  const recipes = selectRecipeEntries(context.catalog, { goal }, 2)
+  const primaryRecipe = recipes[0]
+  const plugins = primaryRecipe?.recommendedPluginIds.length
+    ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)
+    : selectPluginEntries(context.catalog, { goal }, 2)
+  const primaryDocs = primaryRecipe
+    ? findDocsByIds(context.catalog, primaryRecipe.recommendedDocIds)
+    : searchDocs(context, goal, 3)
+  const primaryExamples = primaryRecipe
+    ? findExamplesByIds(context.catalog, primaryRecipe.recommendedExampleIds)
+    : searchExamples(context, goal, 2)
 
   return {
     goal,
-    recommendation: buildIntegrationRecommendation(goal, recommendedQuery),
-    recommendedQuery,
-    docs,
-    examples,
-    recipes,
-    plugins,
+    selectedRecipeId: primaryRecipe?.id ?? null,
+    recommendedQuery: inferFocusArea([goal, primaryRecipe?.title, primaryRecipe?.goal].filter(Boolean).join(' ')),
+    recommendation: buildIntegrationRecommendation(goal, primaryRecipe),
+    docs: mapDocs(primaryDocs).slice(0, 3),
+    examples: mapExamples(primaryExamples).slice(0, 2),
+    recipes: mapRecipes(recipes),
+    plugins: mapPlugins(plugins).slice(0, 2),
   }
 }
 
@@ -211,24 +216,37 @@ function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<st
   const orm = typeof input.orm === 'string' ? input.orm : undefined
   const goal = typeof input.goal === 'string' ? input.goal : undefined
   const wantsCustomPlugin = input.wantsCustomPlugin === true
-  const strategy = choosePluginStrategy(orm, goal, wantsCustomPlugin)
-  const docs = searchDocs(context, strategy.query, 3)
-  const examples = searchExamples(context, strategy.query, 2)
-  const plugins = searchPlugins(context, strategy.query, 2)
-  const recipes = searchRecipes(context, strategy.query, 2)
+  const plugins = selectPluginEntries(context.catalog, {
+    orm,
+    goal,
+    wantsCustomPlugin,
+  }, 2)
+  const primaryPlugin = plugins[0]
+  const recipes = primaryPlugin?.recommendedRecipeIds.length
+    ? findRecipesByIds(context.catalog, primaryPlugin.recommendedRecipeIds)
+    : selectRecipeEntries(context.catalog, {
+      goal: [goal, orm].filter(Boolean).join(' ') || 'plugin',
+      orm,
+    }, 2)
+  const docs = primaryPlugin
+    ? findDocsByIds(context.catalog, primaryPlugin.recommendedDocIds)
+    : searchDocs(context, 'plugin', 3)
+  const examples = primaryPlugin
+    ? findExamplesByIds(context.catalog, primaryPlugin.recommendedExampleIds)
+    : searchExamples(context, 'plugin', 2)
 
   return {
     orm: orm ?? null,
     goal: goal ?? null,
     wantsCustomPlugin,
-    strategy: strategy.id,
-    recommendedPlugin: strategy.recommendedPlugin,
-    rationale: strategy.rationale,
-    nextSteps: strategy.nextSteps,
-    docs,
-    examples,
-    plugins,
-    recipes,
+    strategy: derivePluginStrategyId(primaryPlugin),
+    recommendedPlugin: primaryPlugin?.packageName ?? null,
+    rationale: buildPluginRationale(primaryPlugin, orm, wantsCustomPlugin),
+    nextSteps: buildPluginNextSteps(primaryPlugin, recipes[0]),
+    docs: mapDocs(docs).slice(0, 3),
+    examples: mapExamples(examples).slice(0, 2),
+    plugins: mapPlugins(plugins),
+    recipes: mapRecipes(recipes).slice(0, 2),
   }
 }
 
@@ -239,36 +257,53 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
   const concerns = Array.isArray(input.concerns)
     ? input.concerns.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     : []
-  const focusArea = inferRecommendationQuery([goal, serverStack, orm, ...concerns].filter(Boolean).join(' '))
-  const pluginStrategy = choosePluginStrategy(orm, goal, false)
-  const docs = searchDocs(context, focusArea, 4)
-  const examples = searchExamples(context, focusArea, 3)
-  const recipes = searchRecipes(context, focusArea, 3)
-  const plugins = searchPlugins(context, focusArea, 2)
+
+  const recipes = selectRecipeEntries(context.catalog, {
+    goal,
+    serverStack,
+    orm,
+    concerns,
+  }, 3)
+  const primaryRecipe = recipes[0]
+  const candidatePlugins = primaryRecipe?.recommendedPluginIds.length
+    ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)
+    : selectPluginEntries(context.catalog, { goal, orm }, 2)
+  const primaryPlugin = candidatePlugins[0]
+  const docs = primaryRecipe
+    ? dedupeById([
+        ...findDocsByIds(context.catalog, primaryRecipe.recommendedDocIds),
+        ...findDocsByIds(context.catalog, primaryPlugin?.recommendedDocIds ?? []),
+      ])
+    : searchDocs(context, goal, 4)
+  const examples = primaryRecipe
+    ? dedupeById([
+        ...findExamplesByIds(context.catalog, primaryRecipe.recommendedExampleIds),
+        ...findExamplesByIds(context.catalog, primaryPlugin?.recommendedExampleIds ?? []),
+      ])
+    : searchExamples(context, goal, 3)
 
   return {
     goal,
     serverStack: serverStack ?? null,
     orm: orm ?? null,
     concerns,
-    focusArea,
-    pluginStrategy: {
-      strategy: pluginStrategy.id,
-      recommendedPlugin: pluginStrategy.recommendedPlugin,
-      rationale: pluginStrategy.rationale,
-    },
-    steps: buildIntegrationPlanSteps({
+    selectedRecipeId: primaryRecipe?.id ?? null,
+    focusArea: inferFocusArea([
       goal,
-      serverStack,
-      orm,
-      focusArea,
-      pluginStrategy: pluginStrategy.id,
-      concerns,
-    }),
-    docs,
-    examples,
-    recipes,
-    plugins,
+      primaryRecipe?.title,
+      primaryRecipe?.goal,
+      ...concerns,
+    ].filter(Boolean).join(' ')),
+    pluginStrategy: {
+      strategy: derivePluginStrategyId(primaryPlugin),
+      recommendedPlugin: primaryPlugin?.packageName ?? null,
+      rationale: buildPluginRationale(primaryPlugin, orm, false),
+    },
+    steps: buildStructuredPlanSteps(primaryRecipe, primaryPlugin, serverStack, concerns),
+    docs: mapDocs(docs).slice(0, 4),
+    examples: mapExamples(examples).slice(0, 3),
+    recipes: mapRecipes(recipes),
+    plugins: mapPlugins(candidatePlugins).slice(0, 2),
   }
 }
 
@@ -276,23 +311,36 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
   const symptom = typeof input.symptom === 'string' ? input.symptom : ''
   const issueContext = typeof input.context === 'string' ? input.context : undefined
   const stage = typeof input.stage === 'string' ? input.stage : undefined
-  const recommendedQuery = inferDiagnosisQuery(symptom, issueContext, stage)
-  const docs = searchDocs(context, recommendedQuery, 3)
-  const examples = searchExamples(context, recommendedQuery, 2)
-  const troubleshooting = searchTroubleshooting(context, recommendedQuery, 3)
-  const recipes = searchRecipes(context, recommendedQuery, 2)
+  const troubleshooting = selectTroubleshootingEntries(context.catalog, {
+    symptom,
+    context: issueContext,
+    stage,
+  }, 3)
+  const primaryIssue = troubleshooting[0]
+  const docs = primaryIssue
+    ? findDocsByIds(context.catalog, primaryIssue.recommendedDocIds)
+    : searchDocs(context, [symptom, issueContext, stage].filter(Boolean).join(' '), 3)
+  const examples = primaryIssue
+    ? findExamplesByIds(context.catalog, primaryIssue.recommendedExampleIds)
+    : searchExamples(context, [symptom, issueContext, stage].filter(Boolean).join(' '), 2)
+  const recipes = primaryIssue
+    ? findRecipesByIds(context.catalog, primaryIssue.recommendedRecipeIds)
+    : selectRecipeEntries(context.catalog, {
+      goal: [symptom, issueContext, stage].filter(Boolean).join(' '),
+    }, 2)
 
   return {
     symptom,
     context: issueContext ?? null,
     stage: stage ?? null,
-    diagnosisArea: recommendedQuery,
-    likelyCauses: buildLikelyCauses(recommendedQuery),
-    recommendedChecks: buildRecommendedChecks(recommendedQuery),
-    docs,
-    examples,
-    troubleshooting,
-    recipes,
+    selectedIssueId: primaryIssue?.id ?? null,
+    diagnosisArea: stage ?? inferFocusArea([symptom, issueContext].filter(Boolean).join(' ')),
+    likelyCauses: primaryIssue?.likelyCauses ?? buildFallbackLikelyCauses(stage),
+    recommendedChecks: primaryIssue?.recommendedChecks ?? buildFallbackRecommendedChecks(stage),
+    docs: mapDocs(docs).slice(0, 3),
+    examples: mapExamples(examples).slice(0, 2),
+    troubleshooting: mapTroubleshooting(troubleshooting),
+    recipes: mapRecipes(recipes).slice(0, 2),
   }
 }
 
@@ -321,125 +369,96 @@ function buildFeatureSummary(options: {
   ].join(' ')
 }
 
-function inferRecommendationQuery(goal: string) {
-  const normalized = goal.toLowerCase()
-
-  if (normalized.includes('plugin')) return 'plugin'
-  if (normalized.includes('directive') || normalized.includes('auth')) return 'directive'
-  if (normalized.includes('block') || normalized.includes('cms') || normalized.includes('polymorphic')) return 'polymorphic'
-  if (normalized.includes('query') || normalized.includes('lookahead')) return 'query'
-  return 'schema'
-}
-
-function inferDiagnosisQuery(symptom: string, issueContext?: string, stage?: string) {
-  switch (stage) {
-    case 'install':
-      return 'getting started'
-    case 'schema':
-      return 'schema'
-    case 'plugin':
-      return 'plugin'
-    case 'query':
-      return 'query'
-    case 'directive':
-      return 'directive'
-    case 'runtime':
-      return 'directive'
-    default:
-      return inferRecommendationQuery([symptom, issueContext].filter(Boolean).join(' '))
+function buildIntegrationRecommendation(goal: string, primaryRecipe?: RecipeKnowledgeEntry) {
+  if (!primaryRecipe) {
+    return [
+      `Goal: ${goal}`,
+      'No strong structured recipe match was found yet.',
+      'Start from the highest-ranked canonical docs, then validate with the closest example scenario.',
+    ].join(' ')
   }
-}
 
-function buildIntegrationRecommendation(goal: string, recommendedQuery: string) {
   return [
     `Goal: ${goal}`,
-    `Focus area: ${recommendedQuery}`,
-    'Start from the highest-ranked canonical docs, then validate with the closest example scenario.',
-    'If playground behavior differs from upstream docs or source-backed examples, prefer the upstream-aligned docs.',
+    `Recommended recipe: ${primaryRecipe.title}`,
+    `Why: ${primaryRecipe.summary}`,
+    'Start from the canonical docs linked to that recipe, then validate with the recommended example.',
   ].join(' ')
 }
 
-function choosePluginStrategy(orm?: string, goal?: string, wantsCustomPlugin = false) {
-  const normalizedOrm = (orm ?? '').toLowerCase()
-  const normalizedGoal = (goal ?? '').toLowerCase()
-
-  if (!wantsCustomPlugin && normalizedOrm.includes('sequelize')) {
-    return {
-      id: 'plugin-sequelize',
-      query: 'schema',
-      recommendedPlugin: '@graphql-gene/plugin-sequelize',
-      rationale: 'The current documented first-class path in this repo is the Sequelize plugin.',
-      nextSteps: [
-        'Install graphql-gene and @graphql-gene/plugin-sequelize.',
-        'Export your GraphQL model types from a single module.',
-        'Call generateSchema with pluginSequelize() and your types object.',
-      ],
-    }
+function buildPluginRationale(
+  plugin?: PluginKnowledgeEntry,
+  orm?: string,
+  wantsCustomPlugin = false,
+) {
+  if (!plugin) {
+    return 'No structured plugin recommendation was strong enough yet, so review the plugin docs and recipes first.'
   }
 
-  if (wantsCustomPlugin || normalizedGoal.includes('plugin') || (orm && !normalizedOrm.includes('sequelize'))) {
-    return {
-      id: 'custom-plugin',
-      query: 'plugin',
-      recommendedPlugin: null,
-      rationale: 'A custom plugin path is the safest recommendation when the target ORM is not clearly covered by the documented Sequelize integration.',
-      nextSteps: [
-        'Study the Writing a Plugin reference page.',
-        'Inspect the Sequelize plugin as the reference implementation.',
-        'Define the minimum model, field, and query behaviors your plugin must support first.',
-      ],
-    }
+  if (wantsCustomPlugin) {
+    return `Custom plugin preference is enabled, so "${plugin.title}" is the strongest structured match.`
   }
 
-  return {
-    id: 'evaluate-plugin-surface',
-    query: 'plugin',
-    recommendedPlugin: '@graphql-gene/plugin-sequelize',
-    rationale: 'The documented plugin surface should be reviewed first before committing to a custom plugin path.',
-    nextSteps: [
-      'Confirm whether Sequelize already matches the target data model.',
-      'If not, scope the delta between the target ORM and the reference plugin.',
-      'Choose between adaptation and a custom plugin once the missing capabilities are clear.',
-    ],
+  if (orm) {
+    return `For ORM "${orm}", the strongest structured plugin match is "${plugin.title}". ${plugin.summary}`
   }
+
+  return plugin.summary
 }
 
-function buildIntegrationPlanSteps(options: {
-  goal: string
-  serverStack?: string
-  orm?: string
-  focusArea: string
-  pluginStrategy: string
-  concerns: string[]
-}) {
-  const serverStep = options.serverStack
-    ? `Attach the generated schema to ${options.serverStack} once the core GraphQL Gene setup is stable.`
-    : 'Attach the generated schema to your GraphQL server after the core setup is stable.'
+function buildPluginNextSteps(plugin?: PluginKnowledgeEntry, recipe?: RecipeKnowledgeEntry) {
+  if (recipe) {
+    return recipe.steps
+  }
 
-  const pluginStep = options.pluginStrategy === 'custom-plugin'
-    ? 'Design the custom plugin boundary early and keep the first version narrow.'
-    : 'Start with the documented Sequelize plugin path before widening the integration.'
-
-  const concernStep = options.concerns.length
-    ? `Validate the high-risk concerns next: ${options.concerns.join(', ')}.`
-    : `Validate the primary focus area next: ${options.focusArea}.`
+  if (!plugin) {
+    return [
+      'Review the GraphQL Gene plugin docs.',
+      'Decide whether the project fits the Sequelize path or needs a custom plugin.',
+    ]
+  }
 
   return [
-    'Install GraphQL Gene and align the plugin choice with the target ORM.',
-    'Export all GraphQL Gene types from a single module so schema generation has one canonical input.',
-    'Generate the schema with generateSchema and verify the produced SDL before expanding runtime behavior.',
-    pluginStep,
-    serverStep,
-    concernStep,
+    ...plugin.whenToUse.slice(0, 2),
+    'Open the linked docs and examples before implementing the plugin path.',
   ]
 }
 
-function buildLikelyCauses(area: string) {
-  switch (area) {
-    case 'getting started':
+function buildStructuredPlanSteps(
+  recipe: RecipeKnowledgeEntry | undefined,
+  plugin: PluginKnowledgeEntry | undefined,
+  serverStack?: string,
+  concerns: string[] = [],
+) {
+  const baseSteps = recipe?.steps.length
+    ? [...recipe.steps]
+    : [
+        'Install GraphQL Gene and align the plugin choice with the target ORM.',
+        'Export all GraphQL Gene types from a single module so schema generation has one canonical input.',
+        'Generate the schema and inspect the SDL before expanding runtime behavior.',
+      ]
+
+  if (plugin?.packageName && !baseSteps.some(step => step.includes(plugin.packageName))) {
+    baseSteps.unshift(`Adopt the recommended plugin path: ${plugin.packageName}.`)
+  }
+
+  if (serverStack) {
+    baseSteps.push(`Attach the generated schema to ${serverStack} once the core GraphQL Gene setup is stable.`)
+  }
+
+  if (concerns.length) {
+    baseSteps.push(`Validate the highest-risk concerns next: ${concerns.join(', ')}.`)
+  }
+
+  return dedupeStrings(baseSteps)
+}
+
+function buildFallbackLikelyCauses(stage?: string) {
+  switch (stage) {
+    case 'install':
       return [
         'The core package or plugin package is missing or version-misaligned.',
-        'The generated schema path was wired before the model exports were consolidated.',
+        'The initial setup drifted from the documented bootstrap flow.',
       ]
     case 'schema':
       return [
@@ -449,17 +468,17 @@ function buildLikelyCauses(area: string) {
     case 'plugin':
       return [
         'The chosen plugin strategy does not match the target ORM behavior.',
-        'A custom plugin requirement is being forced through the Sequelize reference path.',
+        'The project likely needs the custom plugin path instead of the Sequelize reference path.',
       ]
     case 'query':
       return [
-        'The selected GraphQL shape does not align with the generated associations.',
+        'The query shape does not align with the generated associations.',
         'Lookahead expectations differ from the current runtime adapter behavior.',
       ]
     case 'directive':
       return [
-        'Directive middleware is attached at the wrong level or uses the wrong naming behavior.',
-        'The expected SDL output differs from the runtime-only directive behavior.',
+        'Directive middleware is attached at the wrong level.',
+        'Runtime-only directive behavior was mistaken for SDL-visible behavior.',
       ]
     default:
       return [
@@ -469,9 +488,9 @@ function buildLikelyCauses(area: string) {
   }
 }
 
-function buildRecommendedChecks(area: string) {
-  switch (area) {
-    case 'getting started':
+function buildFallbackRecommendedChecks(stage?: string) {
+  switch (stage) {
+    case 'install':
       return [
         'Verify graphql-gene and plugin package installation.',
         'Compare the setup against the Getting Started doc.',
@@ -483,8 +502,8 @@ function buildRecommendedChecks(area: string) {
       ]
     case 'plugin':
       return [
-        'Check whether the target ORM truly maps to the Sequelize plugin assumptions.',
-        'Review the Writing a Plugin reference before widening custom behavior.',
+        'Check whether the target ORM truly maps to the recommended plugin.',
+        'Review the plugin docs before widening custom behavior.',
       ]
     case 'query':
       return [
@@ -579,6 +598,95 @@ function searchTroubleshooting(context: McpDomainContext, query: string, limit: 
     }))
 }
 
+function mapDocs(docs: DocKnowledgeEntry[] | ReturnType<typeof searchDocs>) {
+  return docs.map((doc) => {
+    if ('slug' in doc) {
+      return {
+        id: doc.id,
+        title: doc.title,
+        slug: doc.slug,
+        summary: doc.summary,
+      }
+    }
+
+    return doc
+  })
+}
+
+function mapExamples(examples: ExampleKnowledgeEntry[] | ReturnType<typeof searchExamples>) {
+  return examples.map((example) => {
+    if ('scenario' in example && 'exampleId' in example) {
+      return {
+        id: example.id,
+        title: example.title,
+        scenario: example.scenario,
+        summary: example.summary,
+      }
+    }
+
+    return example
+  })
+}
+
+function mapPlugins(plugins: PluginKnowledgeEntry[]) {
+  return plugins.map(plugin => ({
+    id: plugin.id,
+    title: plugin.title,
+    packageName: plugin.packageName ?? null,
+    summary: plugin.summary,
+  }))
+}
+
+function mapRecipes(recipes: RecipeKnowledgeEntry[]) {
+  return recipes.map(recipe => ({
+    id: recipe.id,
+    title: recipe.title,
+    recipeId: recipe.recipeId,
+    summary: recipe.summary,
+  }))
+}
+
+function mapTroubleshooting(issues: TroubleshootingKnowledgeEntry[]) {
+  return issues.map(issue => ({
+    id: issue.id,
+    title: issue.title,
+    issueId: issue.issueId,
+    summary: issue.summary,
+  }))
+}
+
+function serializeSearchHit(entry: KnowledgeEntry, score: number, matchedFields: string[]) {
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    title: entry.title,
+    summary: entry.summary,
+    score,
+    matchedFields,
+    slug: entry.kind === 'doc' ? entry.slug : undefined,
+    scenario: extractScenario(entry),
+    packageName: entry.kind === 'plugin' ? entry.packageName ?? null : undefined,
+    recipeId: entry.kind === 'recipe' ? entry.recipeId : undefined,
+    issueId: entry.kind === 'troubleshooting' ? entry.issueId : undefined,
+  }
+}
+
+function derivePluginStrategyId(plugin?: PluginKnowledgeEntry) {
+  if (!plugin) {
+    return 'evaluate-plugin-surface'
+  }
+
+  if (plugin.pluginId === 'custom-plugin') {
+    return 'custom-plugin'
+  }
+
+  if (plugin.packageName === '@graphql-gene/plugin-sequelize') {
+    return 'plugin-sequelize'
+  }
+
+  return 'evaluate-plugin-surface'
+}
+
 function asKnowledgeKind(value: unknown): KnowledgeKind | undefined {
   return value === 'doc'
     || value === 'example'
@@ -602,4 +710,24 @@ function extractScenario(entry: KnowledgeEntry) {
     default:
       return undefined
   }
+}
+
+function dedupeById<T extends { id: string }>(entries: T[]) {
+  const seen = new Set<string>()
+  const deduped: T[] = []
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) {
+      continue
+    }
+
+    seen.add(entry.id)
+    deduped.push(entry)
+  }
+
+  return deduped
+}
+
+function dedupeStrings(values: string[]) {
+  return [...new Set(values)]
 }

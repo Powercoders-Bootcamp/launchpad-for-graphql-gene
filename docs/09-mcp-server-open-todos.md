@@ -9,8 +9,12 @@ Current foundation already in place:
 
 - canonical knowledge package
 - docs and playground normalization into a shared catalog
+- structured plugin, recipe, and troubleshooting knowledge kinds
 - standalone `mcp-server/` package
 - stdio and Streamable HTTP transports
+- structured decision-backed MCP tools for recommendation, planning, and diagnosis
+- second-wave MCP resources for plugins, recipes, and troubleshooting
+- second-wave MCP prompts for plugin authoring, upgrade planning, and issue triage
 - client registration presets via `npm run mcp:print-config`
 - runtime verification via `npm run mcp:doctor`
 
@@ -42,98 +46,13 @@ Acceptance criteria:
 - `MCP` messaging already added to the homepage remains intact
 - site build passes after the copy update
 
-### 2. Knowledge Wave 2: Ingest Plugins, Recipes, And Troubleshooting
-
-Priority: high
-
-Why this remains open:
-
-- the current canonical catalog is strongest for `doc` and `example` entries
-- real developer workflows also need plugin guidance, integration recipes, and troubleshooting material
-
-Tasks:
-
-- add first-class knowledge entry kinds for `plugin`, `recipe`, and `troubleshooting` or an equivalent normalized model
-- ingest upstream GraphQL Gene material for:
-  - Sequelize integration guidance
-  - custom plugin authoring
-  - common setup and runtime debugging paths
-  - version-sensitive notes where upstream material supports them
-- preserve provenance, version, confidence, and source-of-truth metadata for all new entries
-
-Acceptance criteria:
-
-- canonical catalog exposes the new entry kinds
-- search can return the new kinds
-- MCP resources can expose the new kinds
-- tests cover ingestion, parity, and provenance
-
-### 3. Replace Heuristic Tool Logic With Structured Decision Knowledge
-
-Priority: high
-
-Why this remains open:
-
-- the current MCP tool surface exists
-- but several tool outputs still depend partly on keyword inference in `packages/graphql-gene-knowledge/src/mcp/tools.ts`
-
-Tasks:
-
-- introduce a structured recipe-selection model
-- introduce a structured plugin-decision model
-- make these tools consume structured knowledge rather than relying mainly on inferred keyword buckets:
-  - `recommend_integration_path`
-  - `choose_plugin_strategy`
-  - `plan_graphql_gene_integration`
-  - `diagnose_graphql_gene_issue`
-- require every recommendation to reference supporting canonical entries
-
-Acceptance criteria:
-
-- tool outputs stay concise but become more source-backed
-- returned recommendations point to concrete supporting docs, examples, recipes, or plugin entries
-- tests cover at least:
-  - Sequelize-first path
-  - custom plugin path
-  - polymorphic blocks
-  - directives
-  - debugging flows
-
-### 4. Add Second-Wave MCP Resources And Prompts
+### 2. Release Packaging And CI Hardening
 
 Priority: medium
 
 Tasks:
 
-- add resources for the new knowledge kinds, for example:
-  - `plugins://catalog`
-  - `plugins://plugin/{id}`
-  - `recipes://catalog`
-  - `recipes://recipe/{id}`
-  - `troubleshooting://catalog`
-  - `troubleshooting://issue/{id}`
-- add prompts focused on:
-  - plugin authoring
-  - migration or upgrade planning
-  - troubleshooting triage
-
-Acceptance criteria:
-
-- new resources are listed by `capabilities://server`
-- new prompts are discoverable through the MCP manifest surface
-- transport tests cover resource listing and at least one read per new resource family
-
-### 5. Adoption, Release, And CI Readiness
-
-Priority: medium
-
-Tasks:
-
-- add CI automation for:
-  - site build
-  - MCP build
-  - targeted knowledge and MCP tests
-  - `npm run mcp:doctor -- --json`
+- keep the new CI workflow healthy across dependency updates
 - decide the release shape for the MCP server:
   - repo-local only
   - publishable package
@@ -147,7 +66,7 @@ Acceptance criteria:
 - supported transports and environment variables are documented in one stable place
 - release steps are repeatable by another engineer without hidden context
 
-### 6. HTTP Hardening And Operations
+### 3. HTTP Hardening And Operations
 
 Priority: medium
 
@@ -165,7 +84,7 @@ Acceptance criteria:
 - public-ish deployment defaults are safer than the current developer-default posture
 - docs explain when stdio is enough and when HTTP should be used
 
-### 7. Evaluation Harness For Answer Quality
+### 4. Evaluation Harness For Answer Quality
 
 Priority: medium
 
@@ -195,10 +114,7 @@ These are intentionally not part of the backlog:
 
 ## Suggested Execution Order
 
-1. knowledge wave 2
-2. structured tool reasoning
-3. second-wave resources and prompts
-4. CI and release readiness
-5. HTTP hardening
-6. evaluation harness
-7. homepage and product-positioning pass
+1. CI and release readiness
+2. HTTP hardening
+3. evaluation harness
+4. homepage and product-positioning pass

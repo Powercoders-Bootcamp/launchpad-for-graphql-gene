@@ -121,6 +121,30 @@ describe('knowledge MCP domain', () => {
     expect(prompt.text).toContain('derive GraphQL fields from models')
   })
 
+  it('renders the upgrade planning prompt', () => {
+    const prompt = renderKnowledgeMcpPrompt('plan_graphql_gene_upgrade', {
+      current_state: 'Sequelize plugin with custom directives',
+      target_state: 'Aligned canonical plugin and recipe usage',
+      risk_area: 'plugin strategy',
+    })
+
+    expect(prompt.text).toContain('Sequelize plugin with custom directives')
+    expect(prompt.text).toContain('Aligned canonical plugin and recipe usage')
+    expect(prompt.text).toContain('plugin strategy')
+  })
+
+  it('renders the troubleshooting triage prompt', () => {
+    const prompt = renderKnowledgeMcpPrompt('triage_graphql_gene_issue', {
+      symptom: 'Generated schema is missing expected fields',
+      stage: 'schema',
+      context: 'custom plugin experiment',
+    })
+
+    expect(prompt.text).toContain('Generated schema is missing expected fields')
+    expect(prompt.text).toContain('schema')
+    expect(prompt.text).toContain('custom plugin experiment')
+  })
+
   it('runs the search tool against the canonical catalog', () => {
     const result = invokeKnowledgeMcpTool(createContext(), 'search_knowledge', {
       query: 'directive',
@@ -152,6 +176,18 @@ describe('knowledge MCP domain', () => {
     expect(result.plugins.some((plugin: { id: string }) => plugin.id === 'plugin:sequelize')).toBe(true)
   })
 
+  it('chooses the custom plugin strategy for non-Sequelize projects', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'choose_plugin_strategy', {
+      orm: 'Prisma',
+      goal: 'I need a GraphQL Gene plugin for my existing models',
+      wantsCustomPlugin: true,
+    })
+
+    expect(result.strategy).toBe('custom-plugin')
+    expect(result.plugins.some((plugin: { id: string }) => plugin.id === 'plugin:custom-plugin')).toBe(true)
+    expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:custom-plugin-evaluation')).toBe(true)
+  })
+
   it('builds an actionable integration plan', () => {
     const result = invokeKnowledgeMcpTool(createContext(), 'plan_graphql_gene_integration', {
       goal: 'Add GraphQL Gene to my API',
@@ -167,6 +203,19 @@ describe('knowledge MCP domain', () => {
     expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:directive-middleware-auth')).toBe(true)
   })
 
+  it('builds a polymorphic blocks plan from structured recipes', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'plan_graphql_gene_integration', {
+      goal: 'Model polymorphic CMS blocks with GraphQL Gene',
+      serverStack: 'Apollo Server',
+      concerns: ['inline fragments', 'content blocks'],
+    })
+
+    expect(result.focusArea).toBe('polymorphic')
+    expect(result.selectedRecipeId).toBe('recipe:polymorphic-content-blocks')
+    expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:polymorphic-content-blocks')).toBe(true)
+    expect(result.examples.some((example: { id: string }) => example.id === 'example:polymorphic-blocks:page-blocks-basic')).toBe(true)
+  })
+
   it('diagnoses directive-oriented issues with focused checks', () => {
     const result = invokeKnowledgeMcpTool(createContext(), 'diagnose_graphql_gene_issue', {
       symptom: 'my auth directive is not appearing in SDL',
@@ -177,6 +226,19 @@ describe('knowledge MCP domain', () => {
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/directives')).toBe(true)
     expect(result.recommendedChecks.length).toBeGreaterThan(1)
     expect(result.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:directive-not-printed-in-sdl')).toBe(true)
+  })
+
+  it('diagnoses query lookahead issues with structured troubleshooting guidance', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'diagnose_graphql_gene_issue', {
+      symptom: 'my JOIN shape does not match the query lookahead fields',
+      context: 'Sequelize include graph looks wrong',
+      stage: 'query',
+    })
+
+    expect(result.diagnosisArea).toBe('query')
+    expect(result.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:lookahead-behavior-does-not-match-expectation')).toBe(true)
+    expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:query-lookahead-shape')).toBe(true)
+    expect(result.docs.length).toBeGreaterThan(0)
   })
 
   it('keeps the capabilities resource aligned with the resource manifest', () => {
@@ -200,5 +262,21 @@ describe('knowledge MCP domain', () => {
 
     expect(payload.id).toBe('plugin:sequelize')
     expect(payload.packageName).toBe('@graphql-gene/plugin-sequelize')
+  })
+
+  it('exposes curated recipe resources for targeted retrieval', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'recipes://recipe/polymorphic-content-blocks')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.id).toBe('recipe:polymorphic-content-blocks')
+    expect(payload.recipeId).toBe('polymorphic-content-blocks')
+  })
+
+  it('exposes curated troubleshooting resources for targeted retrieval', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'troubleshooting://issue/directive-not-printed-in-sdl')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.id).toBe('troubleshooting:directive-not-printed-in-sdl')
+    expect(payload.issueId).toBe('directive-not-printed-in-sdl')
   })
 })

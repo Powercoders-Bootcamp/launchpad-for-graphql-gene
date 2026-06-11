@@ -51,6 +51,19 @@ To verify build outputs plus stdio/HTTP runtime handshakes:
 npm run doctor
 ```
 
+To emit the same verification report in machine-readable JSON:
+
+```bash
+npm run doctor -- --json
+```
+
+From the repository root, the MCP-focused verification shortcuts are:
+
+```bash
+npm run mcp:test
+npm run mcp:verify
+```
+
 Optional environment variables:
 
 - `GRAPHQL_GENE_MCP_HOST`
@@ -63,3 +76,19 @@ Example preset templates live in:
 - `examples/cursor-mcp.json`
 - `examples/generic-stdio-config.json`
 - `examples/generic-http-config.json`
+
+## CI Notes
+
+The repository includes a dedicated GitHub Actions workflow at:
+
+- `.github/workflows/mcp-server-ci.yml`
+
+It verifies:
+
+- MCP wrapper build output
+- site build integrity
+- MCP-focused Vitest coverage
+- doctor JSON generation for stdio and Streamable HTTP handshakes
+
+The workflow currently installs `mcp-server/` dependencies with `npm install`
+because that package does not yet have its own committed lockfile.
