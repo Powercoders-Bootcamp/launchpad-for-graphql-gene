@@ -1,73 +1,11 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
-  buildKnowledgeCatalog,
-  getSitePluginKnowledge,
-  getSiteRecipeKnowledge,
-  getSiteTroubleshootingKnowledge,
   searchKnowledgeCatalog,
 } from '../packages/graphql-gene-knowledge/src'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const workspaceRoot = path.resolve(__dirname, '..')
-const docsRoot = path.join(workspaceRoot, 'content', 'graphql-gene', 'docs')
-
-const docsConfig = {
-  docsRoot: 'docs',
-  sections: [
-    { id: 'concepts', title: 'Concepts', order: 1 },
-    { id: 'guides', title: 'Guides', order: 2 },
-    { id: 'reference', title: 'Reference', order: 3 },
-    { id: 'examples', title: 'Examples', order: 4 },
-    { id: 'tutorials', title: 'Tutorials', order: 5 },
-  ],
-}
-
-const examples = [
-  {
-    id: 'user-orders-basic',
-    scenario: 'model-to-schema',
-    title: 'User with Orders',
-    description: 'Generate a schema from User and Order models with a hasMany association.',
-    editableFields: ['includeOrders', 'includeAddress', 'showTypeSummary'],
-  },
-  {
-    id: 'me-with-orders',
-    scenario: 'query-lookahead',
-    title: 'Me with Orders',
-    description: 'Query the current user including their orders. Observe the JOIN in the SQL panel.',
-    editableFields: ['query'],
-  },
-  {
-    id: 'page-blocks-basic',
-    scenario: 'polymorphic-blocks',
-    title: 'Polymorphic Page Blocks',
-    description: 'Query heterogeneous CMS blocks with inline fragments.',
-    editableFields: ['query'],
-  },
-  {
-    id: 'user-auth-directive',
-    scenario: 'directive-middleware',
-    title: 'Auth Directive',
-    description: 'Attach @userAuth to a field and inspect schema and runtime behavior.',
-    editableFields: ['directiveMode'],
-  },
-]
+import { buildTestSiteKnowledgeCatalog } from './support/site-knowledge'
 
 function buildCatalog() {
-  return buildKnowledgeCatalog({
-    workspaceRoot,
-    docsRoot,
-    docsConfig,
-    examples,
-    plugins: getSitePluginKnowledge(),
-    recipes: getSiteRecipeKnowledge(),
-    troubleshooting: getSiteTroubleshootingKnowledge(),
-    sourceRepo: 'graphql-gene-site',
-    sourceRef: 'workspace',
-    versionRange: '^1.3.7',
-  })
+  return buildTestSiteKnowledgeCatalog()
 }
 
 describe('searchKnowledgeCatalog', () => {

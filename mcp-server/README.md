@@ -18,6 +18,7 @@ This wrapper is responsible for:
 - optionally running over Streamable HTTP for separate deployment
 - generating client-ready adoption presets
 - verifying runtime health with a doctor command
+- checking answer quality and provenance with a golden evaluation harness
 
 ## Supported Release Shape
 
@@ -73,6 +74,7 @@ npm run doctor -- --json
 From the repository root, the MCP-focused verification shortcuts are:
 
 ```bash
+npm run mcp:eval
 npm run mcp:test
 npm run mcp:verify
 ```
@@ -134,6 +136,7 @@ It verifies:
 - MCP wrapper build output
 - site build integrity
 - MCP-focused Vitest coverage
+- golden answer-quality and provenance evaluations
 - doctor JSON generation for stdio and Streamable HTTP handshakes plus the HTTP health endpoint
 
 The workflow installs `mcp-server/` dependencies with `npm ci --prefix mcp-server`,

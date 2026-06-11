@@ -25,6 +25,7 @@ Current foundation already in place:
 - safe and redacted HTTP access logging
 - explicit `yaml` runtime dependency in `mcp-server/`
 - package-local lockfile for reproducible `mcp-server/` installs
+- golden MCP evaluation coverage for answer quality and provenance, runnable through `npm run mcp:eval` and `npm run mcp:verify`
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
@@ -74,26 +75,6 @@ Acceptance criteria:
 - supported transports and environment variables are documented in one stable place
 - release steps are repeatable by another engineer without hidden context
 
-### 3. Evaluation Harness For Answer Quality
-
-Priority: medium
-
-Tasks:
-
-- add golden MCP evaluation cases for:
-  - docs search
-  - plugin recommendation
-  - integration planning
-  - issue diagnosis
-- test not only transport health but answer quality and provenance behavior
-- include at least one case where upstream-aligned docs should win over adapted playground framing
-
-Acceptance criteria:
-
-- evaluation catches regressions in reasoning quality
-- evaluation catches regressions in provenance policy
-- evaluation can be run in CI or release validation
-
 ## Explicit Non-Goals
 
 These are intentionally not part of the backlog:
@@ -104,6 +85,5 @@ These are intentionally not part of the backlog:
 
 ## Suggested Execution Order
 
-1. CI and release readiness
-2. evaluation harness
-3. homepage and product-positioning pass
+1. package publication and dependency cleanup
+2. homepage and product-positioning pass

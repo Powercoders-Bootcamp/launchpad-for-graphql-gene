@@ -16,8 +16,9 @@
     "mcp:print-config": "npm --prefix mcp-server run print-config",
     "mcp:start": "npm --prefix mcp-server run start",
     "mcp:start:http": "npm --prefix mcp-server run start:http",
+    "mcp:eval": "vitest run test/mcp-eval.test.ts",
     "mcp:test": "vitest run test/knowledge.catalog.test.ts test/knowledge.search.test.ts test/knowledge.mcp.test.ts test/site-knowledge.test.ts test/mcp-server.test.ts test/mcp-server-http.test.ts test/api.smoke.test.ts",
-    "mcp:verify": "npm run mcp:build && npm run mcp:test && npm run mcp:doctor:json",
+    "mcp:verify": "npm run mcp:build && npm run mcp:test && npm run mcp:eval && npm run mcp:doctor:json",
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:api": "node --test tests/api/playground.mjs"

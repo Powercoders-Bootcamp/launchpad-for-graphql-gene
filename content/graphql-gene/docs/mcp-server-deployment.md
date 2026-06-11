@@ -129,6 +129,7 @@ That verifies:
 
 - the MCP build output
 - MCP-focused tests
+- golden answer-quality and provenance evaluations
 - stdio handshake
 - Streamable HTTP handshake
 - canonical resource availability

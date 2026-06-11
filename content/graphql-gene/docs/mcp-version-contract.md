@@ -89,7 +89,7 @@ Usage:
 
 1. Build the deployed MCP server from the same commit as the docs it is expected to represent.
 2. Treat upstream-aligned docs as the primary truth source when playground behavior is adapted.
-3. Re-run `npm run mcp:verify` whenever the docs, recipes, troubleshooting catalog, or transport code changes.
+3. Re-run `npm run mcp:verify` whenever the docs, recipes, troubleshooting catalog, or transport code changes so transport health, answer quality, and provenance policy are rechecked together.
 4. Do not assume the MCP wrapper version alone is enough to describe behavioral compatibility.
 
 ## Publication rule
