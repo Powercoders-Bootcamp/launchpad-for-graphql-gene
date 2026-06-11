@@ -32,7 +32,7 @@ describe('site knowledge seeds', () => {
       versionRange: '^1.3.7',
     })
 
-    expect(catalog.counts.docs).toBe(6)
+    expect(catalog.counts.docs).toBe(8)
     expect(catalog.counts.examples).toBe(4)
     expect(catalog.counts.plugins).toBe(2)
     expect(catalog.counts.recipes).toBe(5)

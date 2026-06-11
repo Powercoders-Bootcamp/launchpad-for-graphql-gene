@@ -87,8 +87,9 @@ describe('searchKnowledgeCatalog', () => {
       limit: 5,
     })
 
-    expect(results.length).toBe(1)
+    expect(results.length).toBeGreaterThanOrEqual(1)
     expect(results[0].entry.id).toBe('doc:/docs/reference/writing-a-plugin')
+    expect(results.some(result => result.entry.id === 'doc:/docs/reference/mcp-version-contract')).toBe(true)
   })
 
   it('supports scenario filtering across the linked knowledge graph', () => {

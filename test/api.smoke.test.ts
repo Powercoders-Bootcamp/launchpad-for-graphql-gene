@@ -119,7 +119,7 @@ describe('GET /api/knowledge/catalog', () => {
     const res = await api('/api/knowledge/catalog')
     expect(res.status).toBe('ok')
     expect(res.requestId).toBeTypeOf('string')
-    expect(res.knowledge.counts.docs).toBe(6)
+    expect(res.knowledge.counts.docs).toBe(8)
     expect(res.knowledge.counts.examples).toBe(4)
     expect(res.knowledge.counts.plugins).toBe(2)
     expect(res.knowledge.counts.recipes).toBe(5)
@@ -137,12 +137,12 @@ describe('GET /api/knowledge/overview', () => {
   it('returns section and scenario summaries', async () => {
     const res = await api('/api/knowledge/overview')
     expect(res.status).toBe('ok')
-    expect(res.overview.counts.docs).toBe(6)
+    expect(res.overview.counts.docs).toBe(8)
     expect(res.overview.counts.examples).toBe(4)
     expect(res.overview.counts.plugins).toBe(2)
 
     const guidesSection = res.overview.sections.find((section: { id: string }) => section.id === 'guides')
-    expect(guidesSection.docCount).toBe(4)
+    expect(guidesSection.docCount).toBe(5)
 
     const directiveScenario = res.overview.scenarios.find((scenario: { id: string }) => scenario.id === 'directive-middleware')
     expect(directiveScenario.linkedDocCount).toBe(1)
@@ -209,8 +209,9 @@ describe('GET /api/knowledge/search', () => {
   it('applies doc filters', async () => {
     const res = await api('/api/knowledge/search?q=plugin&kind=doc&section=reference')
     expect(res.status).toBe('ok')
-    expect(res.results.length).toBe(1)
+    expect(res.results.length).toBeGreaterThanOrEqual(1)
     expect(res.results[0].id).toBe('doc:/docs/reference/writing-a-plugin')
+    expect(res.results.some((result: { id: string }) => result.id === 'doc:/docs/reference/mcp-version-contract')).toBe(true)
   })
 
   it('supports curated kind filters', async () => {

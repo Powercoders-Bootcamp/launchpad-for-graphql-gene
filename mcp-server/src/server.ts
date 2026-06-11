@@ -100,7 +100,7 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             description: tool.description,
             inputSchema: {
               query: z.string().min(2),
-              kind: z.enum(['doc', 'example']).optional(),
+              kind: z.enum(['doc', 'example', 'plugin', 'recipe', 'troubleshooting']).optional(),
               section: z.string().optional(),
               scenario: z.string().optional(),
               limit: z.number().int().min(1).max(25).optional(),

@@ -119,7 +119,7 @@ async function runDoctor(options) {
       checks.push(await runChecked('http-runtime', 'Streamable HTTP runtime handshake', async () => {
         const result = await verifyHttpTransport(payload)
         return {
-          detail: `Connected over Streamable HTTP at ${result.url} and verified ${result.toolCount} tools, ${result.resourceCount} resources, and the knowledge overview resource.`,
+          detail: `Connected over Streamable HTTP at ${result.url}, verified ${result.toolCount} tools, ${result.resourceCount} resources, the knowledge overview resource, and the health endpoint at ${result.healthUrl}.`,
           data: result,
         }
       }))
@@ -219,9 +219,20 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP knowledge overview resource.',
     )
+    const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
+    const health = await withTimeout(
+      fetch(healthUrl),
+      10000,
+      'Timed out while reading the HTTP health endpoint.',
+    )
+
+    if (!health.ok) {
+      throw new Error(`Health endpoint check failed with status ${health.status}.`)
+    }
 
     return {
       url,
+      healthUrl,
       toolCount: tools.tools.length,
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,

@@ -92,7 +92,7 @@ describe('knowledge MCP domain', () => {
     const payload = JSON.parse(resource.text)
 
     expect(resource.mimeType).toBe('application/json')
-    expect(payload.counts.docs).toBe(6)
+    expect(payload.counts.docs).toBe(8)
     expect(payload.counts.examples).toBe(4)
     expect(payload.counts.plugins).toBe(2)
     expect(payload.counts.recipes).toBe(5)

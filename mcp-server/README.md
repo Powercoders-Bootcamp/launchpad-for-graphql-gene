@@ -19,6 +19,19 @@ This wrapper is responsible for:
 - generating client-ready adoption presets
 - verifying runtime health with a doctor command
 
+## Supported Release Shape
+
+The current official support story is:
+
+- repo-local stdio usage as the primary path
+- separately deployed Streamable HTTP service as the secondary path
+- standalone npm publication deferred for now
+
+Why publication is deferred:
+
+- the canonical knowledge layer still depends on docs and metadata that live in this repository
+- the current boundary is optimized for provenance and correctness, not for a thin published package
+
 ## Commands
 
 ```bash
@@ -69,6 +82,26 @@ Optional environment variables:
 - `GRAPHQL_GENE_MCP_HOST`
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
+- `GRAPHQL_GENE_MCP_HEALTH_PATH`
+
+## Docker HTTP Template
+
+Build from the repository root:
+
+```bash
+docker build -f mcp-server/Dockerfile -t graphql-gene-mcp .
+```
+
+Run the HTTP service:
+
+```bash
+docker run --rm -p 3001:3001 --env-file mcp-server/examples/http.env.example graphql-gene-mcp
+```
+
+Default endpoints:
+
+- MCP: `http://127.0.0.1:3001/mcp`
+- health: `http://127.0.0.1:3001/healthz`
 
 Example preset templates live in:
 
@@ -88,7 +121,7 @@ It verifies:
 - MCP wrapper build output
 - site build integrity
 - MCP-focused Vitest coverage
-- doctor JSON generation for stdio and Streamable HTTP handshakes
+- doctor JSON generation for stdio and Streamable HTTP handshakes plus the HTTP health endpoint
 
 The workflow currently installs `mcp-server/` dependencies with `npm install`
 because that package does not yet have its own committed lockfile.

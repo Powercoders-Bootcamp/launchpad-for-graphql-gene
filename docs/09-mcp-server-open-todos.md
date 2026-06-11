@@ -17,6 +17,9 @@ Current foundation already in place:
 - second-wave MCP prompts for plugin authoring, upgrade planning, and issue triage
 - client registration presets via `npm run mcp:print-config`
 - runtime verification via `npm run mcp:doctor`
+- documented release shape and version contract for repo-local plus HTTP deployment
+- Docker deployment template for Streamable HTTP mode
+- HTTP health endpoint for deployment checks
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
@@ -46,19 +49,20 @@ Acceptance criteria:
 - `MCP` messaging already added to the homepage remains intact
 - site build passes after the copy update
 
-### 2. Release Packaging And CI Hardening
+### 2. Package Publication And Dependency Cleanup
 
 Priority: medium
 
 Tasks:
 
 - keep the new CI workflow healthy across dependency updates
-- decide the release shape for the MCP server:
-  - repo-local only
-  - publishable package
-  - separately deployed HTTP service template
-- document the version contract between the website and `mcp-server`
-- optionally add a deployment recipe or container template for HTTP mode
+- keep the current official release shape explicit:
+  - repo-local stdio is primary
+  - separately deployed HTTP is supported
+  - standalone npm publication is deferred
+- if npm publication becomes a goal later, extract the remaining repo-coupled runtime assumptions
+- make direct runtime dependencies fully explicit for the separately deployed package boundary
+- add a committed lockfile strategy for `mcp-server/`
 
 Acceptance criteria:
 
@@ -76,7 +80,6 @@ Tasks:
 - add rate limits
 - add request size limits
 - add safe and redacted logging
-- add a health or readiness signal suitable for deployment checks
 
 Acceptance criteria:
 

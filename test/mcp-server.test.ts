@@ -6,7 +6,7 @@ describe('mcp-server wrapper', () => {
   it('creates a domain context from the shared knowledge catalog', () => {
     const context = createKnowledgeDomainContext()
 
-    expect(context.catalog.counts.docs).toBe(6)
+    expect(context.catalog.counts.docs).toBe(8)
     expect(context.catalog.counts.examples).toBe(4)
     expect(context.catalog.counts.plugins).toBe(2)
     expect(context.catalog.counts.recipes).toBe(5)

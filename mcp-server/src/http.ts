@@ -7,6 +7,7 @@ export interface GraphqlGeneMcpHttpServerOptions {
   host?: string
   port?: number
   path?: string
+  healthPath?: string
 }
 
 export interface GraphqlGeneMcpHttpServerHandle {
@@ -14,7 +15,9 @@ export interface GraphqlGeneMcpHttpServerHandle {
   host: string
   port: number
   path: string
+  healthPath: string
   url: string
+  healthUrl: string
 }
 
 export async function startGraphqlGeneMcpHttpServer(
@@ -23,9 +26,10 @@ export async function startGraphqlGeneMcpHttpServer(
   const host = options.host ?? '127.0.0.1'
   const port = options.port ?? 3001
   const path = normalizeMcpPath(options.path ?? '/mcp')
+  const healthPath = normalizeMcpPath(options.healthPath ?? '/healthz')
 
   const server = createServer(async (req, res) => {
-    await handleHttpRequest(req, res, path)
+    await handleHttpRequest(req, res, path, healthPath)
   })
 
   await new Promise<void>((resolvePromise, rejectPromise) => {
@@ -43,7 +47,9 @@ export async function startGraphqlGeneMcpHttpServer(
     host,
     port: address.port,
     path,
+    healthPath,
     url: `http://${host}:${address.port}${path}`,
+    healthUrl: `http://${host}:${address.port}${healthPath}`,
   }
 }
 
@@ -65,14 +71,26 @@ export async function startGraphqlGeneMcpHttpServerFromEnv() {
     host: process.env.GRAPHQL_GENE_MCP_HOST,
     port: readPort(process.env.GRAPHQL_GENE_MCP_PORT),
     path: process.env.GRAPHQL_GENE_MCP_PATH,
+    healthPath: process.env.GRAPHQL_GENE_MCP_HEALTH_PATH,
   })
 
   console.error(`[graphql-gene-mcp] streamable HTTP listening on ${handle.url}`)
+  console.error(`[graphql-gene-mcp] health endpoint listening on ${handle.healthUrl}`)
   return handle
 }
 
-async function handleHttpRequest(req: IncomingMessage, res: ServerResponse, expectedPath: string) {
+async function handleHttpRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  expectedPath: string,
+  healthPath: string,
+) {
   const requestUrl = new URL(req.url ?? '/', `http://${req.headers.host ?? '127.0.0.1'}`)
+
+  if (requestUrl.pathname === healthPath) {
+    handleHealthRequest(req, res, expectedPath, healthPath)
+    return
+  }
 
   if (requestUrl.pathname !== expectedPath) {
     writeJson(res, 404, {
@@ -153,6 +171,30 @@ async function handleHttpRequest(req: IncomingMessage, res: ServerResponse, expe
 
     await cleanup()
   }
+}
+
+function handleHealthRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  expectedPath: string,
+  healthPath: string,
+) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET')
+    writeJson(res, 405, {
+      status: 'error',
+      error: 'Method not allowed.',
+    })
+    return
+  }
+
+  writeJson(res, 200, {
+    status: 'ok',
+    service: 'graphql-gene-mcp',
+    transport: 'streamable-http',
+    mcpPath: expectedPath,
+    healthPath,
+  })
 }
 
 function normalizeMcpPath(value: string) {

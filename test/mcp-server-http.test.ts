@@ -35,6 +35,16 @@ afterAll(async () => {
 })
 
 describe('mcp-server streamable HTTP wrapper', () => {
+  it('serves a health endpoint for deployment checks', async () => {
+    const response = await fetch(handle!.healthUrl)
+    const payload = await response.json()
+
+    expect(response.ok).toBe(true)
+    expect(payload.status).toBe('ok')
+    expect(payload.mcpPath).toBe('/mcp')
+    expect(payload.healthPath).toBe('/healthz')
+  })
+
   it('lists MCP tools through the official HTTP client transport', async () => {
     const result = await client!.listTools()
     const toolNames = result.tools.map(tool => tool.name)
@@ -90,5 +100,22 @@ describe('mcp-server streamable HTTP wrapper', () => {
     expect((result.structuredContent as { results: Array<{ id: string }> }).results[0].id).toBe(
       'doc:/docs/guides/directives',
     )
+  })
+
+  it('supports curated search kinds over HTTP', async () => {
+    const result = await client!.callTool({
+      name: 'search_knowledge',
+      arguments: {
+        query: 'sequelize',
+        kind: 'plugin',
+        limit: 2,
+      },
+    })
+
+    const textContent = result.content.find(item => item.type === 'text')
+    expect(textContent).toBeDefined()
+
+    const payload = JSON.parse(textContent!.text)
+    expect(payload.results[0].id).toBe('plugin:sequelize')
   })
 })

@@ -10,6 +10,8 @@ summary: Build the standalone GraphQL Gene MCP server, print client-ready regist
 related:
   - /docs/concepts/getting-started
   - /docs/reference/writing-a-plugin
+  - /docs/guides/mcp-server-deployment
+  - /docs/reference/mcp-version-contract
 ---
 
 # GraphQL Gene MCP server setup
@@ -89,6 +91,7 @@ Optional environment variables:
 GRAPHQL_GENE_MCP_HOST=127.0.0.1
 GRAPHQL_GENE_MCP_PORT=3001
 GRAPHQL_GENE_MCP_PATH=/mcp
+GRAPHQL_GENE_MCP_HEALTH_PATH=/healthz
 ```
 
 The repository also includes:
@@ -96,6 +99,11 @@ The repository also includes:
 - `mcp-server/examples/http.env.example`
 - `mcp-server/examples/generic-stdio-config.json`
 - `mcp-server/examples/generic-http-config.json`
+
+For the official deployment story and Docker template, see:
+
+- `/docs/guides/mcp-server-deployment`
+- `/docs/reference/mcp-version-contract`
 
 ## Verify the installation
 
@@ -111,6 +119,7 @@ This checks:
 - generated client preset payloads
 - a real stdio MCP handshake
 - a real Streamable HTTP MCP handshake
+- the HTTP health endpoint
 - tool/resource listing plus knowledge resource reads
 
 For machine-readable output:
