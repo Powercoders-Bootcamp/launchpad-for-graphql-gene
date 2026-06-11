@@ -20,6 +20,10 @@ This wrapper is responsible for:
 - verifying runtime health with a doctor command
 - checking answer quality and provenance with a golden evaluation harness
 
+It now resolves the workspace root automatically for both source and compiled
+runtime layouts, so the built server can validate the same docs-backed knowledge
+surface that the source tests exercise.
+
 ## Supported Release Shape
 
 The current official support story is:
@@ -81,6 +85,10 @@ npm run mcp:verify
 
 Optional environment variables:
 
+- `GRAPHQL_GENE_MCP_WORKSPACE_ROOT`
+- `GRAPHQL_GENE_MCP_SOURCE_REPO`
+- `GRAPHQL_GENE_MCP_SOURCE_REF`
+- `GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE`
 - `GRAPHQL_GENE_MCP_HOST`
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
@@ -98,6 +106,12 @@ HTTP hardening notes:
 - request bodies are capped by default
 - the built-in rate limiter is process-local and should be treated as an inner safety layer, not a full edge-control replacement
 - access logs avoid request bodies and token values by default
+
+Runtime layout notes:
+
+- `print-config` now emits package-local `npm --prefix <absolute-mcp-server-root> run ...` commands instead of depending on root wrapper scripts
+- `GRAPHQL_GENE_MCP_WORKSPACE_ROOT` can override the repo snapshot root when the package is deployed in a non-standard directory layout
+- `GRAPHQL_GENE_MCP_SOURCE_REPO`, `GRAPHQL_GENE_MCP_SOURCE_REF`, and `GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE` let you keep provenance metadata explicit when the root `package.json` is not the authoritative release marker
 
 ## Docker HTTP Template
 
@@ -138,6 +152,7 @@ It verifies:
 - MCP-focused Vitest coverage
 - golden answer-quality and provenance evaluations
 - doctor JSON generation for stdio and Streamable HTTP handshakes plus the HTTP health endpoint
+- built runtime coverage for canonical docs, examples, plugins, recipes, and troubleshooting resources
 
 The workflow installs `mcp-server/` dependencies with `npm ci --prefix mcp-server`,
 so the package boundary is now reproducible through its own committed lockfile.

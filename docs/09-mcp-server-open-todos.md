@@ -26,6 +26,7 @@ Current foundation already in place:
 - explicit `yaml` runtime dependency in `mcp-server/`
 - package-local lockfile for reproducible `mcp-server/` installs
 - golden MCP evaluation coverage for answer quality and provenance, runnable through `npm run mcp:eval` and `npm run mcp:verify`
+- auto-detected workspace/package roots plus package-local adoption presets, so built MCP runtimes load the same canonical docs-backed knowledge surface as source tests
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
@@ -55,26 +56,6 @@ Acceptance criteria:
 - `MCP` messaging already added to the homepage remains intact
 - site build passes after the copy update
 
-### 2. Package Publication And Dependency Cleanup
-
-Priority: medium
-
-Tasks:
-
-- keep the new CI workflow healthy across dependency updates
-- keep the current official release shape explicit:
-  - repo-local stdio is primary
-  - separately deployed HTTP is supported
-  - standalone npm publication is deferred
-- if npm publication becomes a goal later, extract the remaining repo-coupled runtime assumptions
-- make direct runtime dependencies fully explicit for the separately deployed package boundary
-
-Acceptance criteria:
-
-- broken MCP handshakes are caught in CI before release
-- supported transports and environment variables are documented in one stable place
-- release steps are repeatable by another engineer without hidden context
-
 ## Explicit Non-Goals
 
 These are intentionally not part of the backlog:
@@ -85,5 +66,4 @@ These are intentionally not part of the backlog:
 
 ## Suggested Execution Order
 
-1. package publication and dependency cleanup
-2. homepage and product-positioning pass
+1. homepage and product-positioning pass

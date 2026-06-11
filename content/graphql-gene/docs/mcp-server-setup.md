@@ -48,6 +48,8 @@ For machine-readable output:
 npm run mcp:print-config -- --json
 ```
 
+The printed stdio snippets now invoke the `mcp-server/` package directly, so they do not depend on root wrapper scripts.
+
 ## Option 1: stdio transport
 
 This is the simplest local setup for process-spawned MCP clients.
@@ -88,6 +90,10 @@ npm run mcp:start:http
 Optional environment variables:
 
 ```bash
+GRAPHQL_GENE_MCP_WORKSPACE_ROOT=
+GRAPHQL_GENE_MCP_SOURCE_REPO=
+GRAPHQL_GENE_MCP_SOURCE_REF=
+GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE=
 GRAPHQL_GENE_MCP_HOST=127.0.0.1
 GRAPHQL_GENE_MCP_PORT=3001
 GRAPHQL_GENE_MCP_PATH=/mcp
@@ -98,6 +104,12 @@ GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS=60000
 GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS=120
 GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS=true
 ```
+
+The first four variables are mainly for non-standard deployments:
+
+- `GRAPHQL_GENE_MCP_WORKSPACE_ROOT` overrides the repo snapshot root that contains `content/`, `packages/`, and `server/utils/playground/`
+- `GRAPHQL_GENE_MCP_SOURCE_REPO` and `GRAPHQL_GENE_MCP_SOURCE_REF` keep MCP provenance explicit
+- `GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE` overrides the version range that would otherwise be inferred from the root `package.json`
 
 For local trusted usage, the defaults are usually enough.
 
@@ -135,6 +147,7 @@ This checks:
 - a real Streamable HTTP MCP handshake
 - the HTTP health endpoint
 - tool/resource listing plus knowledge resource reads
+- canonical docs/examples/plugins/recipes/troubleshooting counts from the built runtime
 
 For machine-readable output:
 

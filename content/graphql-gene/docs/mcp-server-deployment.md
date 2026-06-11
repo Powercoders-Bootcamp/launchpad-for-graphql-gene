@@ -69,6 +69,10 @@ Default endpoints:
 
 Supported HTTP deployment environment variables:
 
+- `GRAPHQL_GENE_MCP_WORKSPACE_ROOT`
+- `GRAPHQL_GENE_MCP_SOURCE_REPO`
+- `GRAPHQL_GENE_MCP_SOURCE_REF`
+- `GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE`
 - `GRAPHQL_GENE_MCP_HOST`
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
@@ -82,6 +86,10 @@ Supported HTTP deployment environment variables:
 Recommended defaults:
 
 ```bash
+GRAPHQL_GENE_MCP_WORKSPACE_ROOT=/app
+GRAPHQL_GENE_MCP_SOURCE_REPO=graphql-gene-site
+GRAPHQL_GENE_MCP_SOURCE_REF=workspace
+GRAPHQL_GENE_MCP_GRAPHQL_GENE_VERSION_RANGE=
 GRAPHQL_GENE_MCP_HOST=0.0.0.0
 GRAPHQL_GENE_MCP_PORT=3001
 GRAPHQL_GENE_MCP_PATH=/mcp
@@ -92,6 +100,8 @@ GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS=60000
 GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS=120
 GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS=true
 ```
+
+`GRAPHQL_GENE_MCP_WORKSPACE_ROOT` is the most important override when the repo snapshot is mounted somewhere other than the default auto-detected layout.
 
 ## HTTP hardening defaults
 

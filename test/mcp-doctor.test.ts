@@ -40,5 +40,13 @@ describe('mcp doctor', () => {
     expect(payload.checks.some((check: { id: string, status: string }) => (
       check.id === 'http-runtime' && check.status === 'pass'
     ))).toBe(true)
+
+    const stdioRuntime = payload.checks.find((check: { id: string }) => check.id === 'stdio-runtime')
+    const httpRuntime = payload.checks.find((check: { id: string }) => check.id === 'http-runtime')
+
+    expect(stdioRuntime?.data?.overviewCounts?.docs).toBe(8)
+    expect(stdioRuntime?.data?.resourceCount).toBe(31)
+    expect(httpRuntime?.data?.overviewCounts?.docs).toBe(8)
+    expect(httpRuntime?.data?.resourceCount).toBe(31)
   })
 })

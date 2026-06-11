@@ -4,11 +4,11 @@ import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { buildMcpAdoptionConfig } from './lib/adoption-config.mjs'
 
-const sdkRoot = resolve(import.meta.dirname, '..', '..', 'node_modules', '@modelcontextprotocol', 'sdk', 'dist', 'esm')
-const { Client } = await import(pathToFileURL(resolve(sdkRoot, 'client/index.js')).href)
-const { StdioClientTransport } = await import(pathToFileURL(resolve(sdkRoot, 'client/stdio.js')).href)
+const sdkRoot = resolveSdkRoot()
+const { Client } = await import(pathToFileURL(resolve(sdkRoot, 'dist/esm/client/index.js')).href)
+const { StdioClientTransport } = await import(pathToFileURL(resolve(sdkRoot, 'dist/esm/client/stdio.js')).href)
 const { StreamableHTTPClientTransport } = await import(
-  pathToFileURL(resolve(sdkRoot, 'client/streamableHttp.js')).href,
+  pathToFileURL(resolve(sdkRoot, 'dist/esm/client/streamableHttp.js')).href,
 )
 const scriptPath = fileURLToPath(import.meta.url)
 
@@ -164,11 +164,26 @@ async function verifyStdioTransport(payload) {
       10000,
       'Timed out while reading the stdio knowledge overview resource.',
     )
+    const overviewPayload = parseOverviewPayload(overview)
+    const expectedResourceCount = assertOverviewCoverage('stdio', overviewPayload)
+    const directivesDoc = await withTimeout(
+      client.readResource({ uri: 'docs://docs/guides/directives' }),
+      10000,
+      'Timed out while reading the stdio directives doc resource.',
+    )
+
+    if (resources.resources.length !== expectedResourceCount) {
+      throw new Error(
+        `Unexpected stdio resource count ${resources.resources.length}; expected ${expectedResourceCount} from the knowledge overview payload.`,
+      )
+    }
 
     return {
       toolCount: tools.tools.length,
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
+      overviewCounts: overviewPayload.counts,
+      directivesDocBytes: JSON.stringify(directivesDoc).length,
       stderrPreview: stderrBuffer.read(),
     }
   }
@@ -228,6 +243,13 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP knowledge overview resource.',
     )
+    const overviewPayload = parseOverviewPayload(overview)
+    const expectedResourceCount = assertOverviewCoverage('http', overviewPayload)
+    const directivesDoc = await withTimeout(
+      client.readResource({ uri: 'docs://docs/guides/directives' }),
+      10000,
+      'Timed out while reading the HTTP directives doc resource.',
+    )
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
       fetch(healthUrl, {
@@ -245,12 +267,20 @@ async function verifyHttpTransport(payload) {
       throw new Error(`Health endpoint check failed with status ${health.status}.`)
     }
 
+    if (resources.resources.length !== expectedResourceCount) {
+      throw new Error(
+        `Unexpected HTTP resource count ${resources.resources.length}; expected ${expectedResourceCount} from the knowledge overview payload.`,
+      )
+    }
+
     return {
       url,
       healthUrl,
       toolCount: tools.tools.length,
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
+      overviewCounts: overviewPayload.counts,
+      directivesDocBytes: JSON.stringify(directivesDoc).length,
       stdoutPreview: stdoutBuffer.read(),
       stderrPreview: stderrBuffer.read(),
     }
@@ -534,4 +564,44 @@ function enrichError(error, output) {
   }
 
   return new Error(`${message}\nOutput:\n${output}`)
+}
+
+function parseOverviewPayload(resourceResult) {
+  const text = resourceResult?.contents?.find(content => typeof content?.text === 'string')?.text
+  if (!text) {
+    throw new Error('Knowledge overview resource did not contain JSON text content.')
+  }
+
+  return JSON.parse(text)
+}
+
+function assertOverviewCoverage(transport, overviewPayload) {
+  const counts = overviewPayload?.counts
+  const requiredKeys = ['docs', 'examples', 'plugins', 'recipes', 'troubleshooting']
+
+  for (const key of requiredKeys) {
+    const value = counts?.[key]
+    if (!Number.isInteger(value) || value <= 0) {
+      throw new Error(
+        `The ${transport} knowledge overview reported an invalid "${key}" count (${String(value)}). The built MCP runtime is likely missing canonical knowledge inputs.`,
+      )
+    }
+  }
+
+  return 7 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting
+}
+
+function resolveSdkRoot() {
+  const candidates = [
+    resolve(import.meta.dirname, '..', 'node_modules', '@modelcontextprotocol', 'sdk'),
+    resolve(import.meta.dirname, '..', '..', 'node_modules', '@modelcontextprotocol', 'sdk'),
+  ]
+
+  for (const candidate of candidates) {
+    if (existsSync(resolve(candidate, 'package.json'))) {
+      return candidate
+    }
+  }
+
+  throw new Error('Could not locate @modelcontextprotocol/sdk in either mcp-server/node_modules or the repo root node_modules.')
 }
