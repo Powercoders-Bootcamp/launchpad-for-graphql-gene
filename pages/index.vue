@@ -11,9 +11,13 @@
             <span class="hero-title-accent">{{ ti('home.hero.titleAccent') }}</span>
           </h1>
           <p class="hero-desc">
-            Stop writing resolvers by hand. graphql-gene reads your Sequelize models
+            graphql-gene is ORM-native and generator-first. It reads your Sequelize models
             and generates a complete, production-ready GraphQL schema — with smart
             query lookahead built in.
+          </p>
+          <p class="hero-proof">
+            The differentiator is not polymorphism alone. It is automatic schema generation
+            from the real model layer instead of hand-assembling a generic schema builder.
           </p>
           <div class="hero-actions">
             <NuxtLink :to="localePath('/playground')" class="btn-primary">{{ ti('home.hero.primaryCta') }}</NuxtLink>
@@ -52,8 +56,9 @@
             <p class="mcp-strip-eyebrow">For coding agents and IDE workflows</p>
             <h2 class="mcp-strip-title">GraphQL Gene now ships with a developer MCP server.</h2>
             <p class="mcp-strip-desc">
-              Give Claude Desktop, Cursor, and other MCP clients source-backed GraphQL Gene guidance for docs search,
-              plugin strategy, integration planning, and issue diagnosis.
+              Give Claude Desktop, Cursor, and other MCP clients source-backed GraphQL Gene guidance for an
+              ORM-native, generator-first workflow: docs search, plugin strategy, integration planning, and issue
+              diagnosis.
             </p>
           </div>
           <div class="mcp-strip-meta">
@@ -214,7 +219,7 @@ const polymorphicPlaygroundPath = `${localePath('/playground')}?scenario=polymor
 const mcpSetupPath = localePath('/docs/guides/mcp-server-setup')
 useSeoMeta({
   title: 'graphql-gene — ORM-native GraphQL generation',
-  description: 'Generate production-ready GraphQL schemas from your Sequelize models. Smart query lookahead, directive middleware, and full TypeScript support.',
+  description: 'Generate production-ready GraphQL schemas from your Sequelize models with an ORM-native, generator-first workflow. Smart query lookahead, directive middleware, and full TypeScript support.',
 })
 
 useSeoMeta({
@@ -347,8 +352,16 @@ const showcaseResult = [
   font-size: clamp(1.15rem, 2vw, 1.45rem);
   line-height: 1.5;
   color: var(--muted);
-  margin: 0 0 2rem;
+  margin: 0 0 0.9rem;
   max-width: 40rem;
+}
+
+.hero-proof {
+  margin: 0 0 2rem;
+  max-width: 38rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--muted-strong);
 }
 
 .hero-actions {
