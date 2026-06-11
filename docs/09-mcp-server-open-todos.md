@@ -20,6 +20,11 @@ Current foundation already in place:
 - documented release shape and version contract for repo-local plus HTTP deployment
 - Docker deployment template for Streamable HTTP mode
 - HTTP health endpoint for deployment checks
+- optional bearer auth for the HTTP MCP endpoint
+- built-in request size limits and process-local rate limiting for HTTP mode
+- safe and redacted HTTP access logging
+- explicit `yaml` runtime dependency in `mcp-server/`
+- package-local lockfile for reproducible `mcp-server/` installs
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
@@ -62,7 +67,6 @@ Tasks:
   - standalone npm publication is deferred
 - if npm publication becomes a goal later, extract the remaining repo-coupled runtime assumptions
 - make direct runtime dependencies fully explicit for the separately deployed package boundary
-- add a committed lockfile strategy for `mcp-server/`
 
 Acceptance criteria:
 
@@ -70,24 +74,7 @@ Acceptance criteria:
 - supported transports and environment variables are documented in one stable place
 - release steps are repeatable by another engineer without hidden context
 
-### 3. HTTP Hardening And Operations
-
-Priority: medium
-
-Tasks:
-
-- define auth expectations for separately deployed HTTP mode
-- add rate limits
-- add request size limits
-- add safe and redacted logging
-
-Acceptance criteria:
-
-- HTTP mode has a clear "local trusted" vs "deployed service" operating story
-- public-ish deployment defaults are safer than the current developer-default posture
-- docs explain when stdio is enough and when HTTP should be used
-
-### 4. Evaluation Harness For Answer Quality
+### 3. Evaluation Harness For Answer Quality
 
 Priority: medium
 
@@ -118,6 +105,5 @@ These are intentionally not part of the backlog:
 ## Suggested Execution Order
 
 1. CI and release readiness
-2. HTTP hardening
-3. evaluation harness
-4. homepage and product-positioning pass
+2. evaluation harness
+3. homepage and product-positioning pass

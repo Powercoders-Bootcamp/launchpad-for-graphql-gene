@@ -83,6 +83,19 @@ Optional environment variables:
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
 - `GRAPHQL_GENE_MCP_HEALTH_PATH`
+- `GRAPHQL_GENE_MCP_AUTH_TOKEN`
+- `GRAPHQL_GENE_MCP_MAX_BODY_BYTES`
+- `GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS`
+- `GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS`
+- `GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS`
+
+HTTP hardening notes:
+
+- `GRAPHQL_GENE_MCP_AUTH_TOKEN` protects the MCP endpoint with bearer auth
+- the health endpoint remains intentionally lightweight for readiness probes
+- request bodies are capped by default
+- the built-in rate limiter is process-local and should be treated as an inner safety layer, not a full edge-control replacement
+- access logs avoid request bodies and token values by default
 
 ## Docker HTTP Template
 
@@ -123,5 +136,5 @@ It verifies:
 - MCP-focused Vitest coverage
 - doctor JSON generation for stdio and Streamable HTTP handshakes plus the HTTP health endpoint
 
-The workflow currently installs `mcp-server/` dependencies with `npm install`
-because that package does not yet have its own committed lockfile.
+The workflow installs `mcp-server/` dependencies with `npm ci --prefix mcp-server`,
+so the package boundary is now reproducible through its own committed lockfile.

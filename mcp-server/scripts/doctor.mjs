@@ -186,6 +186,7 @@ async function verifyStdioTransport(payload) {
 async function verifyHttpTransport(payload) {
   const httpConfig = payload.http.start[payload.selectedPlatform]
   const httpEntrypoint = resolve(payload.mcpServerRoot, 'dist/mcp-server/src/http-entry.js')
+  const authToken = process.env.GRAPHQL_GENE_MCP_AUTH_TOKEN
   const child = spawn(process.execPath, [httpEntrypoint], {
     cwd: httpConfig.cwd,
     env: sanitizeEnv({
@@ -209,7 +210,15 @@ async function verifyHttpTransport(payload) {
       name: 'graphql-gene-mcp-doctor-http',
       version: '1.0.0',
     })
-    transport = new StreamableHTTPClientTransport(new URL(url))
+    transport = new StreamableHTTPClientTransport(new URL(url), {
+      requestInit: authToken
+        ? {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        : undefined,
+    })
 
     await withTimeout(client.connect(transport), 15000, 'Timed out while connecting to the HTTP MCP server.')
     const tools = await withTimeout(client.listTools(), 10000, 'Timed out while listing HTTP MCP tools.')
@@ -221,7 +230,13 @@ async function verifyHttpTransport(payload) {
     )
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
-      fetch(healthUrl),
+      fetch(healthUrl, {
+        headers: authToken
+          ? {
+              Authorization: `Bearer ${authToken}`,
+            }
+          : undefined,
+      }),
       10000,
       'Timed out while reading the HTTP health endpoint.',
     )

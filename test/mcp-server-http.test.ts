@@ -45,6 +45,137 @@ describe('mcp-server streamable HTTP wrapper', () => {
     expect(payload.healthPath).toBe('/healthz')
   })
 
+  it('supports bearer auth for HTTP clients when configured', async () => {
+    const securedHandle = await startGraphqlGeneMcpHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      path: '/mcp',
+      authToken: 'test-token',
+      logRequests: false,
+    })
+
+    const securedClient = new Client({
+      name: 'graphql-gene-mcp-http-auth-test',
+      version: '1.0.0',
+    })
+    const securedTransport = new StreamableHTTPClientTransport(new URL(securedHandle.url), {
+      requestInit: {
+        headers: {
+          Authorization: 'Bearer test-token',
+        },
+      },
+    })
+
+    try {
+      await securedClient.connect(securedTransport)
+      const result = await securedClient.listTools()
+      expect(result.tools.some(tool => tool.name === 'search_knowledge')).toBe(true)
+    }
+    finally {
+      await Promise.allSettled([
+        securedTransport.close(),
+        securedClient.close(),
+      ])
+      await stopGraphqlGeneMcpHttpServer(securedHandle.server)
+    }
+  })
+
+  it('rejects unauthorized HTTP requests when bearer auth is enabled', async () => {
+    const securedHandle = await startGraphqlGeneMcpHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      path: '/mcp',
+      authToken: 'test-token',
+      logRequests: false,
+    })
+
+    try {
+      const response = await fetch(securedHandle.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      })
+      const payload = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(payload.error.message).toBe('Unauthorized.')
+    }
+    finally {
+      await stopGraphqlGeneMcpHttpServer(securedHandle.server)
+    }
+  })
+
+  it('applies request body size limits before MCP execution', async () => {
+    const limitedHandle = await startGraphqlGeneMcpHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      path: '/mcp',
+      maxBodyBytes: 32,
+      logRequests: false,
+    })
+
+    try {
+      const response = await fetch(limitedHandle.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: 'x'.repeat(200),
+        }),
+      })
+      const payload = await response.json()
+
+      expect(response.status).toBe(413)
+      expect(payload.error.message).toContain('Request body too large')
+    }
+    finally {
+      await stopGraphqlGeneMcpHttpServer(limitedHandle.server)
+    }
+  })
+
+  it('applies rate limits before MCP execution', async () => {
+    const limitedHandle = await startGraphqlGeneMcpHttpServer({
+      host: '127.0.0.1',
+      port: 0,
+      path: '/mcp',
+      rateLimit: {
+        windowMs: 60_000,
+        maxRequests: 1,
+      },
+      logRequests: false,
+    })
+
+    try {
+      const firstResponse = await fetch(limitedHandle.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: '{',
+      })
+      expect(firstResponse.status).toBe(400)
+
+      const secondResponse = await fetch(limitedHandle.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: '{',
+      })
+      const payload = await secondResponse.json()
+
+      expect(secondResponse.status).toBe(429)
+      expect(secondResponse.headers.get('retry-after')).toBeTruthy()
+      expect(payload.error.message).toBe('Rate limit exceeded.')
+    }
+    finally {
+      await stopGraphqlGeneMcpHttpServer(limitedHandle.server)
+    }
+  })
+
   it('lists MCP tools through the official HTTP client transport', async () => {
     const result = await client!.listTools()
     const toolNames = result.tools.map(tool => tool.name)

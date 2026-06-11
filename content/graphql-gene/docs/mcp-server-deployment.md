@@ -73,6 +73,11 @@ Supported HTTP deployment environment variables:
 - `GRAPHQL_GENE_MCP_PORT`
 - `GRAPHQL_GENE_MCP_PATH`
 - `GRAPHQL_GENE_MCP_HEALTH_PATH`
+- `GRAPHQL_GENE_MCP_AUTH_TOKEN`
+- `GRAPHQL_GENE_MCP_MAX_BODY_BYTES`
+- `GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS`
+- `GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS`
+- `GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS`
 
 Recommended defaults:
 
@@ -81,7 +86,36 @@ GRAPHQL_GENE_MCP_HOST=0.0.0.0
 GRAPHQL_GENE_MCP_PORT=3001
 GRAPHQL_GENE_MCP_PATH=/mcp
 GRAPHQL_GENE_MCP_HEALTH_PATH=/healthz
+GRAPHQL_GENE_MCP_AUTH_TOKEN=replace-me
+GRAPHQL_GENE_MCP_MAX_BODY_BYTES=262144
+GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS=60000
+GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS=120
+GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS=true
 ```
+
+## HTTP hardening defaults
+
+The Streamable HTTP wrapper now supports the following protection layer directly:
+
+- optional bearer-token auth for the MCP endpoint
+- request body size limits
+- per-process in-memory rate limiting
+- safe request logging without request bodies or token values
+
+Important behavior notes:
+
+- the MCP endpoint can be protected with `GRAPHQL_GENE_MCP_AUTH_TOKEN`
+- the health endpoint stays intentionally minimal so deployment probes can still work
+- the built-in rate limiter is process-local, so a reverse proxy or API gateway is still the better outer layer for multi-instance deployments
+
+## Recommended deployment stance
+
+For an internal shared service, use all of the following together:
+
+- `GRAPHQL_GENE_MCP_AUTH_TOKEN`
+- the default body limit unless you have a measured reason to raise it
+- the default rate limit unless another platform layer already enforces stricter limits
+- a reverse proxy or platform ingress if the service will be reachable beyond localhost or a single trusted subnet
 
 ## Release guidance
 
@@ -102,6 +136,6 @@ That verifies:
 
 ## Current operational boundary
 
-This HTTP mode is appropriate for **trusted internal use** right now.
+This HTTP mode is now appropriate for **trusted internal deployments**.
 
-It is not yet positioned as a hardened public internet service because auth, rate limits, and request-size controls are still tracked as follow-up work.
+It is still better treated as an internal service than a raw public internet endpoint. If you expose it more broadly, put it behind stronger platform controls such as managed auth, ingress filtering, and edge rate limiting.

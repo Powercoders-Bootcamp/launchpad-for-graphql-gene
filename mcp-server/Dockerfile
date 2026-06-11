@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 COPY mcp-server/package.json ./mcp-server/package.json
 
 RUN npm ci --ignore-scripts
-RUN npm install --prefix mcp-server --ignore-scripts
+RUN npm ci --prefix mcp-server --ignore-scripts
 
 COPY content ./content
 COPY packages ./packages
@@ -25,10 +25,13 @@ ENV GRAPHQL_GENE_MCP_HOST=0.0.0.0
 ENV GRAPHQL_GENE_MCP_PORT=3001
 ENV GRAPHQL_GENE_MCP_PATH=/mcp
 ENV GRAPHQL_GENE_MCP_HEALTH_PATH=/healthz
+ENV GRAPHQL_GENE_MCP_MAX_BODY_BYTES=262144
+ENV GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS=60000
+ENV GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS=120
+ENV GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS=true
 
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/content ./content
-COPY --from=build /app/node_modules/yaml ./node_modules/yaml
 COPY --from=build /app/mcp-server/package.json ./mcp-server/package.json
 COPY --from=build /app/mcp-server/node_modules ./mcp-server/node_modules
 COPY --from=build /app/mcp-server/dist ./mcp-server/dist

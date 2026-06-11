@@ -92,7 +92,21 @@ GRAPHQL_GENE_MCP_HOST=127.0.0.1
 GRAPHQL_GENE_MCP_PORT=3001
 GRAPHQL_GENE_MCP_PATH=/mcp
 GRAPHQL_GENE_MCP_HEALTH_PATH=/healthz
+GRAPHQL_GENE_MCP_AUTH_TOKEN=
+GRAPHQL_GENE_MCP_MAX_BODY_BYTES=262144
+GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS=60000
+GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS=120
+GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS=true
 ```
+
+For local trusted usage, the defaults are usually enough.
+
+For separately deployed HTTP mode, the recommended minimum is:
+
+- set `GRAPHQL_GENE_MCP_AUTH_TOKEN`
+- keep the request body limit enabled
+- keep the rate limit enabled
+- leave access logs on unless another platform layer already captures safe request metadata
 
 The repository also includes:
 
