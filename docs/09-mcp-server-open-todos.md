@@ -24,7 +24,7 @@ Current foundation already in place:
 - built-in request size limits and process-local rate limiting for HTTP mode
 - safe and redacted HTTP access logging
 - optional rich project and issue context inputs for developer-facing MCP tools
-- developer task pattern MCP tools for planning, adapting, and validating project-specific implementations based on showcased GraphQL Gene capabilities
+- six composable developer task MCP tools plus `developer-tasks://overview` and `developer-tasks://task/{id}` resources
 - playground maintainer MCP tools for scenario inspection, planning, validation, parity comparison, and parity gate listing
 - source-fingerprint-based cached site knowledge catalog invalidation for docs-backed catalog rebuilds
 - catalog diagnostics that flag required playground parity gates and unverified displayed-code parity
@@ -39,14 +39,14 @@ up concrete work from it.
 
 ## Open TODOs
 
-### 1. Upstream Provenance And Example Parity Audit
+### 1. Upstream Provenance And Full Audit
 
 Priority: high
 
 Goal:
 
 - move source provenance from repo-local `workspace` metadata toward explicit upstream refs
-- prove which playground examples are canonical, adapted, or simulated
+- complete the end-to-end upstream audit across docs, package exports, examples, and plugin behavior
 - keep displayed playground code aligned with upstream docs/source expectations
 
 Tasks:
@@ -63,7 +63,66 @@ Acceptance criteria:
 - `validate_playground_scenario` passes for existing scenario implementation summaries
 - catalog diagnostics stop warning about displayed-code parity only after parity is actually proven
 
-### 2. Public HTTP Deployment Policy
+### 2. Package Export Parity Pass
+
+Priority: high
+
+Goal:
+
+- verify every parity-sensitive GraphQL Gene capability against the installed package surface
+- reduce conceptual claims where package exports or runtime behavior do not fully confirm them
+
+Tasks:
+
+- audit documented imports and decorators against installed package entrypoints
+- separate confirmed APIs from conceptual patterns in the canonical knowledge layer
+- add deeper parity checks for polymorphic and directive-sensitive areas
+
+Acceptance criteria:
+
+- task warnings only remain on genuinely unresolved parity gaps
+- developer-task outputs clearly distinguish confirmed APIs from conceptual guidance
+- doctor and eval coverage catch regressions in parity-sensitive task recommendations
+
+### 3. Deeper Canonical Examples And Recipes
+
+Priority: medium
+
+Goal:
+
+- expand the canonical knowledge layer with more implementation-grade examples for real developer tasks
+
+Tasks:
+
+- add more upstream-backed examples for schema generation, filters, mutations, and custom plugin authoring
+- expand recipe coverage where the current tasks rely on high-level docs only
+- keep every added example linked to evidence and version metadata
+
+Acceptance criteria:
+
+- high-frequency developer tasks have at least one strong example or recipe path
+- adaptation tools can point to richer concept mappings without falling back to playground-only guidance
+
+### 4. Optional Schema/Provenance Compiler
+
+Priority: medium
+
+Goal:
+
+- reduce hand-maintained canonical metadata as the knowledge surface grows
+
+Tasks:
+
+- evaluate a compiler layer that derives more catalog structure from upstream docs and package metadata
+- preserve human-curated overrides for warnings, confidence, and parity notes
+- define how generated provenance should be reviewed before release
+
+Acceptance criteria:
+
+- compiler output can be validated deterministically
+- human review points remain explicit for trust-sensitive claims
+
+### 5. Public HTTP Deployment Policy
 
 Priority: medium
 
@@ -95,5 +154,8 @@ These are intentionally not part of the backlog:
 ## Suggested Execution Order
 
 1. homepage and product-positioning pass
-2. upstream provenance and playground parity audit
-3. public HTTP deployment policy
+2. upstream provenance and full audit
+3. package export parity pass
+4. deeper canonical examples and recipes
+5. optional schema/provenance compiler
+6. public HTTP deployment policy

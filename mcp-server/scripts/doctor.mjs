@@ -171,7 +171,15 @@ async function verifyStdioTransport(payload) {
       10000,
       'Timed out while reading the stdio directives doc resource.',
     )
+    const developerTaskOverview = await withTimeout(
+      client.readResource({ uri: 'developer-tasks://overview' }),
+      10000,
+      'Timed out while reading the stdio developer task overview resource.',
+    )
+    const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'stdio')
     const developerToolPayload = await verifyDeveloperTaskTool(client, 'stdio')
+    const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'stdio')
     const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'stdio')
 
     if (resources.resources.length !== expectedResourceCount) {
@@ -185,9 +193,14 @@ async function verifyStdioTransport(payload) {
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
+      developerTaskCount: developerTaskOverviewPayload.count,
+      developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
+      developerTaskVersionMetadata: developerToolPayload.versionMetadata,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
       developerToolPattern: developerToolPayload.patternId,
       developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
+      developerIssueTask: developerIssueDiagnosisPayload.taskId,
       maintainerToolScenario: maintainerToolPayload.scenario,
       maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
       maintainerToolGateCount: maintainerToolPayload.parityGates.length,
@@ -257,7 +270,15 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP directives doc resource.',
     )
+    const developerTaskOverview = await withTimeout(
+      client.readResource({ uri: 'developer-tasks://overview' }),
+      10000,
+      'Timed out while reading the HTTP developer task overview resource.',
+    )
+    const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'HTTP')
     const developerToolPayload = await verifyDeveloperTaskTool(client, 'HTTP')
+    const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'HTTP')
     const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'HTTP')
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
@@ -289,9 +310,14 @@ async function verifyHttpTransport(payload) {
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
+      developerTaskCount: developerTaskOverviewPayload.count,
+      developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
+      developerTaskVersionMetadata: developerToolPayload.versionMetadata,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
       developerToolPattern: developerToolPayload.patternId,
       developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
+      developerIssueTask: developerIssueDiagnosisPayload.taskId,
       maintainerToolScenario: maintainerToolPayload.scenario,
       maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
       maintainerToolGateCount: maintainerToolPayload.parityGates.length,
@@ -617,6 +643,50 @@ async function verifyDeveloperTaskTool(client, transportLabel) {
   return payload
 }
 
+async function verifyDeveloperTaskClassificationTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'classify_developer_goal',
+      arguments: {
+        goal: 'I need to migrate a hand-written schema toward GraphQL Gene',
+        project: {
+          currentGraphqlSetup: 'hand-written schema and resolvers',
+        },
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer task classification tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'classify_developer_goal')
+
+  if (payload?.rankedTasks?.[0]?.taskId !== 'migrate-from-handwritten-schema') {
+    throw new Error(`${transportLabel} developer task classification tool returned an unexpected top task.`)
+  }
+
+  return payload
+}
+
+async function verifyDeveloperTaskDiagnosisTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'diagnose_developer_issue',
+      arguments: {
+        symptom: 'my generated schema is missing expected model types',
+        stage: 'schema',
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer issue diagnosis tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'diagnose_developer_issue')
+
+  if (payload.taskId !== 'debug-schema-generation') {
+    throw new Error(`${transportLabel} developer issue diagnosis tool returned an unexpected task.`)
+  }
+
+  return payload
+}
+
 async function verifyPlaygroundMaintainerTool(client, transportLabel) {
   const result = await withTimeout(
     client.callTool({
@@ -665,7 +735,14 @@ function assertOverviewCoverage(transport, overviewPayload) {
     }
   }
 
-  return 7 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting
+  const developerTaskCount = overviewPayload?.developerTasks?.count
+  if (!Number.isInteger(developerTaskCount) || developerTaskCount <= 0) {
+    throw new Error(
+      `The ${transport} knowledge overview reported an invalid developer task count (${String(developerTaskCount)}). The built MCP runtime is likely missing canonical developer task inputs.`,
+    )
+  }
+
+  return 8 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting + developerTaskCount
 }
 
 function resolveSdkRoot() {

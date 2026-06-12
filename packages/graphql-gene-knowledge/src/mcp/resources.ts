@@ -1,4 +1,9 @@
 import type { KnowledgeCatalog } from '../contracts'
+import {
+  buildDeveloperTaskOverviewResource,
+  listDeveloperTaskPatterns,
+  readDeveloperTaskResource,
+} from '../developer/task-patterns'
 import type { McpDomainContext, McpResourceDescriptor, McpResourceDocument } from './contracts'
 
 const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
@@ -44,6 +49,12 @@ const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
     description: 'Returns common GraphQL Gene troubleshooting entries backed by canonical guidance.',
     mimeType: 'application/json',
   },
+  {
+    uri: 'developer-tasks://overview',
+    name: 'Developer Task Overview',
+    description: 'Returns the canonical GraphQL Gene developer task catalog with stages, capabilities, evidence, and warnings.',
+    mimeType: 'application/json',
+  },
 ]
 
 export function listKnowledgeMcpResources(context?: McpDomainContext): McpResourceDescriptor[] {
@@ -83,6 +94,12 @@ export function listKnowledgeMcpResources(context?: McpDomainContext): McpResour
       description: `Curated troubleshooting entry for ${issue.issueId}.`,
       mimeType: 'application/json' as const,
     })),
+    ...listDeveloperTaskPatterns(context.catalog).patterns.map(task => ({
+      uri: toDeveloperTaskResourceUri(task.taskId),
+      name: `Developer Task: ${task.title}`,
+      description: `Canonical developer task entry for ${task.taskId}.`,
+      mimeType: 'application/json' as const,
+    })),
   ]
 }
 
@@ -108,6 +125,8 @@ export function readKnowledgeMcpResource(context: McpDomainContext, uri: string)
       return jsonResource(uri, context.catalog.recipes)
     case 'troubleshooting://catalog':
       return jsonResource(uri, context.catalog.troubleshooting)
+    case 'developer-tasks://overview':
+      return jsonResource(uri, buildDeveloperTaskOverviewResource(context.catalog))
     default:
       return readEntryResource(context, uri)
   }
@@ -142,6 +161,9 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
   return {
     generatedAt: catalog.generatedAt,
     counts: catalog.counts,
+    developerTasks: {
+      count: listDeveloperTaskPatterns(catalog).count,
+    },
     scenarios,
     diagnostics: catalog.diagnostics,
   }
@@ -185,6 +207,11 @@ function readEntryResource(context: McpDomainContext, uri: string): McpResourceD
     return jsonResource(uri, troubleshooting)
   }
 
+  if (uri.startsWith('developer-tasks://task/')) {
+    const taskId = uri.slice('developer-tasks://task/'.length)
+    return jsonResource(uri, readDeveloperTaskResource(context.catalog, taskId))
+  }
+
   throw new Error(`Unknown MCP resource URI "${uri}".`)
 }
 
@@ -206,4 +233,8 @@ function toRecipeResourceUri(recipeId: string) {
 
 function toTroubleshootingResourceUri(issueId: string) {
   return `troubleshooting://issue/${issueId}`
+}
+
+function toDeveloperTaskResourceUri(taskId: string) {
+  return `developer-tasks://task/${taskId}`
 }

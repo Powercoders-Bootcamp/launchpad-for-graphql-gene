@@ -14,6 +14,7 @@ This wrapper is responsible for:
 - loading the canonical knowledge catalog
 - exposing resources, prompts, and tools through MCP
 - surfacing docs, examples, plugins, recipes, and troubleshooting guidance from one shared graph
+- exposing a task-aware developer assistant layer for real GraphQL Gene project work
 - exposing separate playground maintainer tools for scenario contracts, parity gates, and implementation validation
 - running over stdio so local coding agents can attach directly
 - optionally running over Streamable HTTP for separate deployment
@@ -103,7 +104,7 @@ Optional environment variables:
 
 ## Tool Families
 
-Developer-facing tools help agents use GraphQL Gene in their own projects:
+Developer-facing discovery and explanation tools help agents use GraphQL Gene in their own projects:
 
 - `search_knowledge`
 - `recommend_integration_path`
@@ -112,13 +113,21 @@ Developer-facing tools help agents use GraphQL Gene in their own projects:
 - `plan_graphql_gene_integration`
 - `diagnose_graphql_gene_issue`
 
-Developer task pattern tools help agents turn the showcased GraphQL Gene
-capabilities into project-specific implementation plans:
+Task-aware developer tools help agents turn GraphQL Gene capabilities into
+project-specific implementation plans without confusing demos for source of
+truth:
 
 - `list_developer_task_patterns`
+- `classify_developer_goal`
 - `plan_developer_task`
 - `adapt_example_to_project`
 - `validate_developer_task_plan`
+- `diagnose_developer_issue`
+
+Developer task resources are also exposed through:
+
+- `developer-tasks://overview`
+- `developer-tasks://task/{id}`
 
 Playground maintainer tools help agents implement this website's playground
 scenarios without confusing adapted demos with upstream GraphQL Gene behavior:
@@ -132,6 +141,37 @@ scenarios without confusing adapted demos with upstream GraphQL Gene behavior:
 The maintainer tools expect structured summaries from the host coding agent. They
 do not read local files themselves; the host agent remains responsible for local
 project inspection.
+
+## Source Boundaries
+
+The MCP server is designed for developers using GraphQL Gene in their own
+projects, not only for this website playground.
+
+Boundary rules:
+
+- canonical docs, recipes, plugin metadata, package exports, and package behavior outrank playground demos
+- playground examples are conceptual support unless parity is explicitly proven
+- the host coding agent inspects local files; the MCP server consumes summarized context instead of reading the project directly
+
+## Recommended Host-Agent Workflow
+
+1. Inspect local files in the target project and summarize models, server wiring, plugin choices, schema ownership, and constraints.
+2. Call `classify_developer_goal` to map the developer goal into the right task family.
+3. Call `plan_developer_task` to get plugin strategy, implementation steps, validation checks, evidence, warnings, and version notes.
+4. Call `adapt_example_to_project` only to translate concepts, not to copy playground runtime code.
+5. Call `validate_developer_task_plan` before editing code when the task has non-obvious risk.
+6. Call `diagnose_developer_issue` when behavior diverges during setup, schema generation, directives, query lookahead, or migration work.
+
+## Example Client Calls
+
+Representative tool calls:
+
+- classify a migration goal:
+  `classify_developer_goal { "goal": "Migrate part of our hand-written schema to GraphQL Gene", "project": { "orm": "Sequelize", "currentGraphqlSetup": "hand-written schema" } }`
+- plan a directive task:
+  `plan_developer_task { "taskId": "attach-directive-middleware", "project": { "orm": "Sequelize", "serverStack": "Apollo Server" } }`
+- diagnose missing generated types:
+  `diagnose_developer_issue { "symptom": "Generated schema is missing expected model fields", "stage": "schema", "project": { "orm": "Sequelize" } }`
 
 HTTP hardening notes:
 

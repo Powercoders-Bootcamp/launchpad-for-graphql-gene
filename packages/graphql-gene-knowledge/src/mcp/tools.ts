@@ -9,11 +9,16 @@ import type {
 } from '../contracts'
 import {
   adaptExampleToProject,
+  classifyDeveloperGoal,
+  diagnoseDeveloperIssue,
   listDeveloperTaskPatterns,
   planDeveloperTask,
   validateDeveloperTaskPlan,
   type AdaptExampleToProjectInput,
+  type DeveloperGoalClassificationInput,
+  type DiagnoseDeveloperIssueInput,
   type DeveloperTaskPlanInput,
+  type ListDeveloperTaskPatternsInput,
   type ValidateDeveloperTaskPlanInput,
 } from '../developer/task-patterns'
 import {
@@ -157,7 +162,32 @@ const TOOLS: McpToolDescriptor[] = [
       properties: {
         query: { type: 'string' },
         scenario: { type: 'string' },
+        stage: {
+          type: 'string',
+          enum: ['evaluate', 'setup', 'typing', 'schema', 'server', 'customization', 'query', 'directive', 'plugin', 'debug', 'upgrade', 'integration', 'migration'],
+        },
+        capability: {
+          type: 'string',
+          enum: ['adoption', 'plugin-strategy', 'setup', 'typing', 'schema-generation', 'schema-inspection', 'scalars', 'field-exposure', 'aliases', 'generated-query', 'filtering', 'lookahead', 'mutation', 'directive', 'polymorphism', 'plugin-authoring', 'debugging', 'upgrade', 'codegen', 'migration'],
+        },
+        orm: { type: 'string' },
+        confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'classify_developer_goal',
+    description: 'Classify a developer goal into the most relevant GraphQL Gene task patterns before planning implementation.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        goal: { type: 'string', minLength: 2 },
+        project: projectSummaryJsonSchema(),
+        constraints: { type: 'array', items: { type: 'string' } },
+        targetVersion: { type: 'string' },
+      },
+      required: ['goal'],
       additionalProperties: false,
     },
   },
@@ -167,6 +197,7 @@ const TOOLS: McpToolDescriptor[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        taskId: { type: 'string' },
         patternId: { type: 'string' },
         goal: { type: 'string' },
         project: projectSummaryJsonSchema(),
@@ -182,6 +213,7 @@ const TOOLS: McpToolDescriptor[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        taskId: { type: 'string' },
         patternId: { type: 'string' },
         exampleId: { type: 'string' },
         goal: { type: 'string' },
@@ -199,6 +231,7 @@ const TOOLS: McpToolDescriptor[] = [
     inputSchema: {
       type: 'object',
       properties: {
+        taskId: { type: 'string' },
         patternId: { type: 'string' },
         goal: { type: 'string' },
         project: projectSummaryJsonSchema(),
@@ -213,6 +246,31 @@ const TOOLS: McpToolDescriptor[] = [
         handlesDirectiveRuntimeMode: { type: 'boolean' },
         handlesPolymorphicResolution: { type: 'boolean' },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'diagnose_developer_issue',
+    description: 'Diagnose a GraphQL Gene developer issue with task-aware guidance, troubleshooting, and source-backed next checks.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string' },
+        patternId: { type: 'string' },
+        symptom: { type: 'string', minLength: 2 },
+        stage: {
+          type: 'string',
+          enum: ['install', 'schema', 'runtime', 'plugin', 'query', 'directive'],
+        },
+        project: projectSummaryJsonSchema(),
+        observedBehavior: { type: 'string' },
+        expectedBehavior: { type: 'string' },
+        selectedPlugin: { type: 'string' },
+        schemaExcerpt: { type: 'string' },
+        operationExcerpt: { type: 'string' },
+        targetVersion: { type: 'string' },
+      },
+      required: ['symptom'],
       additionalProperties: false,
     },
   },
@@ -323,12 +381,16 @@ export function invokeKnowledgeMcpTool(
       return runDiagnoseIssueTool(context, input)
     case 'list_developer_task_patterns':
       return runListDeveloperTaskPatternsTool(context, input)
+    case 'classify_developer_goal':
+      return runClassifyDeveloperGoalTool(context, input)
     case 'plan_developer_task':
       return runPlanDeveloperTaskTool(context, input)
     case 'adapt_example_to_project':
       return runAdaptExampleToProjectTool(context, input)
     case 'validate_developer_task_plan':
       return runValidateDeveloperTaskPlanTool(context, input)
+    case 'diagnose_developer_issue':
+      return runDiagnoseDeveloperIssueTool(context, input)
     case 'inspect_playground_scenario':
       return runInspectPlaygroundScenarioTool(context, input)
     case 'validate_playground_scenario':
@@ -596,7 +658,18 @@ function runListDeveloperTaskPatternsTool(context: McpDomainContext, input: Reco
   return listDeveloperTaskPatterns(context.catalog, {
     query: readString(input.query),
     scenario: readString(input.scenario),
+    stage: asDeveloperTaskStage(input.stage),
+    capability: asDeveloperTaskCapability(input.capability),
+    orm: readString(input.orm),
+    confidence: asDeveloperTaskConfidence(input.confidence),
   })
+}
+
+function runClassifyDeveloperGoalTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return classifyDeveloperGoal(
+    context.catalog,
+    readDeveloperGoalClassificationInput(input),
+  )
 }
 
 function runPlanDeveloperTaskTool(context: McpDomainContext, input: Record<string, unknown>) {
@@ -617,6 +690,13 @@ function runValidateDeveloperTaskPlanTool(context: McpDomainContext, input: Reco
   return validateDeveloperTaskPlan(
     context.catalog,
     readValidateDeveloperTaskPlanInput(input),
+  )
+}
+
+function runDiagnoseDeveloperIssueTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return diagnoseDeveloperIssue(
+    context.catalog,
+    readDiagnoseDeveloperIssueInput(input),
   )
 }
 
@@ -1058,8 +1138,18 @@ function readIssueReport(value: unknown) {
   }
 }
 
+function readDeveloperGoalClassificationInput(input: Record<string, unknown>): DeveloperGoalClassificationInput {
+  return {
+    goal: readString(input.goal) ?? '',
+    project: readProjectSummary(input.project),
+    constraints: readStringArray(input.constraints),
+    targetVersion: readString(input.targetVersion),
+  }
+}
+
 function readDeveloperTaskPlanInput(input: Record<string, unknown>): DeveloperTaskPlanInput {
   return {
+    taskId: readString(input.taskId),
     patternId: readString(input.patternId),
     goal: readString(input.goal),
     project: readProjectSummary(input.project),
@@ -1070,6 +1160,7 @@ function readDeveloperTaskPlanInput(input: Record<string, unknown>): DeveloperTa
 
 function readAdaptExampleToProjectInput(input: Record<string, unknown>): AdaptExampleToProjectInput {
   return {
+    taskId: readString(input.taskId),
     patternId: readString(input.patternId),
     exampleId: readString(input.exampleId),
     goal: readString(input.goal),
@@ -1082,6 +1173,7 @@ function readAdaptExampleToProjectInput(input: Record<string, unknown>): AdaptEx
 
 function readValidateDeveloperTaskPlanInput(input: Record<string, unknown>): ValidateDeveloperTaskPlanInput {
   return {
+    taskId: readString(input.taskId),
     patternId: readString(input.patternId),
     goal: readString(input.goal),
     project: readProjectSummary(input.project),
@@ -1095,6 +1187,22 @@ function readValidateDeveloperTaskPlanInput(input: Record<string, unknown>): Val
     handlesLookahead: readBoolean(input.handlesLookahead),
     handlesDirectiveRuntimeMode: readBoolean(input.handlesDirectiveRuntimeMode),
     handlesPolymorphicResolution: readBoolean(input.handlesPolymorphicResolution),
+  }
+}
+
+function readDiagnoseDeveloperIssueInput(input: Record<string, unknown>): DiagnoseDeveloperIssueInput {
+  return {
+    taskId: readString(input.taskId),
+    patternId: readString(input.patternId),
+    symptom: readString(input.symptom) ?? '',
+    stage: asDiagnoseIssueStage(input.stage),
+    project: readProjectSummary(input.project),
+    observedBehavior: readString(input.observedBehavior),
+    expectedBehavior: readString(input.expectedBehavior),
+    selectedPlugin: readString(input.selectedPlugin),
+    schemaExcerpt: readString(input.schemaExcerpt),
+    operationExcerpt: readString(input.operationExcerpt),
+    targetVersion: readString(input.targetVersion),
   }
 }
 
@@ -1177,6 +1285,66 @@ function readStringArray(value: unknown) {
 
 function readBoolean(value: unknown) {
   return typeof value === 'boolean' ? value : undefined
+}
+
+function asDeveloperTaskStage(value: unknown): ListDeveloperTaskPatternsInput['stage'] | undefined {
+  return value === 'evaluate'
+    || value === 'setup'
+    || value === 'typing'
+    || value === 'schema'
+    || value === 'server'
+    || value === 'customization'
+    || value === 'query'
+    || value === 'directive'
+    || value === 'plugin'
+    || value === 'debug'
+    || value === 'upgrade'
+    || value === 'integration'
+    || value === 'migration'
+    ? value
+    : undefined
+}
+
+function asDeveloperTaskCapability(value: unknown): ListDeveloperTaskPatternsInput['capability'] | undefined {
+  return value === 'adoption'
+    || value === 'plugin-strategy'
+    || value === 'setup'
+    || value === 'typing'
+    || value === 'schema-generation'
+    || value === 'schema-inspection'
+    || value === 'scalars'
+    || value === 'field-exposure'
+    || value === 'aliases'
+    || value === 'generated-query'
+    || value === 'filtering'
+    || value === 'lookahead'
+    || value === 'mutation'
+    || value === 'directive'
+    || value === 'polymorphism'
+    || value === 'plugin-authoring'
+    || value === 'debugging'
+    || value === 'upgrade'
+    || value === 'codegen'
+    || value === 'migration'
+    ? value
+    : undefined
+}
+
+function asDeveloperTaskConfidence(value: unknown): ListDeveloperTaskPatternsInput['confidence'] | undefined {
+  return value === 'high' || value === 'medium' || value === 'low'
+    ? value
+    : undefined
+}
+
+function asDiagnoseIssueStage(value: unknown): DiagnoseDeveloperIssueInput['stage'] | undefined {
+  return value === 'install'
+    || value === 'schema'
+    || value === 'runtime'
+    || value === 'plugin'
+    || value === 'query'
+    || value === 'directive'
+    ? value
+    : undefined
 }
 
 function asExecutionMode(value: unknown) {

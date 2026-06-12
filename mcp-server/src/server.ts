@@ -236,6 +236,27 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             inputSchema: {
               query: z.string().optional(),
               scenario: z.string().optional(),
+              stage: z.enum(['evaluate', 'setup', 'typing', 'schema', 'server', 'customization', 'query', 'directive', 'plugin', 'debug', 'upgrade', 'integration', 'migration']).optional(),
+              capability: z.enum(['adoption', 'plugin-strategy', 'setup', 'typing', 'schema-generation', 'schema-inspection', 'scalars', 'field-exposure', 'aliases', 'generated-query', 'filtering', 'lookahead', 'mutation', 'directive', 'polymorphism', 'plugin-authoring', 'debugging', 'upgrade', 'codegen', 'migration']).optional(),
+              orm: z.string().optional(),
+              confidence: z.enum(['high', 'medium', 'low']).optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'classify_developer_goal':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              goal: z.string().min(2),
+              project: projectSummarySchema,
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -249,6 +270,7 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             title: tool.name,
             description: tool.description,
             inputSchema: {
+              taskId: z.string().optional(),
               patternId: z.string().optional(),
               goal: z.string().optional(),
               project: projectSummarySchema,
@@ -267,6 +289,7 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             title: tool.name,
             description: tool.description,
             inputSchema: {
+              taskId: z.string().optional(),
               patternId: z.string().optional(),
               exampleId: z.string().optional(),
               goal: z.string().optional(),
@@ -287,6 +310,7 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             title: tool.name,
             description: tool.description,
             inputSchema: {
+              taskId: z.string().optional(),
               patternId: z.string().optional(),
               goal: z.string().optional(),
               project: projectSummarySchema,
@@ -300,6 +324,30 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
               handlesLookahead: z.boolean().optional(),
               handlesDirectiveRuntimeMode: z.boolean().optional(),
               handlesPolymorphicResolution: z.boolean().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'diagnose_developer_issue':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              taskId: z.string().optional(),
+              patternId: z.string().optional(),
+              symptom: z.string().min(2),
+              stage: z.enum(['install', 'schema', 'runtime', 'plugin', 'query', 'directive']).optional(),
+              project: projectSummarySchema,
+              observedBehavior: z.string().optional(),
+              expectedBehavior: z.string().optional(),
+              selectedPlugin: z.string().optional(),
+              schemaExcerpt: z.string().optional(),
+              operationExcerpt: z.string().optional(),
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
