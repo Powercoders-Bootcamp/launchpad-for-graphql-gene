@@ -18,7 +18,7 @@ This wrapper is responsible for:
 - running over stdio so local coding agents can attach directly
 - optionally running over Streamable HTTP for separate deployment
 - generating client-ready adoption presets
-- verifying runtime health with a doctor command
+- verifying runtime health and maintainer tool invocation with a doctor command
 - checking answer quality and provenance with a golden evaluation harness
 
 It now resolves the workspace root automatically for both source and compiled

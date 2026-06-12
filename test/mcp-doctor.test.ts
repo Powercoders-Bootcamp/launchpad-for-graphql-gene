@@ -46,7 +46,13 @@ describe('mcp doctor', () => {
 
     expect(stdioRuntime?.data?.overviewCounts?.docs).toBe(8)
     expect(stdioRuntime?.data?.resourceCount).toBe(31)
+    expect(stdioRuntime?.data?.maintainerToolScenario).toBe('polymorphic-blocks')
+    expect(stdioRuntime?.data?.maintainerToolKnownScenario).toBe(true)
+    expect(stdioRuntime?.data?.maintainerToolGateCount).toBeGreaterThanOrEqual(5)
     expect(httpRuntime?.data?.overviewCounts?.docs).toBe(8)
     expect(httpRuntime?.data?.resourceCount).toBe(31)
+    expect(httpRuntime?.data?.maintainerToolScenario).toBe('polymorphic-blocks')
+    expect(httpRuntime?.data?.maintainerToolKnownScenario).toBe(true)
+    expect(httpRuntime?.data?.maintainerToolGateCount).toBeGreaterThanOrEqual(5)
   })
 })

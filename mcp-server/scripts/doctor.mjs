@@ -171,6 +171,7 @@ async function verifyStdioTransport(payload) {
       10000,
       'Timed out while reading the stdio directives doc resource.',
     )
+    const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'stdio')
 
     if (resources.resources.length !== expectedResourceCount) {
       throw new Error(
@@ -184,6 +185,9 @@ async function verifyStdioTransport(payload) {
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      maintainerToolScenario: maintainerToolPayload.scenario,
+      maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
+      maintainerToolGateCount: maintainerToolPayload.parityGates.length,
       stderrPreview: stderrBuffer.read(),
     }
   }
@@ -250,6 +254,7 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP directives doc resource.',
     )
+    const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'HTTP')
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
       fetch(healthUrl, {
@@ -281,6 +286,9 @@ async function verifyHttpTransport(payload) {
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      maintainerToolScenario: maintainerToolPayload.scenario,
+      maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
+      maintainerToolGateCount: maintainerToolPayload.parityGates.length,
       stdoutPreview: stdoutBuffer.read(),
       stderrPreview: stderrBuffer.read(),
     }
@@ -570,6 +578,41 @@ function parseOverviewPayload(resourceResult) {
   const text = resourceResult?.contents?.find(content => typeof content?.text === 'string')?.text
   if (!text) {
     throw new Error('Knowledge overview resource did not contain JSON text content.')
+  }
+
+  return JSON.parse(text)
+}
+
+async function verifyPlaygroundMaintainerTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'inspect_playground_scenario',
+      arguments: {
+        scenario: 'polymorphic-blocks',
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} playground maintainer inspection tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'inspect_playground_scenario')
+
+  if (payload.scenario !== 'polymorphic-blocks' || payload.knownScenario !== true) {
+    throw new Error(
+      `${transportLabel} maintainer tool returned an unexpected scenario contract for polymorphic-blocks.`,
+    )
+  }
+
+  if (!Array.isArray(payload.parityGates) || payload.parityGates.length < 5) {
+    throw new Error(`${transportLabel} maintainer tool did not return the expected playground parity gates.`)
+  }
+
+  return payload
+}
+
+function parseToolJsonPayload(toolResult, toolName) {
+  const text = toolResult?.content?.find(content => typeof content?.text === 'string')?.text
+  if (!text) {
+    throw new Error(`${toolName} did not return JSON text content.`)
   }
 
   return JSON.parse(text)
