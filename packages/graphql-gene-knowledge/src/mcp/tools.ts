@@ -8,6 +8,15 @@ import type {
   TroubleshootingKnowledgeEntry,
 } from '../contracts'
 import {
+  adaptExampleToProject,
+  listDeveloperTaskPatterns,
+  planDeveloperTask,
+  validateDeveloperTaskPlan,
+  type AdaptExampleToProjectInput,
+  type DeveloperTaskPlanInput,
+  type ValidateDeveloperTaskPlanInput,
+} from '../developer/task-patterns'
+import {
   comparePlaygroundWithCanonical,
   inspectPlaygroundScenario,
   listPlaygroundParityGates,
@@ -141,6 +150,73 @@ const TOOLS: McpToolDescriptor[] = [
     },
   },
   {
+    name: 'list_developer_task_patterns',
+    description: 'List source-backed GraphQL Gene developer task patterns derived from the canonical docs, recipes, and examples.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        scenario: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'plan_developer_task',
+    description: 'Plan how a developer should implement a GraphQL Gene task pattern in their own project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        patternId: { type: 'string' },
+        goal: { type: 'string' },
+        project: projectSummaryJsonSchema(),
+        constraints: { type: 'array', items: { type: 'string' } },
+        targetVersion: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'adapt_example_to_project',
+    description: 'Explain how to adapt a canonical GraphQL Gene example pattern to a developer project without copying website playground runtime code.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        patternId: { type: 'string' },
+        exampleId: { type: 'string' },
+        goal: { type: 'string' },
+        project: projectSummaryJsonSchema(),
+        targetModels: { type: 'array', items: { type: 'string' } },
+        constraints: { type: 'array', items: { type: 'string' } },
+        targetVersion: { type: 'string' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'validate_developer_task_plan',
+    description: 'Validate a developer-facing GraphQL Gene task plan against canonical pattern guidance and playground-source boundaries.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        patternId: { type: 'string' },
+        goal: { type: 'string' },
+        project: projectSummaryJsonSchema(),
+        proposedSteps: { type: 'array', items: { type: 'string' } },
+        selectedPlugin: { type: 'string' },
+        usesPlaygroundCodeAsSource: { type: 'boolean' },
+        usesPlaygroundRuntimeAsSource: { type: 'boolean' },
+        includesSchemaInspection: { type: 'boolean' },
+        includesTests: { type: 'boolean' },
+        includesPluginDecision: { type: 'boolean' },
+        handlesLookahead: { type: 'boolean' },
+        handlesDirectiveRuntimeMode: { type: 'boolean' },
+        handlesPolymorphicResolution: { type: 'boolean' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'inspect_playground_scenario',
     description: 'Maintainer tool: inspect the canonical contract for a playground scenario before implementing UI, API, or runtime behavior.',
     inputSchema: {
@@ -245,6 +321,14 @@ export function invokeKnowledgeMcpTool(
       return runPlanIntegrationTool(context, input)
     case 'diagnose_graphql_gene_issue':
       return runDiagnoseIssueTool(context, input)
+    case 'list_developer_task_patterns':
+      return runListDeveloperTaskPatternsTool(context, input)
+    case 'plan_developer_task':
+      return runPlanDeveloperTaskTool(context, input)
+    case 'adapt_example_to_project':
+      return runAdaptExampleToProjectTool(context, input)
+    case 'validate_developer_task_plan':
+      return runValidateDeveloperTaskPlanTool(context, input)
     case 'inspect_playground_scenario':
       return runInspectPlaygroundScenarioTool(context, input)
     case 'validate_playground_scenario':
@@ -506,6 +590,34 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
     troubleshooting: mapTroubleshooting(troubleshooting),
     recipes: mapRecipes(recipes).slice(0, 2),
   }
+}
+
+function runListDeveloperTaskPatternsTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return listDeveloperTaskPatterns(context.catalog, {
+    query: readString(input.query),
+    scenario: readString(input.scenario),
+  })
+}
+
+function runPlanDeveloperTaskTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return planDeveloperTask(
+    context.catalog,
+    readDeveloperTaskPlanInput(input),
+  )
+}
+
+function runAdaptExampleToProjectTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return adaptExampleToProject(
+    context.catalog,
+    readAdaptExampleToProjectInput(input),
+  )
+}
+
+function runValidateDeveloperTaskPlanTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return validateDeveloperTaskPlan(
+    context.catalog,
+    readValidateDeveloperTaskPlanInput(input),
+  )
 }
 
 function runInspectPlaygroundScenarioTool(context: McpDomainContext, input: Record<string, unknown>) {
@@ -943,6 +1055,46 @@ function readIssueReport(value: unknown) {
     tried: readStringArray(input.tried),
     environment: readString(input.environment),
     graphqlGeneVersion: readString(input.graphqlGeneVersion),
+  }
+}
+
+function readDeveloperTaskPlanInput(input: Record<string, unknown>): DeveloperTaskPlanInput {
+  return {
+    patternId: readString(input.patternId),
+    goal: readString(input.goal),
+    project: readProjectSummary(input.project),
+    constraints: readStringArray(input.constraints),
+    targetVersion: readString(input.targetVersion),
+  }
+}
+
+function readAdaptExampleToProjectInput(input: Record<string, unknown>): AdaptExampleToProjectInput {
+  return {
+    patternId: readString(input.patternId),
+    exampleId: readString(input.exampleId),
+    goal: readString(input.goal),
+    project: readProjectSummary(input.project),
+    targetModels: readStringArray(input.targetModels),
+    constraints: readStringArray(input.constraints),
+    targetVersion: readString(input.targetVersion),
+  }
+}
+
+function readValidateDeveloperTaskPlanInput(input: Record<string, unknown>): ValidateDeveloperTaskPlanInput {
+  return {
+    patternId: readString(input.patternId),
+    goal: readString(input.goal),
+    project: readProjectSummary(input.project),
+    proposedSteps: readStringArray(input.proposedSteps),
+    selectedPlugin: readString(input.selectedPlugin),
+    usesPlaygroundCodeAsSource: readBoolean(input.usesPlaygroundCodeAsSource),
+    usesPlaygroundRuntimeAsSource: readBoolean(input.usesPlaygroundRuntimeAsSource),
+    includesSchemaInspection: readBoolean(input.includesSchemaInspection),
+    includesTests: readBoolean(input.includesTests),
+    includesPluginDecision: readBoolean(input.includesPluginDecision),
+    handlesLookahead: readBoolean(input.handlesLookahead),
+    handlesDirectiveRuntimeMode: readBoolean(input.handlesDirectiveRuntimeMode),
+    handlesPolymorphicResolution: readBoolean(input.handlesPolymorphicResolution),
   }
 }
 

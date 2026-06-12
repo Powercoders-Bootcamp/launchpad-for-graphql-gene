@@ -227,6 +227,85 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
         )
         break
 
+      case 'list_developer_task_patterns':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              query: z.string().optional(),
+              scenario: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'plan_developer_task':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              patternId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'adapt_example_to_project':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              patternId: z.string().optional(),
+              exampleId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              targetModels: z.array(z.string()).optional(),
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'validate_developer_task_plan':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              patternId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              proposedSteps: z.array(z.string()).optional(),
+              selectedPlugin: z.string().optional(),
+              usesPlaygroundCodeAsSource: z.boolean().optional(),
+              usesPlaygroundRuntimeAsSource: z.boolean().optional(),
+              includesSchemaInspection: z.boolean().optional(),
+              includesTests: z.boolean().optional(),
+              includesPluginDecision: z.boolean().optional(),
+              handlesLookahead: z.boolean().optional(),
+              handlesDirectiveRuntimeMode: z.boolean().optional(),
+              handlesPolymorphicResolution: z.boolean().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
       case 'inspect_playground_scenario':
         server.registerTool(
           tool.name,

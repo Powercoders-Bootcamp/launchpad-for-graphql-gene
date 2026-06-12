@@ -19,7 +19,9 @@ describe('knowledge MCP domain', () => {
     expect(manifest.server.name).toBe('graphql-gene-mcp')
     expect(manifest.resources.length).toBeGreaterThanOrEqual(4)
     expect(manifest.prompts.length).toBeGreaterThanOrEqual(4)
-    expect(manifest.tools.length).toBeGreaterThanOrEqual(11)
+    expect(manifest.tools.length).toBeGreaterThanOrEqual(15)
+    expect(manifest.tools.some(tool => tool.name === 'plan_developer_task')).toBe(true)
+    expect(manifest.tools.some(tool => tool.name === 'adapt_example_to_project')).toBe(true)
     expect(manifest.tools.some(tool => tool.name === 'validate_playground_scenario')).toBe(true)
   })
 
@@ -175,6 +177,34 @@ describe('knowledge MCP domain', () => {
     expect(result.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:lookahead-behavior-does-not-match-expectation')).toBe(true)
     expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:query-lookahead-shape')).toBe(true)
     expect(result.docs.length).toBeGreaterThan(0)
+  })
+
+  it('plans developer task patterns from canonical scenario guidance', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'plan_developer_task', {
+      patternId: 'polymorphic-blocks',
+      project: {
+        serverStack: 'Apollo Server',
+        orm: 'Sequelize',
+      },
+    })
+
+    expect(result.patternId).toBe('polymorphic-blocks')
+    expect(result.pluginStrategy.strategy).toBe('plugin-sequelize')
+    expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/polymorphic-blocks')).toBe(true)
+    expect(result.agentInstructions.join(' ')).toContain('not as the implementation source')
+  })
+
+  it('validates developer task plans without treating playground code as source', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'validate_developer_task_plan', {
+      patternId: 'query-lookahead',
+      usesPlaygroundRuntimeAsSource: true,
+      includesPluginDecision: false,
+      handlesLookahead: false,
+    })
+
+    expect(result.status).toBe('fail')
+    expect(result.issues.some((issue: { code: string }) => issue.code === 'PLAYGROUND_RUNTIME_USED_AS_SOURCE')).toBe(true)
+    expect(result.issues.some((issue: { code: string }) => issue.code === 'LOOKAHEAD_NOT_HANDLED')).toBe(true)
   })
 
   it('inspects playground scenario contracts for maintainer agents', () => {

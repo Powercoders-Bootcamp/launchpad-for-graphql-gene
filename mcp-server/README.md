@@ -112,6 +112,14 @@ Developer-facing tools help agents use GraphQL Gene in their own projects:
 - `plan_graphql_gene_integration`
 - `diagnose_graphql_gene_issue`
 
+Developer task pattern tools help agents turn the showcased GraphQL Gene
+capabilities into project-specific implementation plans:
+
+- `list_developer_task_patterns`
+- `plan_developer_task`
+- `adapt_example_to_project`
+- `validate_developer_task_plan`
+
 Playground maintainer tools help agents implement this website's playground
 scenarios without confusing adapted demos with upstream GraphQL Gene behavior:
 

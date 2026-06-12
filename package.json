@@ -18,7 +18,7 @@
     "mcp:start:http": "npm --prefix mcp-server run start:http",
     "mcp:eval": "vitest run test/mcp-eval.test.ts",
     "mcp:playground-verify": "vitest run test/playground-maintainer.test.ts",
-    "mcp:test": "vitest run test/knowledge.catalog.test.ts test/knowledge.search.test.ts test/knowledge.mcp.test.ts test/site-knowledge.test.ts test/playground-maintainer.test.ts test/mcp-server.test.ts test/mcp-server-http.test.ts test/api.smoke.test.ts",
+    "mcp:test": "vitest run test/knowledge.catalog.test.ts test/knowledge.search.test.ts test/knowledge.mcp.test.ts test/site-knowledge.test.ts test/developer-task-patterns.test.ts test/playground-maintainer.test.ts test/mcp-server.test.ts test/mcp-server-http.test.ts test/api.smoke.test.ts",
     "mcp:verify": "npm run mcp:build && npm run mcp:test && npm run mcp:eval && npm run mcp:doctor:json",
     "postinstall": "nuxt prepare",
     "test": "vitest run",

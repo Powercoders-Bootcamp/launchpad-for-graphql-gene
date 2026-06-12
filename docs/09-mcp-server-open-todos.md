@@ -24,6 +24,7 @@ Current foundation already in place:
 - built-in request size limits and process-local rate limiting for HTTP mode
 - safe and redacted HTTP access logging
 - optional rich project and issue context inputs for developer-facing MCP tools
+- developer task pattern MCP tools for planning, adapting, and validating project-specific implementations based on showcased GraphQL Gene capabilities
 - playground maintainer MCP tools for scenario inspection, planning, validation, parity comparison, and parity gate listing
 - source-fingerprint-based cached site knowledge catalog invalidation for docs-backed catalog rebuilds
 - catalog diagnostics that flag required playground parity gates and unverified displayed-code parity

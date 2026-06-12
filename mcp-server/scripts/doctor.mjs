@@ -171,6 +171,7 @@ async function verifyStdioTransport(payload) {
       10000,
       'Timed out while reading the stdio directives doc resource.',
     )
+    const developerToolPayload = await verifyDeveloperTaskTool(client, 'stdio')
     const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'stdio')
 
     if (resources.resources.length !== expectedResourceCount) {
@@ -185,6 +186,8 @@ async function verifyStdioTransport(payload) {
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerToolPattern: developerToolPayload.patternId,
+      developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
       maintainerToolScenario: maintainerToolPayload.scenario,
       maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
       maintainerToolGateCount: maintainerToolPayload.parityGates.length,
@@ -254,6 +257,7 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP directives doc resource.',
     )
+    const developerToolPayload = await verifyDeveloperTaskTool(client, 'HTTP')
     const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'HTTP')
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
@@ -286,6 +290,8 @@ async function verifyHttpTransport(payload) {
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerToolPattern: developerToolPayload.patternId,
+      developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
       maintainerToolScenario: maintainerToolPayload.scenario,
       maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
       maintainerToolGateCount: maintainerToolPayload.parityGates.length,
@@ -581,6 +587,34 @@ function parseOverviewPayload(resourceResult) {
   }
 
   return JSON.parse(text)
+}
+
+async function verifyDeveloperTaskTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'plan_developer_task',
+      arguments: {
+        patternId: 'polymorphic-blocks',
+        project: {
+          orm: 'Sequelize',
+          serverStack: 'Apollo Server',
+        },
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer task planning tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'plan_developer_task')
+
+  if (payload.patternId !== 'polymorphic-blocks') {
+    throw new Error(`${transportLabel} developer task tool returned an unexpected pattern.`)
+  }
+
+  if (payload?.pluginStrategy?.strategy !== 'plugin-sequelize') {
+    throw new Error(`${transportLabel} developer task tool did not return the expected Sequelize plugin strategy.`)
+  }
+
+  return payload
 }
 
 async function verifyPlaygroundMaintainerTool(client, transportLabel) {

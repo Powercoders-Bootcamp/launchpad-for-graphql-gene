@@ -577,6 +577,18 @@ Recommended core tools:
 5. `plan_graphql_gene_integration`
 6. `diagnose_graphql_gene_issue`
 
+Recommended developer task pattern tools:
+
+1. `list_developer_task_patterns`
+2. `plan_developer_task`
+3. `adapt_example_to_project`
+4. `validate_developer_task_plan`
+
+These tools should treat playground scenarios as source-backed task patterns
+for developers, not as website runtime implementation templates. Their job is
+to help a host coding agent adapt a GraphQL Gene capability to the developer's
+own ORM models, GraphQL server, plugin strategy, and test plan.
+
 Optional later tools:
 
 - `compare_graphql_gene_approaches`
