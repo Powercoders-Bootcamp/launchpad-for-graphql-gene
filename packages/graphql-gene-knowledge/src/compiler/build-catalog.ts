@@ -189,12 +189,27 @@ function buildDiagnostics(options: {
     message: `Normalized ${options.plugins.length + options.recipes.length + options.troubleshooting.length} curated knowledge entries for plugins, recipes, and troubleshooting.`,
   })
 
+  diagnostics.push({
+    level: 'info',
+    code: 'PLAYGROUND_PARITY_GATES_REQUIRED',
+    message: 'Playground scenarios require maintainer parity gates before new scenario implementations are treated as source-aligned.',
+  })
+
   for (const example of options.examples) {
     if (example.executionMode !== 'canonical') {
       diagnostics.push({
         level: 'warning',
         code: 'PLAYGROUND_RUNTIME_NOT_CANONICAL',
         message: `Example "${example.id}" is currently exposed through an ${example.executionMode} runtime.`,
+        entryId: example.id,
+      })
+    }
+
+    if (example.supportsDisplayedCodeParity === false) {
+      diagnostics.push({
+        level: 'warning',
+        code: 'PLAYGROUND_DISPLAYED_CODE_PARITY_UNVERIFIED',
+        message: `Example "${example.id}" does not yet prove displayed-code parity with upstream sources.`,
         entryId: example.id,
       })
     }

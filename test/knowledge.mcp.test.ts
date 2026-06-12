@@ -19,7 +19,8 @@ describe('knowledge MCP domain', () => {
     expect(manifest.server.name).toBe('graphql-gene-mcp')
     expect(manifest.resources.length).toBeGreaterThanOrEqual(4)
     expect(manifest.prompts.length).toBeGreaterThanOrEqual(4)
-    expect(manifest.tools.length).toBeGreaterThanOrEqual(6)
+    expect(manifest.tools.length).toBeGreaterThanOrEqual(11)
+    expect(manifest.tools.some(tool => tool.name === 'validate_playground_scenario')).toBe(true)
   })
 
   it('reads the overview resource', () => {
@@ -174,6 +175,37 @@ describe('knowledge MCP domain', () => {
     expect(result.troubleshooting.some((issue: { id: string }) => issue.id === 'troubleshooting:lookahead-behavior-does-not-match-expectation')).toBe(true)
     expect(result.recipes.some((recipe: { id: string }) => recipe.id === 'recipe:query-lookahead-shape')).toBe(true)
     expect(result.docs.length).toBeGreaterThan(0)
+  })
+
+  it('inspects playground scenario contracts for maintainer agents', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'inspect_playground_scenario', {
+      scenario: 'polymorphic-blocks',
+    })
+
+    expect(result.knownScenario).toBe(true)
+    expect(result.expectedApiEndpoints).toContain('POST /api/playground/query')
+    expect(result.relatedDocs.some((doc: { slug: string }) => doc.slug === '/docs/guides/polymorphic-blocks')).toBe(true)
+  })
+
+  it('validates playground scenario implementation summaries', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'validate_playground_scenario', {
+      scenario: 'query-lookahead',
+      exampleId: 'me-with-orders',
+      editableFields: ['query'],
+      docsSlugs: ['/docs/guides/schema-design'],
+      outputPanels: ['response-payload', 'captured-sql', 'include-graph', 'diagnostics'],
+      executionMode: 'adapted',
+      declaresAdaptedRuntime: true,
+      hasFixture: true,
+      hasApiValidation: true,
+      hasTests: true,
+      usesHardcodedOutput: false,
+      sourcePath: 'server/utils/playground/registry.ts',
+      runtimeSourcePath: 'server/utils/playground/engine.ts',
+    })
+
+    expect(result.status).toBe('pass')
+    expect(result.contract.knownScenario).toBe(true)
   })
 
   it('keeps the capabilities resource aligned with the resource manifest', () => {

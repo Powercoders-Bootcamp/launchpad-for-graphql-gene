@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  buildSiteKnowledgeCatalog,
+  buildCachedSiteKnowledgeCatalog,
   searchKnowledgeCatalog,
   type DocKnowledgeEntry,
   type ExampleKnowledgeEntry,
@@ -16,7 +16,7 @@ import {
 export function getKnowledgeCatalog() {
   const workspaceRoot = process.cwd()
 
-  return buildSiteKnowledgeCatalog({
+  return buildCachedSiteKnowledgeCatalog({
     workspaceRoot,
     sourceRepo: 'graphql-gene-site',
     sourceRef: 'workspace',

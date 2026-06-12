@@ -23,9 +23,14 @@ Current foundation already in place:
 - optional bearer auth for the HTTP MCP endpoint
 - built-in request size limits and process-local rate limiting for HTTP mode
 - safe and redacted HTTP access logging
+- optional rich project and issue context inputs for developer-facing MCP tools
+- playground maintainer MCP tools for scenario inspection, planning, validation, parity comparison, and parity gate listing
+- source-fingerprint-based cached site knowledge catalog invalidation for docs-backed catalog rebuilds
+- catalog diagnostics that flag required playground parity gates and unverified displayed-code parity
 - explicit `yaml` runtime dependency in `mcp-server/`
 - package-local lockfile for reproducible `mcp-server/` installs
 - golden MCP evaluation coverage for answer quality and provenance, runnable through `npm run mcp:eval` and `npm run mcp:verify`
+- playground maintainer verification coverage via `npm run mcp:playground-verify`
 - auto-detected workspace/package roots plus package-local adoption presets, so built MCP runtimes load the same canonical docs-backed knowledge surface as source tests
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
@@ -33,28 +38,50 @@ up concrete work from it.
 
 ## Open TODOs
 
-### 1. Product Positioning: Explain The Real Differentiator
+### 1. Upstream Provenance And Example Parity Audit
 
 Priority: high
 
 Goal:
 
-- make it clear that GraphQL Gene is not merely "a library that supports polymorphism"
-- state the real positioning precisely: ORM-native, generator-first, automatic schema generation from real models
+- move source provenance from repo-local `workspace` metadata toward explicit upstream refs
+- prove which playground examples are canonical, adapted, or simulated
+- keep displayed playground code aligned with upstream docs/source expectations
 
 Tasks:
 
-- update homepage copy with one concise proof point that contrasts GraphQL Gene with generic union/interface-capable builders
-- keep the claim factual and non-defensive; do not imply that unions or interfaces themselves are unique to GraphQL Gene
-- mirror the same positioning in the relevant docs and MCP-facing copy where helpful
-- keep the current homepage structure intact; no redesign required
+- audit upstream GraphQL Gene docs, examples, tests, and plugin packages
+- assign explicit `sourceRepo`, `sourceRef`, `sourcePath`, and `sourceType` values where possible
+- update playground example entries once parity is proven
+- add drift checks for any scenario that claims canonical runtime or displayed-code parity
 
 Acceptance criteria:
 
-- homepage contains one concise message about the ORM-native plus generator-first difference
-- message does not overclaim "exclusive polymorphism support"
-- `MCP` messaging already added to the homepage remains intact
-- site build passes after the copy update
+- every playground example has clear canonical/adapted/simulated status
+- no adapted scenario is presented as exact upstream runtime behavior
+- `validate_playground_scenario` passes for existing scenario implementation summaries
+- catalog diagnostics stop warning about displayed-code parity only after parity is actually proven
+
+### 2. Public HTTP Deployment Policy
+
+Priority: medium
+
+Goal:
+
+- document the production boundary for Streamable HTTP MCP deployments
+- keep the built-in HTTP hardening as an inner safety layer, not the only edge control
+
+Tasks:
+
+- define the recommended reverse proxy/TLS/auth deployment pattern
+- decide whether bearer auth should be mandatory for non-local HTTP deployments
+- document log retention and observability expectations
+
+Acceptance criteria:
+
+- production deployment docs clearly distinguish local stdio, local HTTP, and public HTTP usage
+- public HTTP examples include auth and edge hardening guidance
+- `mcp:doctor` remains able to verify a secured HTTP endpoint
 
 ## Explicit Non-Goals
 
@@ -67,3 +94,5 @@ These are intentionally not part of the backlog:
 ## Suggested Execution Order
 
 1. homepage and product-positioning pass
+2. upstream provenance and playground parity audit
+3. public HTTP deployment policy

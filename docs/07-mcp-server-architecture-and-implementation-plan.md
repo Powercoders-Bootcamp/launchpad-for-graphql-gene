@@ -584,7 +584,31 @@ Optional later tools:
 - `playground_generate_schema`
 - `playground_run_query`
 
-The playground tools remain secondary.
+The playground execution tools remain secondary.
+
+### Playground maintainer tools
+
+Playground authoring and parity work is a separate tool family. These tools are
+for maintainers and coding agents working inside this website repo, not for
+general developers adopting GraphQL Gene in their own projects.
+
+Implemented maintainer tools:
+
+1. `inspect_playground_scenario`
+2. `validate_playground_scenario`
+3. `plan_playground_scenario`
+4. `compare_playground_with_canonical`
+5. `list_playground_parity_gates`
+
+Rules:
+
+1. These tools should use canonical scenario contracts and parity gates.
+2. They should accept implementation summaries from the host coding agent rather
+   than reading local files themselves.
+3. They should flag hardcoded primary outputs, missing API validation, missing
+   docs linkage, and execution-mode overclaims.
+4. They should not expand the public developer adoption tool surface with
+   website-specific implementation details.
 
 ## MCP Tool Contract Philosophy
 

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  buildSiteKnowledgeCatalog,
+  buildCachedSiteKnowledgeCatalog,
   createKnowledgeMcpManifest,
   type McpDomainContext,
 } from '../../packages/graphql-gene-knowledge/src'
@@ -27,7 +27,7 @@ export function createKnowledgeDomainContext(): McpDomainContext {
   const sourceRef = process.env[SOURCE_REF_ENV] || DEFAULT_SOURCE_REF
 
   return {
-    catalog: buildSiteKnowledgeCatalog({
+    catalog: buildCachedSiteKnowledgeCatalog({
       workspaceRoot,
       sourceRepo,
       sourceRef,

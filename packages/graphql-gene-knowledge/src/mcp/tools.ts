@@ -8,6 +8,16 @@ import type {
   TroubleshootingKnowledgeEntry,
 } from '../contracts'
 import {
+  comparePlaygroundWithCanonical,
+  inspectPlaygroundScenario,
+  listPlaygroundParityGates,
+  planPlaygroundScenario,
+  validatePlaygroundScenario,
+  type PlaygroundCanonicalComparisonInput,
+  type PlaygroundScenarioImplementationSummary,
+  type PlaygroundScenarioPlanInput,
+} from '../playground/maintainer'
+import {
   findDocsByIds,
   findExamplesByIds,
   findPluginsByIds,
@@ -32,6 +42,7 @@ const TOOLS: McpToolDescriptor[] = [
         section: { type: 'string' },
         scenario: { type: 'string' },
         limit: { type: 'integer', minimum: 1, maximum: 25 },
+        targetVersion: { type: 'string' },
       },
       required: ['query'],
       additionalProperties: false,
@@ -44,6 +55,17 @@ const TOOLS: McpToolDescriptor[] = [
       type: 'object',
       properties: {
         feature: { type: 'string', minLength: 2 },
+        question: {
+          type: 'object',
+          properties: {
+            feature: { type: 'string' },
+            desiredDepth: { type: 'string', enum: ['brief', 'standard', 'deep'] },
+            currentContext: { type: 'string' },
+            targetVersion: { type: 'string' },
+          },
+          additionalProperties: false,
+        },
+        targetVersion: { type: 'string' },
       },
       required: ['feature'],
       additionalProperties: false,
@@ -56,6 +78,8 @@ const TOOLS: McpToolDescriptor[] = [
       type: 'object',
       properties: {
         goal: { type: 'string', minLength: 2 },
+        project: projectSummaryJsonSchema(),
+        targetVersion: { type: 'string' },
       },
       required: ['goal'],
       additionalProperties: false,
@@ -70,6 +94,8 @@ const TOOLS: McpToolDescriptor[] = [
         orm: { type: 'string' },
         goal: { type: 'string' },
         wantsCustomPlugin: { type: 'boolean' },
+        project: projectSummaryJsonSchema(),
+        targetVersion: { type: 'string' },
       },
       additionalProperties: false,
     },
@@ -87,6 +113,8 @@ const TOOLS: McpToolDescriptor[] = [
           type: 'array',
           items: { type: 'string' },
         },
+        project: projectSummaryJsonSchema(),
+        targetVersion: { type: 'string' },
       },
       required: ['goal'],
       additionalProperties: false,
@@ -104,8 +132,92 @@ const TOOLS: McpToolDescriptor[] = [
           type: 'string',
           enum: ['install', 'schema', 'runtime', 'plugin', 'query', 'directive'],
         },
+        issue: issueReportJsonSchema(),
+        project: projectSummaryJsonSchema(),
+        targetVersion: { type: 'string' },
       },
       required: ['symptom'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'inspect_playground_scenario',
+    description: 'Maintainer tool: inspect the canonical contract for a playground scenario before implementing UI, API, or runtime behavior.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: { type: 'string', minLength: 2 },
+      },
+      required: ['scenario'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'validate_playground_scenario',
+    description: 'Maintainer tool: validate a playground scenario implementation summary against canonical metadata and parity gates.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: { type: 'string', minLength: 2 },
+        exampleId: { type: 'string' },
+        editableFields: { type: 'array', items: { type: 'string' } },
+        docsSlugs: { type: 'array', items: { type: 'string' } },
+        outputPanels: { type: 'array', items: { type: 'string' } },
+        executionMode: { type: 'string', enum: ['canonical', 'adapted', 'simulated'] },
+        declaresAdaptedRuntime: { type: 'boolean' },
+        hasFixture: { type: 'boolean' },
+        hasApiValidation: { type: 'boolean' },
+        hasTests: { type: 'boolean' },
+        usesHardcodedOutput: { type: 'boolean' },
+        sourcePath: { type: 'string' },
+        runtimeSourcePath: { type: 'string' },
+      },
+      required: ['scenario'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'plan_playground_scenario',
+    description: 'Maintainer tool: plan the implementation artifacts and parity gates for a new or existing playground scenario.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: { type: 'string', minLength: 2 },
+        goal: { type: 'string' },
+        exampleId: { type: 'string' },
+        executionMode: { type: 'string', enum: ['canonical', 'adapted', 'simulated'] },
+        editableFields: { type: 'array', items: { type: 'string' } },
+        outputPanels: { type: 'array', items: { type: 'string' } },
+        upstreamSourcePath: { type: 'string' },
+      },
+      required: ['scenario'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'compare_playground_with_canonical',
+    description: 'Maintainer tool: compare observed playground behavior with the canonical scenario contract and flag parity overclaims.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: { type: 'string', minLength: 2 },
+        exampleId: { type: 'string' },
+        observedExecutionMode: { type: 'string', enum: ['canonical', 'adapted', 'simulated'] },
+        observedSourceType: { type: 'string' },
+        observedBehaviorSummary: { type: 'string' },
+      },
+      required: ['scenario'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'list_playground_parity_gates',
+    description: 'Maintainer tool: list the parity gates that every playground scenario implementation should satisfy.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: { type: 'string' },
+      },
       additionalProperties: false,
     },
   },
@@ -133,6 +245,16 @@ export function invokeKnowledgeMcpTool(
       return runPlanIntegrationTool(context, input)
     case 'diagnose_graphql_gene_issue':
       return runDiagnoseIssueTool(context, input)
+    case 'inspect_playground_scenario':
+      return runInspectPlaygroundScenarioTool(context, input)
+    case 'validate_playground_scenario':
+      return runValidatePlaygroundScenarioTool(context, input)
+    case 'plan_playground_scenario':
+      return runPlanPlaygroundScenarioTool(context, input)
+    case 'compare_playground_with_canonical':
+      return runComparePlaygroundWithCanonicalTool(context, input)
+    case 'list_playground_parity_gates':
+      return runListPlaygroundParityGatesTool(context, input)
     default:
       throw new Error(`Unknown MCP tool "${name}".`)
   }
@@ -144,6 +266,7 @@ function runSearchTool(context: McpDomainContext, input: Record<string, unknown>
   const kind = asKnowledgeKind(input.kind)
   const section = typeof input.section === 'string' ? input.section : undefined
   const scenario = typeof input.scenario === 'string' ? input.scenario : undefined
+  const targetVersion = readString(input.targetVersion)
 
   const results = searchKnowledgeCatalog(context.catalog, {
     query,
@@ -155,13 +278,18 @@ function runSearchTool(context: McpDomainContext, input: Record<string, unknown>
 
   return {
     query,
+    targetVersion: targetVersion ?? null,
     resultCount: results.length,
     results,
   }
 }
 
 function runExplainFeatureTool(context: McpDomainContext, input: Record<string, unknown>) {
-  const feature = typeof input.feature === 'string' ? input.feature : ''
+  const question = isRecord(input.question) ? input.question : undefined
+  const feature = readString(question?.feature) ?? readString(input.feature) ?? ''
+  const targetVersion = readString(input.targetVersion) ?? readString(question?.targetVersion)
+  const desiredDepth = readString(question?.desiredDepth)
+  const currentContext = readString(question?.currentContext)
   const docs = searchDocs(context, feature, 3)
   const examples = searchExamples(context, feature, 2)
   const plugins = searchPlugins(context, feature, 2)
@@ -170,6 +298,9 @@ function runExplainFeatureTool(context: McpDomainContext, input: Record<string, 
 
   return {
     feature,
+    targetVersion: targetVersion ?? null,
+    desiredDepth: desiredDepth ?? 'standard',
+    currentContext: currentContext ?? null,
     summary: buildFeatureSummary({
       feature,
       docs: docs.map(match => match.title),
@@ -187,21 +318,31 @@ function runExplainFeatureTool(context: McpDomainContext, input: Record<string, 
 }
 
 function runRecommendIntegrationTool(context: McpDomainContext, input: Record<string, unknown>) {
-  const goal = typeof input.goal === 'string' ? input.goal : ''
-  const recipes = selectRecipeEntries(context.catalog, { goal }, 2)
+  const project = readProjectSummary(input.project)
+  const targetVersion = readString(input.targetVersion) ?? project.graphqlGeneVersion
+  const goal = readString(input.goal) ?? project.targetOutcome ?? ''
+  const decisionText = joinContextText(goal, project.targetOutcome, project.currentGraphqlSetup, ...(project.constraints ?? []))
+  const recipes = selectRecipeEntries(context.catalog, {
+    goal: decisionText,
+    serverStack: project.serverStack,
+    orm: project.orm,
+    concerns: project.constraints,
+  }, 2)
   const primaryRecipe = recipes[0]
   const plugins = primaryRecipe?.recommendedPluginIds.length
     ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)
-    : selectPluginEntries(context.catalog, { goal }, 2)
+    : selectPluginEntries(context.catalog, { goal: decisionText, orm: project.orm }, 2)
   const primaryDocs = primaryRecipe
     ? findDocsByIds(context.catalog, primaryRecipe.recommendedDocIds)
-    : searchDocs(context, goal, 3)
+    : searchDocs(context, decisionText, 3)
   const primaryExamples = primaryRecipe
     ? findExamplesByIds(context.catalog, primaryRecipe.recommendedExampleIds)
-    : searchExamples(context, goal, 2)
+    : searchExamples(context, decisionText, 2)
 
   return {
     goal,
+    targetVersion: targetVersion ?? null,
+    projectContext: serializeProjectContext(project),
     selectedRecipeId: primaryRecipe?.id ?? null,
     recommendedQuery: inferFocusArea([goal, primaryRecipe?.title, primaryRecipe?.goal].filter(Boolean).join(' ')),
     recommendation: buildIntegrationRecommendation(goal, primaryRecipe),
@@ -213,12 +354,15 @@ function runRecommendIntegrationTool(context: McpDomainContext, input: Record<st
 }
 
 function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<string, unknown>) {
-  const orm = typeof input.orm === 'string' ? input.orm : undefined
-  const goal = typeof input.goal === 'string' ? input.goal : undefined
+  const project = readProjectSummary(input.project)
+  const targetVersion = readString(input.targetVersion) ?? project.graphqlGeneVersion
+  const orm = readString(input.orm) ?? project.orm
+  const goal = readString(input.goal) ?? project.targetOutcome
   const wantsCustomPlugin = input.wantsCustomPlugin === true
+  const decisionGoal = joinContextText(goal, project.currentGraphqlSetup, ...(project.constraints ?? [])) || undefined
   const plugins = selectPluginEntries(context.catalog, {
     orm,
-    goal,
+    goal: decisionGoal,
     wantsCustomPlugin,
   }, 2)
   const primaryPlugin = plugins[0]
@@ -238,6 +382,8 @@ function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<st
   return {
     orm: orm ?? null,
     goal: goal ?? null,
+    targetVersion: targetVersion ?? null,
+    projectContext: serializeProjectContext(project),
     wantsCustomPlugin,
     strategy: derivePluginStrategyId(primaryPlugin),
     recommendedPlugin: primaryPlugin?.packageName ?? null,
@@ -251,15 +397,18 @@ function runChoosePluginStrategyTool(context: McpDomainContext, input: Record<st
 }
 
 function runPlanIntegrationTool(context: McpDomainContext, input: Record<string, unknown>) {
-  const goal = typeof input.goal === 'string' ? input.goal : ''
-  const serverStack = typeof input.serverStack === 'string' ? input.serverStack : undefined
-  const orm = typeof input.orm === 'string' ? input.orm : undefined
+  const project = readProjectSummary(input.project)
+  const targetVersion = readString(input.targetVersion) ?? project.graphqlGeneVersion
+  const goal = readString(input.goal) ?? project.targetOutcome ?? ''
+  const serverStack = readString(input.serverStack) ?? project.serverStack
+  const orm = readString(input.orm) ?? project.orm
   const concerns = Array.isArray(input.concerns)
     ? input.concerns.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-    : []
+    : project.constraints ?? []
+  const decisionGoal = joinContextText(goal, project.targetOutcome, project.currentGraphqlSetup)
 
   const recipes = selectRecipeEntries(context.catalog, {
-    goal,
+    goal: decisionGoal || goal,
     serverStack,
     orm,
     concerns,
@@ -286,6 +435,8 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
     goal,
     serverStack: serverStack ?? null,
     orm: orm ?? null,
+    targetVersion: targetVersion ?? null,
+    projectContext: serializeProjectContext(project),
     concerns,
     selectedRecipeId: primaryRecipe?.id ?? null,
     focusArea: inferFocusArea([
@@ -308,8 +459,18 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
 }
 
 function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, unknown>) {
-  const symptom = typeof input.symptom === 'string' ? input.symptom : ''
-  const issueContext = typeof input.context === 'string' ? input.context : undefined
+  const project = readProjectSummary(input.project)
+  const issue = readIssueReport(input.issue)
+  const targetVersion = readString(input.targetVersion) ?? issue.graphqlGeneVersion ?? project.graphqlGeneVersion
+  const symptom = readString(input.symptom) ?? issue.symptom ?? ''
+  const issueContext = joinContextText(
+    readString(input.context),
+    issue.context,
+    issue.userGoal,
+    project.currentGraphqlSetup,
+    issue.environment,
+    ...(issue.tried ?? []),
+  ) || undefined
   const stage = typeof input.stage === 'string' ? input.stage : undefined
   const troubleshooting = selectTroubleshootingEntries(context.catalog, {
     symptom,
@@ -333,6 +494,9 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
     symptom,
     context: issueContext ?? null,
     stage: stage ?? null,
+    targetVersion: targetVersion ?? null,
+    projectContext: serializeProjectContext(project),
+    issueContext: serializeIssueContext(issue),
     selectedIssueId: primaryIssue?.id ?? null,
     diagnosisArea: stage ?? inferFocusArea([symptom, issueContext].filter(Boolean).join(' ')),
     likelyCauses: primaryIssue?.likelyCauses ?? buildFallbackLikelyCauses(stage),
@@ -342,6 +506,39 @@ function runDiagnoseIssueTool(context: McpDomainContext, input: Record<string, u
     troubleshooting: mapTroubleshooting(troubleshooting),
     recipes: mapRecipes(recipes).slice(0, 2),
   }
+}
+
+function runInspectPlaygroundScenarioTool(context: McpDomainContext, input: Record<string, unknown>) {
+  const scenario = readString(input.scenario) ?? ''
+  return inspectPlaygroundScenario(context.catalog, scenario)
+}
+
+function runValidatePlaygroundScenarioTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return validatePlaygroundScenario(
+    context.catalog,
+    readPlaygroundImplementationSummary(input),
+  )
+}
+
+function runPlanPlaygroundScenarioTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return planPlaygroundScenario(
+    context.catalog,
+    readPlaygroundScenarioPlanInput(input),
+  )
+}
+
+function runComparePlaygroundWithCanonicalTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return comparePlaygroundWithCanonical(
+    context.catalog,
+    readPlaygroundCanonicalComparisonInput(input),
+  )
+}
+
+function runListPlaygroundParityGatesTool(context: McpDomainContext, input: Record<string, unknown>) {
+  return listPlaygroundParityGates(
+    context.catalog,
+    readString(input.scenario),
+  )
 }
 
 function buildFeatureSummary(options: {
@@ -685,6 +882,159 @@ function derivePluginStrategyId(plugin?: PluginKnowledgeEntry) {
   }
 
   return 'evaluate-plugin-surface'
+}
+
+function projectSummaryJsonSchema() {
+  return {
+    type: 'object',
+    properties: {
+      packageManager: { type: 'string' },
+      runtime: { type: 'string' },
+      language: { type: 'string' },
+      serverStack: { type: 'string' },
+      orm: { type: 'string' },
+      currentGraphqlSetup: { type: 'string' },
+      constraints: { type: 'array', items: { type: 'string' } },
+      targetOutcome: { type: 'string' },
+      graphqlGeneVersion: { type: 'string' },
+    },
+    additionalProperties: false,
+  }
+}
+
+function issueReportJsonSchema() {
+  return {
+    type: 'object',
+    properties: {
+      userGoal: { type: 'string' },
+      symptom: { type: 'string' },
+      context: { type: 'string' },
+      tried: { type: 'array', items: { type: 'string' } },
+      environment: { type: 'string' },
+      graphqlGeneVersion: { type: 'string' },
+    },
+    additionalProperties: false,
+  }
+}
+
+function readProjectSummary(value: unknown) {
+  const input = isRecord(value) ? value : {}
+
+  return {
+    packageManager: readString(input.packageManager),
+    runtime: readString(input.runtime),
+    language: readString(input.language),
+    serverStack: readString(input.serverStack),
+    orm: readString(input.orm),
+    currentGraphqlSetup: readString(input.currentGraphqlSetup),
+    constraints: readStringArray(input.constraints),
+    targetOutcome: readString(input.targetOutcome),
+    graphqlGeneVersion: readString(input.graphqlGeneVersion),
+  }
+}
+
+function readIssueReport(value: unknown) {
+  const input = isRecord(value) ? value : {}
+
+  return {
+    userGoal: readString(input.userGoal),
+    symptom: readString(input.symptom),
+    context: readString(input.context),
+    tried: readStringArray(input.tried),
+    environment: readString(input.environment),
+    graphqlGeneVersion: readString(input.graphqlGeneVersion),
+  }
+}
+
+function readPlaygroundImplementationSummary(input: Record<string, unknown>): PlaygroundScenarioImplementationSummary {
+  return {
+    scenario: readString(input.scenario) ?? '',
+    exampleId: readString(input.exampleId),
+    editableFields: readStringArray(input.editableFields),
+    docsSlugs: readStringArray(input.docsSlugs),
+    outputPanels: readStringArray(input.outputPanels),
+    executionMode: asExecutionMode(input.executionMode),
+    declaresAdaptedRuntime: readBoolean(input.declaresAdaptedRuntime),
+    hasFixture: readBoolean(input.hasFixture),
+    hasApiValidation: readBoolean(input.hasApiValidation),
+    hasTests: readBoolean(input.hasTests),
+    usesHardcodedOutput: readBoolean(input.usesHardcodedOutput),
+    sourcePath: readString(input.sourcePath),
+    runtimeSourcePath: readString(input.runtimeSourcePath),
+  }
+}
+
+function readPlaygroundScenarioPlanInput(input: Record<string, unknown>): PlaygroundScenarioPlanInput {
+  return {
+    scenario: readString(input.scenario) ?? '',
+    goal: readString(input.goal),
+    exampleId: readString(input.exampleId),
+    executionMode: asExecutionMode(input.executionMode),
+    editableFields: readStringArray(input.editableFields),
+    outputPanels: readStringArray(input.outputPanels),
+    upstreamSourcePath: readString(input.upstreamSourcePath),
+  }
+}
+
+function readPlaygroundCanonicalComparisonInput(input: Record<string, unknown>): PlaygroundCanonicalComparisonInput {
+  return {
+    scenario: readString(input.scenario) ?? '',
+    exampleId: readString(input.exampleId),
+    observedExecutionMode: asExecutionMode(input.observedExecutionMode),
+    observedSourceType: readString(input.observedSourceType),
+    observedBehaviorSummary: readString(input.observedBehaviorSummary),
+  }
+}
+
+function serializeProjectContext(project: ReturnType<typeof readProjectSummary>) {
+  return pruneEmptyObject(project)
+}
+
+function serializeIssueContext(issue: ReturnType<typeof readIssueReport>) {
+  return pruneEmptyObject(issue)
+}
+
+function pruneEmptyObject<T extends Record<string, unknown>>(value: T) {
+  const entries = Object.entries(value).filter(([, entryValue]) => {
+    if (Array.isArray(entryValue)) {
+      return entryValue.length > 0
+    }
+
+    return entryValue !== undefined && entryValue !== null && entryValue !== ''
+  })
+
+  return entries.length ? Object.fromEntries(entries) : null
+}
+
+function joinContextText(...values: Array<string | string[] | undefined>) {
+  return values
+    .flatMap(value => Array.isArray(value) ? value : [value])
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(' ')
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim().length ? value.trim() : undefined
+}
+
+function readStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+    : undefined
+}
+
+function readBoolean(value: unknown) {
+  return typeof value === 'boolean' ? value : undefined
+}
+
+function asExecutionMode(value: unknown) {
+  return value === 'canonical' || value === 'adapted' || value === 'simulated'
+    ? value
+    : undefined
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function asKnowledgeKind(value: unknown): KnowledgeKind | undefined {

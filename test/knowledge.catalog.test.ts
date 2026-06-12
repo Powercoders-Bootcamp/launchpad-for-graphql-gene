@@ -25,6 +25,8 @@ describe('buildKnowledgeCatalog', () => {
     expect(directiveRecipe.relatedIds).toContain('doc:/docs/guides/directives')
     expect(catalog.examples.every(example => example.executionMode === 'adapted')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_RUNTIME_NOT_CANONICAL')).toBe(true)
+    expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_PARITY_GATES_REQUIRED')).toBe(true)
+    expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_DISPLAYED_CODE_PARITY_UNVERIFIED')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'CURATED_KNOWLEDGE_NORMALIZED')).toBe(true)
   })
 })

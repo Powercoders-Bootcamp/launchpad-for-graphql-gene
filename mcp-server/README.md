@@ -14,6 +14,7 @@ This wrapper is responsible for:
 - loading the canonical knowledge catalog
 - exposing resources, prompts, and tools through MCP
 - surfacing docs, examples, plugins, recipes, and troubleshooting guidance from one shared graph
+- exposing separate playground maintainer tools for scenario contracts, parity gates, and implementation validation
 - running over stdio so local coding agents can attach directly
 - optionally running over Streamable HTTP for separate deployment
 - generating client-ready adoption presets
@@ -79,6 +80,7 @@ From the repository root, the MCP-focused verification shortcuts are:
 
 ```bash
 npm run mcp:eval
+npm run mcp:playground-verify
 npm run mcp:test
 npm run mcp:verify
 ```
@@ -98,6 +100,30 @@ Optional environment variables:
 - `GRAPHQL_GENE_MCP_RATE_LIMIT_WINDOW_MS`
 - `GRAPHQL_GENE_MCP_RATE_LIMIT_MAX_REQUESTS`
 - `GRAPHQL_GENE_MCP_ENABLE_ACCESS_LOGS`
+
+## Tool Families
+
+Developer-facing tools help agents use GraphQL Gene in their own projects:
+
+- `search_knowledge`
+- `recommend_integration_path`
+- `choose_plugin_strategy`
+- `explain_graphql_gene_feature`
+- `plan_graphql_gene_integration`
+- `diagnose_graphql_gene_issue`
+
+Playground maintainer tools help agents implement this website's playground
+scenarios without confusing adapted demos with upstream GraphQL Gene behavior:
+
+- `inspect_playground_scenario`
+- `validate_playground_scenario`
+- `plan_playground_scenario`
+- `compare_playground_with_canonical`
+- `list_playground_parity_gates`
+
+The maintainer tools expect structured summaries from the host coding agent. They
+do not read local files themselves; the host agent remains responsible for local
+project inspection.
 
 HTTP hardening notes:
 

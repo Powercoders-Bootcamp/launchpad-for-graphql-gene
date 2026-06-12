@@ -183,6 +183,7 @@ describe('mcp-server streamable HTTP wrapper', () => {
     expect(toolNames).toContain('search_knowledge')
     expect(toolNames).toContain('plan_graphql_gene_integration')
     expect(toolNames).toContain('diagnose_graphql_gene_issue')
+    expect(toolNames).toContain('validate_playground_scenario')
   })
 
   it('lists and reads MCP resources through HTTP', async () => {
