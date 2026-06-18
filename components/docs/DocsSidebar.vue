@@ -2,10 +2,10 @@
   <aside class="docs-sidebar">
     <nav>
       <ClientOnly>
-        <DocsSearch />
+        <DocsSearch :slug-prefix="navSlugPrefix" :labels-key-prefix="labelsKeyPrefix" />
       </ClientOnly>
 
-      <NuxtLink :to="localePath('/docs')" class="docs-sidebar__label">
+      <NuxtLink :to="localePath(homePath)" class="docs-sidebar__label">
         <svg
           class="docs-sidebar__home-icon"
           xmlns="http://www.w3.org/2000/svg"
@@ -21,7 +21,7 @@
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
           <polyline points="9 21 9 12 15 12 15 21" />
         </svg>
-        {{ t("docs.home") }}
+        {{ t(`${labelsKeyPrefix}.home`) }}
       </NuxtLink>
 
       <!-- Tree root line -->
@@ -59,7 +59,7 @@
                 <!-- Pages -->
                 <div
                   v-for="(page, pi) in group.pages"
-                  :key="page._path"
+                  :key="page.slug"
                   class="tree-item"
                   :class="{ 'tree-item--last': pi === group.pages.length - 1 }"
                 >
@@ -98,12 +98,35 @@
 </template>
 
 <script setup lang="ts">
-const route = useRoute();
-const localePath = useLocalePath();
-const { stripLocalePrefix } = useLocaleRouting();
-const { t } = useI18n();
-const nav = await useDocsNav();
-const currentPath = computed(() => stripLocalePrefix(route.path));
+import { docsConfig } from '~/content/graphql-gene/docs.config'
+import type { DocsSection } from '~/types'
+
+const props = withDefaults(defineProps<{
+  homePath?: string
+  navSlugPrefix?: string
+  labelsKeyPrefix?: string
+  sectionLabelKeyPrefix?: string
+  sections?: DocsSection[]
+}>(), {
+  homePath: '/docs',
+  navSlugPrefix: '/docs',
+  labelsKeyPrefix: 'docs',
+  sectionLabelKeyPrefix: 'docs.sections',
+})
+
+const route = useRoute()
+const localePath = useLocalePath()
+const { stripLocalePrefix } = useLocaleRouting()
+const { t } = useI18n()
+const nav = await useDocsNav({
+  sections: props.sections ?? docsConfig.sections,
+  slugPrefix: props.navSlugPrefix,
+  sectionLabelKeyPrefix: props.sectionLabelKeyPrefix,
+})
+const currentPath = computed(() => stripLocalePrefix(route.path))
+const homePath = computed(() => props.homePath)
+const navSlugPrefix = computed(() => props.navSlugPrefix)
+const labelsKeyPrefix = computed(() => props.labelsKeyPrefix)
 
 const sectionIcons: Record<string, string> = {
   concepts: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>`,
@@ -111,7 +134,7 @@ const sectionIcons: Record<string, string> = {
   reference: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
   tutorials: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
   default: `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-};
+}
 </script>
 
 <style scoped>

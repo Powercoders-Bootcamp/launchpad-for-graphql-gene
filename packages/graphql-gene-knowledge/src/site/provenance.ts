@@ -34,9 +34,9 @@ export function buildSiteKnowledgeProvenance(
       '/docs/guides/directives': upstreamDoc('README.md#define-directives', coreRef, 'package-readme'),
       '/docs/guides/polymorphic-blocks': upstreamDoc('docs/polymorphic-blocks.md', coreRef, 'canonical-doc'),
       '/docs/reference/writing-a-plugin': upstreamDoc('docs/plugins/writing-a-plugin.md', coreRef, 'canonical-doc'),
-      '/docs/guides/mcp-server-setup': localOnly(),
-      '/docs/guides/mcp-server-deployment': localOnly(),
-      '/docs/reference/mcp-version-contract': localOnly(),
+      '/mcp/setup': localOnly(),
+      '/mcp/deployment': localOnly(),
+      '/mcp/version-contract': localOnly(),
     },
     examplesByKey: {
       'model-to-schema:user-orders-basic': upstreamDoc('README.md#quick-setup', coreRef, 'package-readme'),

@@ -48,6 +48,6 @@ describe('site knowledge seeds', () => {
     expect(catalog.audit?.coverage.capabilities).toBeGreaterThanOrEqual(8)
     expect(catalog.audit?.packageParity.summary.unresolved).toBeGreaterThan(0)
     expect(catalog.byId['doc:/docs/concepts/getting-started'].upstreamSourcePath).toBe('README.md#quick-setup')
-    expect(catalog.byId['doc:/docs/guides/mcp-server-setup'].provenanceStatus).toBe('local-only')
+    expect(catalog.byId['doc:/mcp/setup'].provenanceStatus).toBe('local-only')
   })
 })

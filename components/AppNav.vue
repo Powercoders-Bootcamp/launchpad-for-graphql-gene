@@ -10,6 +10,7 @@
       <div class="nav-actions">
         <nav class="nav-links">
           <NuxtLink :to="localePath('/docs')" class="nav-link">{{ t('nav.docs') }}</NuxtLink>
+          <NuxtLink :to="localePath('/mcp')" class="nav-link">{{ t('nav.mcp') }}</NuxtLink>
           <NuxtLink :to="localePath('/playground')" class="nav-link">{{ t('nav.playground') }}</NuxtLink>
         </nav>
 

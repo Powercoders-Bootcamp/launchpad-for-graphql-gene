@@ -1,5 +1,5 @@
 import { docsConfig } from '~/content/graphql-gene/docs.config'
-import type { DocsSectionId } from '~/types'
+import type { DocsSection, DocsSectionId } from '~/types'
 
 interface NavPage {
   title: string
@@ -24,6 +24,12 @@ export interface NavSection {
   groups: NavGroup[]
 }
 
+interface UseDocsNavOptions {
+  sections?: DocsSection[]
+  slugPrefix?: string
+  sectionLabelKeyPrefix?: string
+}
+
 function buildGroups(pages: NavPage[]): NavGroup[] {
   const grouped = new Map<string | undefined, NavPage[]>()
   for (const page of pages) {
@@ -37,15 +43,19 @@ function buildGroups(pages: NavPage[]): NavGroup[] {
   return [...grouped.entries()].map(([category, pages]) => ({ category, pages }))
 }
 
-export async function useDocsNav(): Promise<NavSection[]> {
+export async function useDocsNav(options: UseDocsNavOptions = {}): Promise<NavSection[]> {
   const { t, te } = useI18n()
-  const pages = (await queryCollection('docs').all()) as unknown as NavPage[]
+  const sections = options.sections ?? docsConfig.sections
+  const slugPrefix = options.slugPrefix ?? '/docs'
+  const sectionLabelKeyPrefix = options.sectionLabelKeyPrefix ?? 'docs.sections'
+  const pages = ((await queryCollection('docs').all()) as unknown as NavPage[])
+    .filter(page => page.slug.startsWith(slugPrefix))
 
-  return [...docsConfig.sections]
+  return [...sections]
     .sort((a, b) => a.order - b.order)
     .map(section => ({
       ...section,
-      title: te(`docs.sections.${section.id}.title`) ? t(`docs.sections.${section.id}.title`) : section.title,
+      title: te(`${sectionLabelKeyPrefix}.${section.id}.title`) ? t(`${sectionLabelKeyPrefix}.${section.id}.title`) : section.title,
       groups: buildGroups(pages.filter(p => p.section === section.id)),
     }))
 }

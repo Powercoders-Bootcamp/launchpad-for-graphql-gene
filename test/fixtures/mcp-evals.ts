@@ -154,7 +154,7 @@ export const mcpEvalCases: McpEvalCase[] = [
     expected: {
       selectedIssueId: 'troubleshooting:playground-runtime-differs-from-upstream-guidance',
       diagnosisArea: 'runtime',
-      docsInclude: ['doc:/docs/guides/mcp-server-setup'],
+      docsInclude: ['doc:/mcp/setup'],
       troubleshootingInclude: ['troubleshooting:playground-runtime-differs-from-upstream-guidance'],
       recommendedChecksInclude: [
         'Prefer the upstream-aligned docs and canonical knowledge entries when they conflict with the playground.',

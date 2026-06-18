@@ -8,6 +8,7 @@ export default {
   nav: {
     playground: 'Playground',
     docs: 'Docs',
+    mcp: 'MCP',
     github: 'GitHub',
     language: 'Language',
     switchTheme: 'Switch to {mode} mode',
@@ -149,6 +150,54 @@ export default {
         'Schema design, directives, and polymorphic blocks through focused how-to pages.',
       referenceTitle: 'Reference',
       referenceDescription: 'Plugin API, configuration options, and exact lookup-style documentation.',
+    },
+  },
+  mcp: {
+    seo: {
+      title: 'MCP Server - graphql-gene',
+      description:
+        'Operational setup, deployment, and version contract documentation for the GraphQL Gene MCP server.',
+    },
+    home: 'MCP Server',
+    searchLabel: 'Search MCP docs',
+    searchPlaceholder: 'Search MCP docs',
+    noResults: 'No results for "{query}".',
+    notFound: 'Page not found.',
+    sections: {
+      guides: {
+        title: 'Guides',
+      },
+      reference: {
+        title: 'Reference',
+      },
+    },
+    landing: {
+      eyebrow: 'Developer MCP Server',
+      title: 'Source-backed GraphQL Gene guidance for coding agents',
+      description:
+        'Use the GraphQL Gene MCP server when you want Claude Desktop, Cursor, or another MCP client to work from canonical docs, audited package parity, and developer-task planning tools.',
+      primaryCta: 'Open setup guide',
+      secondaryCta: 'Read library docs',
+      highlightsTitle: 'What this surface covers',
+      highlightsDescription:
+        'Keep MCP operations separate from product docs while preserving one canonical knowledge graph underneath.',
+      highlightOneTitle: 'Client setup',
+      highlightOneDescription:
+        'Register stdio or Streamable HTTP transports, print ready-made client presets, and validate the installation.',
+      highlightTwoTitle: 'Deployment',
+      highlightTwoDescription:
+        'Ship the HTTP server as an internal service with auth, rate limits, health checks, and provenance-aware verification.',
+      highlightThreeTitle: 'Version contract',
+      highlightThreeDescription:
+        'Understand how repo commit, GraphQL Gene package range, and MCP wrapper version stay aligned.',
+      cardsTitle: 'Start with one of these paths',
+      cardsDescription: 'Choose the operational slice you need without mixing it into the core library documentation.',
+      setupTitle: 'Setup',
+      setupDescription: 'Build the MCP server, print client presets, and verify stdio or HTTP registration locally.',
+      deploymentTitle: 'Deployment',
+      deploymentDescription: 'Run the MCP server as a long-lived HTTP service with the recommended hardening defaults.',
+      versionTitle: 'Version contract',
+      versionDescription: 'See how provenance, parity audits, and repo-aligned builds define the support boundary.',
     },
   },
   playground: {

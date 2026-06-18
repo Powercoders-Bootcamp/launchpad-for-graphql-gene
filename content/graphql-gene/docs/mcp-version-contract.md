@@ -4,12 +4,12 @@ description: Understand how the website, canonical knowledge layer, GraphQL Gene
 section: reference
 category: mcp
 order: 2
-slug: /docs/reference/mcp-version-contract
+slug: /mcp/version-contract
 status: experimental
 summary: "The website repo is the release unit; docs, knowledge, playground projections, and the MCP wrapper should be built from the same commit whenever possible, while audit resources keep provenance and package-parity explicit."
 related:
-  - /docs/guides/mcp-server-setup
-  - /docs/guides/mcp-server-deployment
+  - /mcp/setup
+  - /mcp/deployment
   - /docs/reference/writing-a-plugin
 ---
 

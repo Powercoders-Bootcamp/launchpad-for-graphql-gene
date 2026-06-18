@@ -4,14 +4,14 @@ description: Run the GraphQL Gene MCP server locally over stdio or Streamable HT
 section: guides
 category: integration
 order: 4
-slug: /docs/guides/mcp-server-setup
+slug: /mcp/setup
 status: experimental
 summary: Build the standalone GraphQL Gene MCP server, print client-ready registration snippets, choose between stdio and Streamable HTTP transports, and inspect parity-aware audit resources.
 related:
   - /docs/concepts/getting-started
   - /docs/reference/writing-a-plugin
-  - /docs/guides/mcp-server-deployment
-  - /docs/reference/mcp-version-contract
+  - /mcp/deployment
+  - /mcp/version-contract
 ---
 
 # GraphQL Gene MCP server setup
@@ -129,8 +129,8 @@ The repository also includes:
 
 For the official deployment story and Docker template, see:
 
-- `/docs/guides/mcp-server-deployment`
-- `/docs/reference/mcp-version-contract`
+- `/mcp/deployment`
+- `/mcp/version-contract`
 
 ## Verify the installation
 

@@ -4,12 +4,12 @@ description: Deploy the GraphQL Gene MCP server as a long-running Streamable HTT
 section: guides
 category: deployment
 order: 5
-slug: /docs/guides/mcp-server-deployment
+slug: /mcp/deployment
 status: experimental
 summary: "Official release shape: repo-local stdio first, optional separately deployed HTTP service second, standalone npm publication deferred for now, with provenance and package-parity audit surfaces preserved in both modes."
 related:
-  - /docs/guides/mcp-server-setup
-  - /docs/reference/mcp-version-contract
+  - /mcp/setup
+  - /mcp/version-contract
 ---
 
 # GraphQL Gene MCP deployment

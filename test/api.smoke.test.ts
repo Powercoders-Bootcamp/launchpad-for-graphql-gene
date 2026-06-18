@@ -211,7 +211,7 @@ describe('GET /api/knowledge/search', () => {
     expect(res.status).toBe('ok')
     expect(res.results.length).toBeGreaterThanOrEqual(1)
     expect(res.results[0].id).toBe('doc:/docs/reference/writing-a-plugin')
-    expect(res.results.some((result: { id: string }) => result.id === 'doc:/docs/reference/mcp-version-contract')).toBe(true)
+    expect(res.results.some((result: { id: string }) => result.id === 'doc:/mcp/version-contract')).toBe(true)
   })
 
   it('supports curated kind filters', async () => {

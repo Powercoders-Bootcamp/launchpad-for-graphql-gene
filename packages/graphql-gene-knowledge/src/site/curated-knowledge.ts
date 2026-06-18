@@ -7,7 +7,7 @@ import type {
 const DOC_IDS = {
   gettingStarted: 'doc:/docs/concepts/getting-started',
   directives: 'doc:/docs/guides/directives',
-  mcpServerSetup: 'doc:/docs/guides/mcp-server-setup',
+  mcpServerSetup: 'doc:/mcp/setup',
   polymorphicBlocks: 'doc:/docs/guides/polymorphic-blocks',
   schemaDesign: 'doc:/docs/guides/schema-design',
   writingAPlugin: 'doc:/docs/reference/writing-a-plugin',
