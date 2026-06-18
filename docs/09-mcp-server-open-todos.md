@@ -33,6 +33,7 @@ Current foundation already in place:
 - golden MCP evaluation coverage for answer quality and provenance, runnable through `npm run mcp:eval` and `npm run mcp:verify`
 - playground maintainer verification coverage via `npm run mcp:playground-verify`
 - auto-detected workspace/package roots plus package-local adoption presets, so built MCP runtimes load the same canonical docs-backed knowledge surface as source tests
+- upstream audit snapshot exposed through `audit://upstream-snapshot`, now carrying explicit provenance mapping and pinned package-version refs for docs, examples, and curated entries
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
@@ -45,12 +46,13 @@ Priority: high
 
 Goal:
 
-- move source provenance from repo-local `workspace` metadata toward explicit upstream refs
+- deepen the current explicit-provenance audit snapshot into a stricter upstream audit grounded in direct repo evidence
 - complete the end-to-end upstream audit across docs, package exports, examples, and plugin behavior
 - keep displayed playground code aligned with upstream docs/source expectations
 
 Tasks:
 
+- replace package-version-based pinned refs with a direct upstream branch, tag, or commit audit ref when available
 - audit upstream GraphQL Gene docs, examples, tests, and plugin packages
 - assign explicit `sourceRepo`, `sourceRef`, `sourcePath`, and `sourceType` values where possible
 - update playground example entries once parity is proven

@@ -11,6 +11,7 @@ describe('mcp-server wrapper', () => {
     expect(context.catalog.counts.plugins).toBe(2)
     expect(context.catalog.counts.recipes).toBe(5)
     expect(context.catalog.counts.troubleshooting).toBe(5)
+    expect(context.catalog.audit?.coverage.docs).toBe(8)
     expect(context.serverVersion).toBeTypeOf('string')
   })
 

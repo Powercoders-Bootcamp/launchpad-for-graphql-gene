@@ -57,6 +57,7 @@ describe('developer task patterns', () => {
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/schema-design')).toBe(true)
     expect(result.sourceEvidence.length).toBeGreaterThan(0)
     expect(result.versionMetadata.workspaceGraphqlGeneRange).toBeTruthy()
+    expect(result.versionMetadata.parityFindings.some(finding => finding.capabilityId === 'lookahead-helpers')).toBe(true)
   })
 
   it('adapts a canonical example to project model concepts without copying playground runtime code', () => {
@@ -116,6 +117,7 @@ describe('developer task patterns', () => {
     expect(result.taskId).toBe('model-polymorphic-content-blocks')
     expect(result.diagnosisArea).toBe('plugin')
     expect(result.warnings.length).toBeGreaterThan(0)
+    expect(result.versionMetadata.parityFindings.some(finding => finding.status === 'conceptual-pattern')).toBe(true)
     expect(result.nextTool).toBe('plan_developer_task')
   })
 })

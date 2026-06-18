@@ -100,6 +100,7 @@ function scoreEntry(entry: KnowledgeEntry, rawQuery: string, tokens: string[]) {
   const normalizedSummary = normalize(entry.summary)
   const normalizedTopics = entry.topics.map(topic => normalize(topic))
   const normalizedSourcePath = normalize(entry.sourcePath)
+  const normalizedUpstreamSourcePath = normalize(entry.upstreamSourcePath ?? '')
 
   if (normalizedTitle.includes(normalizedQuery)) {
     score += 20
@@ -130,6 +131,11 @@ function scoreEntry(entry: KnowledgeEntry, rawQuery: string, tokens: string[]) {
     if (normalizedSourcePath.includes(token)) {
       score += 2
       matchedFields.add('sourcePath')
+    }
+
+    if (normalizedUpstreamSourcePath && normalizedUpstreamSourcePath.includes(token)) {
+      score += 2
+      matchedFields.add('upstreamSourcePath')
     }
   }
 

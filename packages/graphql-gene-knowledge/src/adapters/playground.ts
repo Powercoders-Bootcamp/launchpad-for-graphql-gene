@@ -1,6 +1,7 @@
 import type {
   BuildKnowledgeCatalogOptions,
   ExampleKnowledgeEntry,
+  KnowledgeSourceOverride,
   PlaygroundExampleContract,
 } from '../contracts'
 
@@ -18,9 +19,14 @@ export function loadPlaygroundKnowledgeEntries(
     | 'versionRange'
     | 'exampleCatalogSourcePath'
     | 'exampleRuntimeSourcePath'
+    | 'provenanceOverrides'
   >,
 ): ExampleKnowledgeEntry[] {
-  return options.examples.map(example => createExampleEntry(example, options))
+  return options.examples.map((example) => {
+    const entry = createExampleEntry(example, options)
+    const override = options.provenanceOverrides?.examplesByKey?.[`${example.scenario}:${example.id}`]
+    return applySourceOverride(entry, override)
+  })
 }
 
 export function createExampleId(scenario: string, exampleId: string) {
@@ -36,6 +42,7 @@ function createExampleEntry(
     | 'versionRange'
     | 'exampleCatalogSourcePath'
     | 'exampleRuntimeSourcePath'
+    | 'provenanceOverrides'
   >,
 ): ExampleKnowledgeEntry {
   return {
@@ -63,5 +70,20 @@ function createExampleEntry(
     requiresAdapter: true,
     adapterRisk: 'medium',
     notes: [ADAPTED_RUNTIME_NOTE],
+  }
+}
+
+function applySourceOverride<T extends ExampleKnowledgeEntry>(entry: T, override?: KnowledgeSourceOverride): T {
+  if (!override) {
+    return entry
+  }
+
+  return {
+    ...entry,
+    provenanceStatus: override.provenanceStatus,
+    upstreamSourcePath: override.upstreamSourcePath,
+    upstreamSourceRepo: override.upstreamSourceRepo,
+    upstreamSourceRef: override.upstreamSourceRef,
+    upstreamSourceType: override.upstreamSourceType,
   }
 }

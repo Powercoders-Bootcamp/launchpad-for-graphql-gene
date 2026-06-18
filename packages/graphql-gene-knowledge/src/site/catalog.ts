@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { buildUpstreamAuditSnapshot } from '../audit/upstream-audit'
 import { buildKnowledgeCatalog } from '../compiler/build-catalog'
 import type { BuildKnowledgeCatalogOptions, KnowledgeCatalog } from '../contracts'
 import {
@@ -9,6 +10,7 @@ import {
 } from './curated-knowledge'
 import { siteDocsConfig } from './docs-config'
 import { getSitePlaygroundExamples } from './playground-examples'
+import { buildSiteKnowledgeProvenance } from './provenance'
 
 export const SITE_DOCS_ROOT_RELATIVE_PATH = 'content/graphql-gene/docs'
 export const SITE_EXAMPLE_CATALOG_SOURCE_PATH = 'server/utils/playground/registry.ts'
@@ -30,6 +32,9 @@ const siteKnowledgeCatalogCache = new Map<string, {
 }>()
 
 export function buildSiteKnowledgeCatalog(options: BuildSiteKnowledgeCatalogOptions) {
+  const provenanceOverrides = buildSiteKnowledgeProvenance({
+    workspaceRoot: options.workspaceRoot,
+  })
   const resolvedOptions: BuildKnowledgeCatalogOptions = {
     workspaceRoot: options.workspaceRoot,
     docsRoot: resolve(options.workspaceRoot, options.docsRootRelativePath ?? SITE_DOCS_ROOT_RELATIVE_PATH),
@@ -43,9 +48,22 @@ export function buildSiteKnowledgeCatalog(options: BuildSiteKnowledgeCatalogOpti
     versionRange: options.versionRange,
     exampleCatalogSourcePath: options.exampleCatalogSourcePath ?? SITE_EXAMPLE_CATALOG_SOURCE_PATH,
     exampleRuntimeSourcePath: options.exampleRuntimeSourcePath ?? SITE_EXAMPLE_RUNTIME_SOURCE_PATH,
+    provenanceOverrides,
   }
 
-  return buildKnowledgeCatalog(resolvedOptions)
+  const catalog = buildKnowledgeCatalog(resolvedOptions)
+
+  return {
+    ...catalog,
+    audit: buildUpstreamAuditSnapshot({
+      workspaceRoot: resolvedOptions.workspaceRoot,
+      sourceRepo: resolvedOptions.sourceRepo ?? 'graphql-gene-site',
+      sourceRef: resolvedOptions.sourceRef ?? 'workspace',
+      versionRange: resolvedOptions.versionRange,
+      auditMetadata: provenanceOverrides.audit,
+      catalog,
+    }),
+  } satisfies KnowledgeCatalog
 }
 
 export function buildCachedSiteKnowledgeCatalog(options: BuildSiteKnowledgeCatalogOptions) {
@@ -84,6 +102,9 @@ function buildSiteKnowledgeFingerprint(options: BuildSiteKnowledgeCatalogOptions
 
   return JSON.stringify({
     docsFingerprint,
+    packageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'package.json')),
+    graphqlGenePackageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'node_modules/graphql-gene/package.json')),
+    sequelizePluginPackageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'node_modules/@graphql-gene/plugin-sequelize/package.json')),
     pluginCount: getSitePluginKnowledge().length,
     recipeCount: getSiteRecipeKnowledge().length,
     troubleshootingCount: getSiteTroubleshootingKnowledge().length,
@@ -99,6 +120,15 @@ function fingerprintMarkdownDirectory(rootDir: string) {
   return collectMarkdownFingerprints(rootDir)
     .sort((left, right) => left.localeCompare(right))
     .join('|')
+}
+
+function fingerprintFile(filePath: string) {
+  if (!existsSync(filePath)) {
+    return 'missing'
+  }
+
+  const stats = statSync(filePath)
+  return `${stats.size}:${Math.trunc(stats.mtimeMs)}`
 }
 
 function collectMarkdownFingerprints(rootDir: string, currentDir = rootDir): string[] {

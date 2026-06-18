@@ -1,5 +1,6 @@
 import type {
   BuildKnowledgeCatalogOptions,
+  KnowledgeSourceOverride,
   PluginKnowledgeEntry,
   RecipeKnowledgeEntry,
   TroubleshootingKnowledgeEntry,
@@ -20,7 +21,7 @@ export function createTroubleshootingId(issueId: string) {
 export function loadCuratedKnowledgeEntries(
   options: Pick<
     BuildKnowledgeCatalogOptions,
-    'plugins' | 'recipes' | 'troubleshooting' | 'sourceRepo' | 'sourceRef' | 'versionRange'
+    'plugins' | 'recipes' | 'troubleshooting' | 'sourceRepo' | 'sourceRef' | 'versionRange' | 'provenanceOverrides'
   >,
 ): {
   plugins: PluginKnowledgeEntry[]
@@ -28,7 +29,7 @@ export function loadCuratedKnowledgeEntries(
   troubleshooting: TroubleshootingKnowledgeEntry[]
 } {
   return {
-    plugins: options.plugins.map(plugin => ({
+    plugins: options.plugins.map((plugin) => applySourceOverride({
       id: createPluginId(plugin.id),
       kind: 'plugin',
       pluginId: plugin.id,
@@ -62,8 +63,8 @@ export function loadCuratedKnowledgeEntries(
       recommendedDocIds: plugin.recommendedDocIds,
       recommendedExampleIds: ensureArray(plugin.recommendedExampleIds),
       recommendedRecipeIds: ensureArray(plugin.recommendedRecipeIds),
-    })),
-    recipes: options.recipes.map(recipe => ({
+    }, options.provenanceOverrides?.pluginsById?.[plugin.id])),
+    recipes: options.recipes.map((recipe) => applySourceOverride({
       id: createRecipeId(recipe.id),
       kind: 'recipe',
       recipeId: recipe.id,
@@ -97,8 +98,8 @@ export function loadCuratedKnowledgeEntries(
       recommendedPluginIds: ensureArray(recipe.recommendedPluginIds),
       recommendedDocIds: recipe.recommendedDocIds,
       recommendedExampleIds: ensureArray(recipe.recommendedExampleIds),
-    })),
-    troubleshooting: options.troubleshooting.map(issue => ({
+    }, options.provenanceOverrides?.recipesById?.[recipe.id])),
+    troubleshooting: options.troubleshooting.map((issue) => applySourceOverride({
       id: createTroubleshootingId(issue.id),
       kind: 'troubleshooting',
       issueId: issue.id,
@@ -131,7 +132,7 @@ export function loadCuratedKnowledgeEntries(
       recommendedDocIds: issue.recommendedDocIds,
       recommendedExampleIds: ensureArray(issue.recommendedExampleIds),
       recommendedRecipeIds: ensureArray(issue.recommendedRecipeIds),
-    })),
+    }, options.provenanceOverrides?.troubleshootingById?.[issue.id])),
   }
 }
 
@@ -145,4 +146,21 @@ function compact(values: Array<string | undefined>) {
 
 function uniqueStrings(values: string[]) {
   return [...new Set(values)]
+}
+
+function applySourceOverride<
+  T extends PluginKnowledgeEntry | RecipeKnowledgeEntry | TroubleshootingKnowledgeEntry,
+>(entry: T, override?: KnowledgeSourceOverride): T {
+  if (!override) {
+    return entry
+  }
+
+  return {
+    ...entry,
+    provenanceStatus: override.provenanceStatus,
+    upstreamSourcePath: override.upstreamSourcePath,
+    upstreamSourceRepo: override.upstreamSourceRepo,
+    upstreamSourceRef: override.upstreamSourceRef,
+    upstreamSourceType: override.upstreamSourceType,
+  }
 }

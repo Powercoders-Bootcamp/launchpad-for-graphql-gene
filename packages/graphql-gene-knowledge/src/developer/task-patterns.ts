@@ -1,9 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import {
+  buildPackageParityAudit,
+  findPackageParityCapability,
+  isUnresolvedPackageCapabilityStatus,
+} from '../audit/package-parity'
 import type {
   DocKnowledgeEntry,
   ExampleKnowledgeEntry,
   KnowledgeCatalog,
+  PackageCapabilityParityStatus,
+  PackageParityAudit,
   PluginKnowledgeEntry,
   RecipeKnowledgeEntry,
   TroubleshootingKnowledgeEntry,
@@ -103,9 +110,19 @@ export interface DeveloperTaskVersionMetadata {
   effectiveGraphqlGeneVersion: string | null
   workspaceGraphqlGeneRange: string | null
   workspacePluginSequelizeRange: string | null
+  installedGraphqlGeneVersion: string | null
   installedPluginSequelizeVersion: string | null
   notes: string[]
   parityWarnings: string[]
+  parityFindings: Array<{
+    capabilityId: string
+    title: string
+    status: PackageCapabilityParityStatus
+    summary: string
+    confirmedPublicApis: string[]
+    missingPublicApis: string[]
+    warnings: string[]
+  }>
 }
 
 export interface DeveloperProjectContext {
@@ -223,8 +240,9 @@ interface DeveloperTaskSeed {
 interface WorkspacePackageMetadata {
   workspaceGraphqlGeneRange: string | null
   workspacePluginSequelizeRange: string | null
+  installedGraphqlGeneVersion: string | null
   installedPluginSequelizeVersion: string | null
-  pluginExportsPolymorphic: boolean
+  packageParity: PackageParityAudit
 }
 
 const DOC_IDS = {
@@ -256,9 +274,7 @@ const PLUGIN_IDS = {
 } as const
 
 const WORKSPACE_METADATA = readWorkspacePackageMetadata()
-const POLYMORPHIC_EXPORT_WARNING = WORKSPACE_METADATA.pluginExportsPolymorphic
-  ? null
-  : 'The docs describe a @Polymorphic pattern, but the installed @graphql-gene/plugin-sequelize export surface did not confirm a public "Polymorphic" export. Verify upstream/package parity before presenting it as a directly importable API.'
+const POLYMORPHIC_PARITY = findPackageParityCapability(WORKSPACE_METADATA.packageParity, 'polymorphic-blocks')
 
 const DEVELOPER_TASKS: DeveloperTaskSeed[] = [
   {
@@ -1030,7 +1046,7 @@ const DEVELOPER_TASKS: DeveloperTaskSeed[] = [
     relatedScenario: 'polymorphic-blocks',
     stage: 'query',
     capabilities: ['polymorphism'],
-    confidence: POLYMORPHIC_EXPORT_WARNING ? 'medium' : 'high',
+    confidence: POLYMORPHIC_PARITY && isUnresolvedPackageCapabilityStatus(POLYMORPHIC_PARITY.status) ? 'medium' : 'high',
     title: 'Model polymorphic content blocks',
     summary: 'Represent ordered heterogeneous content blocks with fragment-friendly GraphQL access while keeping the model layer authoritative.',
     developerGoal: 'Expose polymorphic content blocks without abandoning model-native schema generation.',
@@ -1068,7 +1084,7 @@ const DEVELOPER_TASKS: DeveloperTaskSeed[] = [
     versionNotes: [
       'This task is more sensitive than others to docs-versus-package parity.',
     ],
-    warnings: POLYMORPHIC_EXPORT_WARNING ? [POLYMORPHIC_EXPORT_WARNING] : [],
+    warnings: [],
     orms: ['Sequelize'],
     docIds: [DOC_IDS.polymorphicBlocks, DOC_IDS.directives, DOC_IDS.schemaDesign],
     exampleIds: [EXAMPLE_IDS.polymorphicBlocks],
@@ -1250,7 +1266,7 @@ const DEVELOPER_TASKS: DeveloperTaskSeed[] = [
     versionNotes: [
       'This task should always return the workspace dependency range and installed plugin version when available.',
     ],
-    warnings: POLYMORPHIC_EXPORT_WARNING ? [POLYMORPHIC_EXPORT_WARNING] : [],
+    warnings: [],
     orms: ['Sequelize', 'Custom ORM'],
     docIds: [DOC_IDS.gettingStarted, DOC_IDS.writingAPlugin],
     exampleIds: [],
@@ -1438,19 +1454,23 @@ export function classifyDeveloperGoal(
     goal: input.goal,
     projectContext: serializeProject(project),
     targetVersion: input.targetVersion ?? project.graphqlGeneVersion ?? null,
-    rankedTasks: selected.map(({ task, score }) => ({
-      taskId: task.id,
-      patternId: task.patternAlias ?? task.relatedScenario ?? task.id,
-      title: task.title,
-      summary: task.summary,
-      stage: task.stage,
-      capabilities: task.capabilities,
-      confidence: task.confidence,
-      relatedScenario: task.relatedScenario ?? null,
-      score,
-      rationale: buildClassificationRationale(task, project, constraints),
-      warnings: dedupeStrings([...task.warnings, ...versionMetadata.parityWarnings]),
-    })),
+    rankedTasks: selected.map(({ task, score }) => {
+      const taskVersionMetadata = buildVersionMetadata(task, project, input.targetVersion)
+
+      return {
+        taskId: task.id,
+        patternId: task.patternAlias ?? task.relatedScenario ?? task.id,
+        title: task.title,
+        summary: task.summary,
+        stage: task.stage,
+        capabilities: task.capabilities,
+        confidence: task.confidence,
+        relatedScenario: task.relatedScenario ?? null,
+        score,
+        rationale: buildClassificationRationale(task, project, constraints),
+        warnings: dedupeStrings([...task.warnings, ...taskVersionMetadata.parityWarnings]),
+      }
+    }),
     missingContextQuestions: buildMissingContextQuestions(topTask, project),
     recommendedNextTool: 'plan_developer_task',
     versionMetadata,
@@ -1686,7 +1706,7 @@ export function buildDeveloperTaskOverviewResource(catalog: KnowledgeCatalog) {
     count: tasks.length,
     byStage: countBy(tasks.map(task => task.stage)),
     byConfidence: countBy(tasks.map(task => task.confidence)),
-    parityWarningCount: tasks.filter(task => task.warnings.length > 0).length,
+    parityWarningCount: tasks.filter(task => task.versionMetadata.parityWarnings.length > 0).length,
     tasks,
   }
 }
@@ -1791,8 +1811,20 @@ function choosePluginStrategy(project: DeveloperProjectContext) {
     strategy: 'custom-plugin-evaluation',
     recommendedPlugin: null,
     recommendedPluginIds: [PLUGIN_IDS.customPlugin],
-    rationale: `The project ORM "${project.orm}" is not Sequelize, so evaluate a custom GraphQL Gene plugin instead of forcing the Sequelize path.`,
+      rationale: `The project ORM "${project.orm}" is not Sequelize, so evaluate a custom GraphQL Gene plugin instead of forcing the Sequelize path.`,
   }
+}
+
+function getRelevantPackageCapabilityIds(taskId: DeveloperTaskId) {
+  if (taskId === 'upgrade-version-and-parity-check') {
+    return WORKSPACE_METADATA.packageParity.capabilities
+      .filter(capability => capability.paritySensitive)
+      .map(capability => capability.capabilityId)
+  }
+
+  return WORKSPACE_METADATA.packageParity.capabilities
+    .filter(capability => capability.relatedTaskIds.includes(taskId))
+    .map(capability => capability.capabilityId)
 }
 
 function buildVersionMetadata(
@@ -1801,12 +1833,23 @@ function buildVersionMetadata(
   targetVersion?: string,
 ): DeveloperTaskVersionMetadata {
   const requestedTargetVersion = targetVersion ?? project.graphqlGeneVersion ?? null
-  const parityWarnings = dedupeStrings([
-    ...task.warnings,
-    ...(POLYMORPHIC_EXPORT_WARNING && task.id === 'model-polymorphic-content-blocks'
-      ? [POLYMORPHIC_EXPORT_WARNING]
-      : []),
-  ])
+  const parityFindings = getRelevantPackageCapabilityIds(task.id)
+    .map(capabilityId => findPackageParityCapability(WORKSPACE_METADATA.packageParity, capabilityId))
+    .filter((capability): capability is NonNullable<typeof capability> => Boolean(capability))
+    .map(capability => ({
+      capabilityId: capability.capabilityId,
+      title: capability.title,
+      status: capability.status,
+      summary: capability.summary,
+      confirmedPublicApis: capability.confirmedPublicApis,
+      missingPublicApis: capability.missingPublicApis,
+      warnings: capability.warnings,
+    }))
+  const parityWarnings = dedupeStrings(
+    parityFindings
+      .filter(finding => isUnresolvedPackageCapabilityStatus(finding.status))
+      .flatMap(finding => finding.warnings),
+  )
   const notes = dedupeStrings([
     ...task.versionNotes,
     requestedTargetVersion
@@ -1818,19 +1861,33 @@ function buildVersionMetadata(
     WORKSPACE_METADATA.workspacePluginSequelizeRange
       ? `The workspace currently depends on @graphql-gene/plugin-sequelize ${WORKSPACE_METADATA.workspacePluginSequelizeRange}.`
       : 'The workspace @graphql-gene/plugin-sequelize dependency range could not be detected.',
+    WORKSPACE_METADATA.installedGraphqlGeneVersion
+      ? `The installed graphql-gene package version is ${WORKSPACE_METADATA.installedGraphqlGeneVersion}.`
+      : 'The installed graphql-gene package version could not be detected.',
     WORKSPACE_METADATA.installedPluginSequelizeVersion
       ? `The installed @graphql-gene/plugin-sequelize package version is ${WORKSPACE_METADATA.installedPluginSequelizeVersion}.`
       : 'The installed @graphql-gene/plugin-sequelize package version could not be detected.',
+    ...parityFindings.map((finding) => {
+      const apiSummary = finding.confirmedPublicApis.length
+        ? `confirmed APIs: ${finding.confirmedPublicApis.join(', ')}`
+        : 'no confirmed public APIs'
+      const missingSummary = finding.missingPublicApis.length
+        ? `missing confirmations: ${finding.missingPublicApis.join(', ')}`
+        : 'no missing API confirmations'
+      return `Capability parity for "${finding.title}" is ${finding.status}; ${apiSummary}; ${missingSummary}.`
+    }),
   ])
 
   return {
     requestedTargetVersion,
     effectiveGraphqlGeneVersion: requestedTargetVersion ?? WORKSPACE_METADATA.workspaceGraphqlGeneRange,
     workspaceGraphqlGeneRange: WORKSPACE_METADATA.workspaceGraphqlGeneRange,
+    installedGraphqlGeneVersion: WORKSPACE_METADATA.installedGraphqlGeneVersion,
     workspacePluginSequelizeRange: WORKSPACE_METADATA.workspacePluginSequelizeRange,
     installedPluginSequelizeVersion: WORKSPACE_METADATA.installedPluginSequelizeVersion,
     notes,
     parityWarnings,
+    parityFindings,
   }
 }
 
@@ -2468,27 +2525,29 @@ function evidenceLocal(sourcePath: string, claim: string, confidence: DeveloperT
 function readWorkspacePackageMetadata(): WorkspacePackageMetadata {
   const workspaceRoot = findWorkspaceRoot(process.cwd())
   if (!workspaceRoot) {
+    const packageParity = buildPackageParityAudit({
+      workspaceRoot: process.cwd(),
+    })
+
     return {
       workspaceGraphqlGeneRange: null,
       workspacePluginSequelizeRange: null,
+      installedGraphqlGeneVersion: null,
       installedPluginSequelizeVersion: null,
-      pluginExportsPolymorphic: false,
+      packageParity,
     }
   }
 
-  const workspacePackage = readJson(resolve(workspaceRoot, 'package.json')) as {
-    dependencies?: Record<string, string>
-  } | null
-  const pluginPackage = readJson(resolve(workspaceRoot, 'node_modules', '@graphql-gene', 'plugin-sequelize', 'package.json')) as {
-    version?: string
-  } | null
-  const pluginExportSurface = readText(resolve(workspaceRoot, 'node_modules', '@graphql-gene', 'plugin-sequelize', 'dist', 'index.d.ts'))
+  const packageParity = buildPackageParityAudit({
+    workspaceRoot,
+  })
 
   return {
-    workspaceGraphqlGeneRange: workspacePackage?.dependencies?.['graphql-gene'] ?? null,
-    workspacePluginSequelizeRange: workspacePackage?.dependencies?.['@graphql-gene/plugin-sequelize'] ?? null,
-    installedPluginSequelizeVersion: pluginPackage?.version ?? null,
-    pluginExportsPolymorphic: /\bPolymorphic\b/.test(pluginExportSurface),
+    workspaceGraphqlGeneRange: packageParity.metadata.workspaceGraphqlGeneRange,
+    workspacePluginSequelizeRange: packageParity.metadata.workspacePluginSequelizeRange,
+    installedGraphqlGeneVersion: packageParity.metadata.installedGraphqlGeneVersion,
+    installedPluginSequelizeVersion: packageParity.metadata.installedPluginSequelizeVersion,
+    packageParity,
   }
 }
 
@@ -2518,14 +2577,5 @@ function readJson(filePath: string) {
   }
   catch {
     return null
-  }
-}
-
-function readText(filePath: string) {
-  try {
-    return readFileSync(filePath, 'utf8')
-  }
-  catch {
-    return ''
   }
 }

@@ -8,11 +8,18 @@ export type KnowledgeSourceType =
   | 'demo-catalog'
   | 'demo-runtime'
 
+export type AuditSourceType =
+  | KnowledgeSourceType
+  | 'package-metadata'
+  | 'package-readme'
+  | 'workspace-metadata'
+
 export type KnowledgeConfidence = 'high' | 'medium' | 'low'
 export type KnowledgeExecutionMode = 'canonical' | 'adapted' | 'simulated'
 export type KnowledgeStability = 'stable' | 'experimental' | 'planned' | 'deprecated'
 export type AdapterRisk = 'low' | 'medium' | 'high'
 export type TroubleshootingStage = 'install' | 'schema' | 'runtime' | 'plugin' | 'query' | 'directive'
+export type KnowledgeProvenanceStatus = 'local-only' | 'upstream-projected' | 'package-derived'
 
 export interface DocsSectionConfig {
   id: string
@@ -105,6 +112,27 @@ export interface TroubleshootingKnowledgeContract {
   confidence?: KnowledgeConfidence
 }
 
+export interface KnowledgeSourceOverride {
+  provenanceStatus: KnowledgeProvenanceStatus
+  upstreamSourcePath?: string
+  upstreamSourceRepo?: string
+  upstreamSourceRef?: string
+  upstreamSourceType?: AuditSourceType
+}
+
+export interface KnowledgeProvenanceOverrides {
+  audit?: {
+    upstreamRepo: string
+    auditedRef: string
+    auditor?: string
+  }
+  docsBySlug?: Record<string, KnowledgeSourceOverride>
+  examplesByKey?: Record<string, KnowledgeSourceOverride>
+  pluginsById?: Record<string, KnowledgeSourceOverride>
+  recipesById?: Record<string, KnowledgeSourceOverride>
+  troubleshootingById?: Record<string, KnowledgeSourceOverride>
+}
+
 export interface KnowledgeEntryBase {
   id: string
   kind: KnowledgeKind
@@ -117,6 +145,11 @@ export interface KnowledgeEntryBase {
   sourceRef: string
   sourceType: KnowledgeSourceType
   confidence: KnowledgeConfidence
+  provenanceStatus?: KnowledgeProvenanceStatus
+  upstreamSourcePath?: string
+  upstreamSourceRepo?: string
+  upstreamSourceRef?: string
+  upstreamSourceType?: AuditSourceType
   versionRange?: string
   stability?: KnowledgeStability
 }
@@ -207,6 +240,202 @@ export interface KnowledgeDiagnostic {
   entryId?: string
 }
 
+export type UpstreamAuditStatus = 'bootstrap' | 'full'
+export type AuditedDocKind = 'canonical' | 'tutorial' | 'example' | 'troubleshooting'
+export type AuditedAudienceLevel = 'introductory' | 'intermediate' | 'advanced' | 'mixed'
+export type AuditedPackageRole = 'core' | 'plugin' | 'support' | 'internal'
+export type PackageCapabilityParityStatus =
+  | 'confirmed-public-api'
+  | 'conceptual-pattern'
+  | 'unresolved'
+export type AuditConflictKind =
+  | 'docs-vs-code'
+  | 'docs-vs-package'
+  | 'playground-vs-upstream'
+  | 'version-ambiguity'
+
+export interface AuditSourceReference {
+  sourcePath: string
+  sourceRepo: string
+  sourceRef: string
+  sourceType: AuditSourceType
+}
+
+export interface PackageCapabilityEvidence {
+  sourcePath: string
+  sourceType: AuditSourceType
+  detail: string
+}
+
+export interface UpstreamAuditMetadata {
+  status: UpstreamAuditStatus
+  upstreamRepo: string
+  auditedRef: string
+  auditDate: string
+  auditor: string
+  workspaceVersionRange?: string
+  installedGraphqlGeneVersion?: string | null
+  installedPluginSequelizeVersion?: string | null
+  limitations: string[]
+}
+
+export interface UpstreamRepositoryInventoryItem {
+  path: string
+  kind:
+    | 'root-file'
+    | 'docs-directory'
+    | 'package-directory'
+    | 'plugin-directory'
+    | 'example-directory'
+    | 'test-directory'
+    | 'workspace-file'
+  note: string
+  exists: boolean
+}
+
+export interface AuditedDoc {
+  sourcePath: string
+  title: string
+  summary: string
+  topics: string[]
+  kind: AuditedDocKind
+  audienceLevel: AuditedAudienceLevel
+  relatedPackages: string[]
+  observedCapabilities: string[]
+  confidence: KnowledgeConfidence
+  source: AuditSourceReference
+  workspaceProjectionPath?: string
+}
+
+export interface AuditedPackage {
+  packageName: string
+  sourcePath: string
+  role: AuditedPackageRole
+  summary: string
+  exportsOfInterest: string[]
+  relatedDocs: string[]
+  confidence: KnowledgeConfidence
+  source: AuditSourceReference
+}
+
+export interface AuditedPackageCapability {
+  capabilityId: string
+  title: string
+  summary: string
+  packageNames: string[]
+  docsPaths: string[]
+  relatedTaskIds: string[]
+  paritySensitive: boolean
+  status: PackageCapabilityParityStatus
+  confirmedPublicApis: string[]
+  missingPublicApis: string[]
+  warnings: string[]
+  evidence: PackageCapabilityEvidence[]
+}
+
+export interface PackageParityAudit {
+  metadata: {
+    auditDate: string
+    workspaceGraphqlGeneRange: string | null
+    workspacePluginSequelizeRange: string | null
+    installedGraphqlGeneVersion: string | null
+    installedPluginSequelizeVersion: string | null
+  }
+  capabilities: AuditedPackageCapability[]
+  summary: {
+    total: number
+    paritySensitive: number
+    unresolved: number
+    warningCount: number
+    byStatus: Record<PackageCapabilityParityStatus, number>
+  }
+}
+
+export interface AuditedPlugin {
+  pluginId: string
+  packageName?: string
+  targetOrms: string[]
+  integrationStyle: string
+  setupExpectations: string[]
+  docsPaths: string[]
+  evidencePaths: string[]
+  confidence: KnowledgeConfidence
+  source: AuditSourceReference
+  workspaceProjectionPath?: string
+}
+
+export interface AuditedExample {
+  sourcePath: string
+  title: string
+  capability: string
+  relatedDocs: string[]
+  relatedPackages: string[]
+  suitableSurfaces: Array<'docs' | 'playground' | 'mcp'>
+  paritySuitability: 'canonical' | 'adapted' | 'simulated' | 'unknown'
+  confidence: KnowledgeConfidence
+  source: AuditSourceReference
+  workspaceProjectionPath?: string
+}
+
+export interface AuditConceptNode {
+  conceptId: string
+  summary: string
+  requiredDocs: string[]
+  requiredPackages: string[]
+  relatedExamples: string[]
+  relatedTasks: string[]
+}
+
+export interface AuditedScenario {
+  scenarioId: string
+  goal: string
+  trigger: string
+  requiredConcepts: string[]
+  requiredPackages: string[]
+  requiredDocs: string[]
+  requiredExamples: string[]
+  recommendedMcpResources: string[]
+  recommendedMcpPrompts: string[]
+  recommendedMcpTools: string[]
+}
+
+export interface AuditConflict {
+  id: string
+  kind: AuditConflictKind
+  summary: string
+  conflictingSources: string[]
+  currentBestJudgment: string
+  recommendedResolutionRule: string
+  severity: 'info' | 'warning'
+}
+
+export interface UpstreamAuditSnapshot {
+  metadata: UpstreamAuditMetadata
+  repositoryInventory: UpstreamRepositoryInventoryItem[]
+  docs: AuditedDoc[]
+  packages: AuditedPackage[]
+  packageParity: PackageParityAudit
+  plugins: AuditedPlugin[]
+  examples: AuditedExample[]
+  conceptMap: AuditConceptNode[]
+  scenarios: AuditedScenario[]
+  conflicts: AuditConflict[]
+  provenanceSummary: {
+    sourceTypeCounts: Record<string, number>
+    sourceRepoCounts: Record<string, number>
+    confidenceCounts: Record<KnowledgeConfidence, number>
+  }
+  coverage: {
+    docs: number
+    packages: number
+    capabilities: number
+    plugins: number
+    examples: number
+    scenarios: number
+    conflicts: number
+  }
+}
+
 export interface KnowledgeCatalog {
   generatedAt: string
   counts: {
@@ -225,6 +454,7 @@ export interface KnowledgeCatalog {
   entries: KnowledgeEntry[]
   byId: Record<string, KnowledgeEntry>
   diagnostics: KnowledgeDiagnostic[]
+  audit?: UpstreamAuditSnapshot
 }
 
 export interface BuildKnowledgeCatalogOptions {
@@ -240,4 +470,5 @@ export interface BuildKnowledgeCatalogOptions {
   exampleCatalogSourcePath?: string
   exampleRuntimeSourcePath?: string
   versionRange?: string
+  provenanceOverrides?: KnowledgeProvenanceOverrides
 }

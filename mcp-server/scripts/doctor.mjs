@@ -177,6 +177,19 @@ async function verifyStdioTransport(payload) {
       'Timed out while reading the stdio developer task overview resource.',
     )
     const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const auditSnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://upstream-snapshot' }),
+      10000,
+      'Timed out while reading the stdio upstream audit snapshot resource.',
+    )
+    const auditPayload = parseOverviewPayload(auditSnapshot)
+    const packageParitySnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://package-parity' }),
+      10000,
+      'Timed out while reading the stdio package parity audit resource.',
+    )
+    const packageParityPayload = parseOverviewPayload(packageParitySnapshot)
+    assertPackageParityCoverage('stdio', packageParityPayload)
     const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'stdio')
     const developerToolPayload = await verifyDeveloperTaskTool(client, 'stdio')
     const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'stdio')
@@ -196,6 +209,12 @@ async function verifyStdioTransport(payload) {
       developerTaskCount: developerTaskOverviewPayload.count,
       developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
       developerTaskVersionMetadata: developerToolPayload.versionMetadata,
+      auditStatus: auditPayload.metadata?.status ?? null,
+      auditConflictCount: auditPayload.coverage?.conflicts ?? 0,
+      packageParityUnresolvedCount: packageParityPayload.summary?.unresolved ?? 0,
+      packageParityPolymorphicStatus: packageParityPayload.capabilities?.find(
+        capability => capability.capabilityId === 'polymorphic-blocks',
+      )?.status ?? null,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
       developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
       developerToolPattern: developerToolPayload.patternId,
@@ -276,6 +295,19 @@ async function verifyHttpTransport(payload) {
       'Timed out while reading the HTTP developer task overview resource.',
     )
     const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const auditSnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://upstream-snapshot' }),
+      10000,
+      'Timed out while reading the HTTP upstream audit snapshot resource.',
+    )
+    const auditPayload = parseOverviewPayload(auditSnapshot)
+    const packageParitySnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://package-parity' }),
+      10000,
+      'Timed out while reading the HTTP package parity audit resource.',
+    )
+    const packageParityPayload = parseOverviewPayload(packageParitySnapshot)
+    assertPackageParityCoverage('http', packageParityPayload)
     const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'HTTP')
     const developerToolPayload = await verifyDeveloperTaskTool(client, 'HTTP')
     const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'HTTP')
@@ -313,6 +345,12 @@ async function verifyHttpTransport(payload) {
       developerTaskCount: developerTaskOverviewPayload.count,
       developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
       developerTaskVersionMetadata: developerToolPayload.versionMetadata,
+      auditStatus: auditPayload.metadata?.status ?? null,
+      auditConflictCount: auditPayload.coverage?.conflicts ?? 0,
+      packageParityUnresolvedCount: packageParityPayload.summary?.unresolved ?? 0,
+      packageParityPolymorphicStatus: packageParityPayload.capabilities?.find(
+        capability => capability.capabilityId === 'polymorphic-blocks',
+      )?.status ?? null,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
       developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
       developerToolPattern: developerToolPayload.patternId,
@@ -742,7 +780,36 @@ function assertOverviewCoverage(transport, overviewPayload) {
     )
   }
 
-  return 8 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting + developerTaskCount
+  const auditScenarioCount = overviewPayload?.audit?.scenarioCount
+  if (!Number.isInteger(auditScenarioCount) || auditScenarioCount <= 0) {
+    throw new Error(
+      `The ${transport} knowledge overview reported an invalid audit scenario count (${String(auditScenarioCount)}). The built MCP runtime is likely missing upstream-audit snapshot coverage.`,
+    )
+  }
+
+  return 10 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting + developerTaskCount
+}
+
+function assertPackageParityCoverage(transport, packageParityPayload) {
+  if (!Array.isArray(packageParityPayload?.capabilities) || packageParityPayload.capabilities.length < 5) {
+    throw new Error(
+      `The ${transport} package parity audit did not expose the expected capability coverage.`,
+    )
+  }
+
+  const polymorphicCapability = packageParityPayload.capabilities.find(
+    capability => capability.capabilityId === 'polymorphic-blocks',
+  )
+
+  if (!polymorphicCapability) {
+    throw new Error(`The ${transport} package parity audit is missing the polymorphic-blocks capability.`)
+  }
+
+  if (polymorphicCapability.status === 'confirmed-public-api') {
+    throw new Error(
+      `The ${transport} package parity audit unexpectedly marked polymorphic-blocks as a confirmed public API.`,
+    )
+  }
 }
 
 function resolveSdkRoot() {

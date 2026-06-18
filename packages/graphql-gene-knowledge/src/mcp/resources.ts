@@ -55,6 +55,18 @@ const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
     description: 'Returns the canonical GraphQL Gene developer task catalog with stages, capabilities, evidence, and warnings.',
     mimeType: 'application/json',
   },
+  {
+    uri: 'audit://upstream-snapshot',
+    name: 'Upstream Audit Snapshot',
+    description: 'Returns the current upstream-audit snapshot covering inventories, scenario matrix, provenance, and conflict log.',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'audit://package-parity',
+    name: 'Package Parity Audit',
+    description: 'Returns the package export parity and capability audit used by developer-task planning.',
+    mimeType: 'application/json',
+  },
 ]
 
 export function listKnowledgeMcpResources(context?: McpDomainContext): McpResourceDescriptor[] {
@@ -127,6 +139,10 @@ export function readKnowledgeMcpResource(context: McpDomainContext, uri: string)
       return jsonResource(uri, context.catalog.troubleshooting)
     case 'developer-tasks://overview':
       return jsonResource(uri, buildDeveloperTaskOverviewResource(context.catalog))
+    case 'audit://upstream-snapshot':
+      return jsonResource(uri, context.catalog.audit ?? null)
+    case 'audit://package-parity':
+      return jsonResource(uri, context.catalog.audit?.packageParity ?? null)
     default:
       return readEntryResource(context, uri)
   }
@@ -164,6 +180,26 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
     developerTasks: {
       count: listDeveloperTaskPatterns(catalog).count,
     },
+    audit: catalog.audit
+      ? {
+          status: catalog.audit.metadata.status,
+          upstreamRepo: catalog.audit.metadata.upstreamRepo,
+          auditedRef: catalog.audit.metadata.auditedRef,
+          docsCount: catalog.audit.coverage.docs,
+          packageCount: catalog.audit.coverage.packages,
+          capabilityCount: catalog.audit.coverage.capabilities,
+          pluginCount: catalog.audit.coverage.plugins,
+          exampleCount: catalog.audit.coverage.examples,
+          scenarioCount: catalog.audit.coverage.scenarios,
+          conflictCount: catalog.audit.coverage.conflicts,
+          packageParity: {
+            total: catalog.audit.packageParity.summary.total,
+            unresolved: catalog.audit.packageParity.summary.unresolved,
+            warningCount: catalog.audit.packageParity.summary.warningCount,
+            byStatus: catalog.audit.packageParity.summary.byStatus,
+          },
+        }
+      : null,
     scenarios,
     diagnostics: catalog.diagnostics,
   }

@@ -38,6 +38,9 @@ describe('knowledge MCP domain', () => {
     expect(payload.counts.recipes).toBe(5)
     expect(payload.counts.troubleshooting).toBe(5)
     expect(payload.developerTasks.count).toBeGreaterThanOrEqual(20)
+    expect(payload.audit.status).toBe('full')
+    expect(payload.audit.scenarioCount).toBeGreaterThanOrEqual(6)
+    expect(payload.audit.packageParity.unresolved).toBeGreaterThan(0)
   })
 
   it('renders prompts with caller context', () => {
@@ -235,6 +238,9 @@ describe('knowledge MCP domain', () => {
     expect(result.pluginStrategy.strategy).toBe('plugin-sequelize')
     expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/polymorphic-blocks')).toBe(true)
     expect(result.agentInstructions.join(' ')).toContain('not as the implementation source')
+    expect(result.versionMetadata.parityFindings.some((finding: { capabilityId: string, status: string }) => (
+      finding.capabilityId === 'polymorphic-blocks' && finding.status === 'conceptual-pattern'
+    ))).toBe(true)
   })
 
   it('validates developer task plans without treating playground code as source', () => {
@@ -337,5 +343,28 @@ describe('knowledge MCP domain', () => {
 
     expect(payload.taskId).toBe('optimize-lookahead-loading')
     expect(payload.patternId).toBe('query-lookahead')
+  })
+
+  it('exposes the upstream audit snapshot resource', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'audit://upstream-snapshot')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.metadata.status).toBe('full')
+    expect(payload.coverage.docs).toBe(8)
+    expect(payload.coverage.capabilities).toBeGreaterThanOrEqual(8)
+    expect(payload.scenarios.some((scenario: { scenarioId: string }) => scenario.scenarioId === 'sequelize-setup')).toBe(true)
+    expect(payload.docs.some((doc: { workspaceProjectionPath?: string, sourcePath: string }) => (
+      doc.workspaceProjectionPath && doc.sourcePath !== doc.workspaceProjectionPath
+    ))).toBe(true)
+  })
+
+  it('exposes the package parity audit resource', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'audit://package-parity')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.summary.unresolved).toBeGreaterThan(0)
+    expect(payload.capabilities.some((capability: { capabilityId: string, status: string }) => (
+      capability.capabilityId === 'polymorphic-blocks' && capability.status === 'conceptual-pattern'
+    ))).toBe(true)
   })
 })
