@@ -6,7 +6,7 @@ category: mcp
 order: 2
 slug: /docs/reference/mcp-version-contract
 status: experimental
-summary: "The website repo is the release unit; docs, knowledge, playground projections, and the MCP wrapper should be built from the same commit whenever possible."
+summary: "The website repo is the release unit; docs, knowledge, playground projections, and the MCP wrapper should be built from the same commit whenever possible, while audit resources keep provenance and package-parity explicit."
 related:
   - /docs/guides/mcp-server-setup
   - /docs/guides/mcp-server-deployment
@@ -24,6 +24,8 @@ It serves knowledge compiled from:
 - curated plugin, recipe, and troubleshooting entries
 
 Because of that, version alignment must be explicit.
+
+It must also stay auditable from the client side.
 
 ## The release unit
 
@@ -85,11 +87,25 @@ Usage:
 - provenance and debugging
 - drift detection between docs, examples, and deployed MCP behavior
 
+The built MCP runtime exposes this context through `knowledge://overview` and `audit://upstream-snapshot`.
+
+## Package-parity contract
+
+Version alignment alone is not enough for advanced GraphQL Gene capabilities.
+
+Some guidance may be:
+
+- confirmed by the currently installed public package surface
+- conceptual but still useful for design guidance
+- parity-sensitive and in need of explicit verification
+
+That distinction is part of the runtime contract now. The MCP server exposes it through `audit://package-parity`, and developer-task outputs carry parity findings so coding agents can tell the difference between a released API surface and a higher-level pattern.
+
 ## Alignment rules
 
 1. Build the deployed MCP server from the same commit as the docs it is expected to represent.
 2. Treat upstream-aligned docs as the primary truth source when playground behavior is adapted.
-3. Re-run `npm run mcp:verify` whenever the docs, recipes, troubleshooting catalog, or transport code changes so transport health, answer quality, and provenance policy are rechecked together.
+3. Re-run `npm run mcp:verify` whenever the docs, recipes, troubleshooting catalog, or transport code changes so transport health, answer quality, provenance policy, and package-parity coverage are rechecked together.
 4. Do not assume the MCP wrapper version alone is enough to describe behavioral compatibility.
 
 ## Publication rule

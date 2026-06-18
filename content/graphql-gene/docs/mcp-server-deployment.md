@@ -6,7 +6,7 @@ category: deployment
 order: 5
 slug: /docs/guides/mcp-server-deployment
 status: experimental
-summary: "Official release shape: repo-local stdio first, optional separately deployed HTTP service second, standalone npm publication deferred for now."
+summary: "Official release shape: repo-local stdio first, optional separately deployed HTTP service second, standalone npm publication deferred for now, with provenance and package-parity audit surfaces preserved in both modes."
 related:
   - /docs/guides/mcp-server-setup
   - /docs/reference/mcp-version-contract
@@ -17,6 +17,8 @@ related:
 The GraphQL Gene MCP server is designed around one canonical knowledge layer that lives in this repository.
 
 That release shape matters.
+
+The deployed HTTP service is expected to expose the same audit-aware knowledge surface as local stdio mode, including provenance and package-parity resources.
 
 ## Official release shape
 
@@ -140,6 +142,7 @@ That verifies:
 - the MCP build output
 - MCP-focused tests
 - golden answer-quality and provenance evaluations
+- package-parity and upstream-audit resource coverage
 - stdio handshake
 - Streamable HTTP handshake
 - canonical resource availability
@@ -150,3 +153,5 @@ That verifies:
 This HTTP mode is now appropriate for **trusted internal deployments**.
 
 It is still better treated as an internal service than a raw public internet endpoint. If you expose it more broadly, put it behind stronger platform controls such as managed auth, ingress filtering, and edge rate limiting.
+
+The same rule applies to trust in content: clients should prefer the deployed audit resources when they need to know whether a capability is confirmed by the installed package surface or still conceptual, adapted, or parity-sensitive.
