@@ -9,7 +9,7 @@ import type {
   TroubleshootingKnowledgeEntry,
 } from '../contracts'
 
-export function createExampleId(scenario: string, exampleId: string) {
+function createExampleId(scenario: string, exampleId: string) {
   return `example:${scenario}:${exampleId}`
 }
 
@@ -194,7 +194,7 @@ function ensureArray(values?: string[]) {
   return values ? [...values] : []
 }
 
-function ensureSurfaces(values?: KnowledgeSurface[]) {
+function ensureSurfaces(values?: KnowledgeSurface[]): KnowledgeSurface[] {
   return values?.length ? [...values] : ['docs', 'mcp']
 }
 
