@@ -6,11 +6,11 @@ describe('buildKnowledgeCatalog', () => {
     const catalog = buildTestSiteKnowledgeCatalog()
 
     expect(catalog.counts.docs).toBe(8)
-    expect(catalog.counts.examples).toBe(4)
+    expect(catalog.counts.examples).toBe(8)
     expect(catalog.counts.plugins).toBe(2)
-    expect(catalog.counts.recipes).toBe(5)
+    expect(catalog.counts.recipes).toBe(11)
     expect(catalog.counts.troubleshooting).toBe(5)
-    expect(catalog.counts.entries).toBe(24)
+    expect(catalog.counts.entries).toBe(34)
 
     const directivesDoc = catalog.byId['doc:/docs/guides/directives']
     const directivesExample = catalog.byId['example:directive-middleware:user-auth-directive']
@@ -23,10 +23,16 @@ describe('buildKnowledgeCatalog', () => {
     expect(directivesDoc.relatedIds).toContain('recipe:directive-middleware-auth')
     expect(directivesExample.relatedIds).toContain('doc:/docs/guides/directives')
     expect(directiveRecipe.relatedIds).toContain('doc:/docs/guides/directives')
-    expect(catalog.examples.every(example => example.executionMode === 'adapted')).toBe(true)
+    const playgroundExamples = catalog.examples.filter(example => example.sourceType === 'demo-catalog')
+    const curatedExamples = catalog.examples.filter(example => example.sourceType === 'canonical-curation')
+    expect(playgroundExamples).toHaveLength(4)
+    expect(curatedExamples).toHaveLength(4)
+    expect(playgroundExamples.every(example => example.executionMode === 'adapted')).toBe(true)
+    expect(curatedExamples.every(example => example.executionMode === 'canonical')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_RUNTIME_NOT_CANONICAL')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_PARITY_GATES_REQUIRED')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'PLAYGROUND_DISPLAYED_CODE_PARITY_UNVERIFIED')).toBe(true)
+    expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'CURATED_EXAMPLE_CATALOG_NORMALIZED')).toBe(true)
     expect(catalog.diagnostics.some(diagnostic => diagnostic.code === 'CURATED_KNOWLEDGE_NORMALIZED')).toBe(true)
     expect(catalog.audit?.metadata.status).toBe('full')
     expect(catalog.audit?.coverage.docs).toBe(8)

@@ -33,9 +33,9 @@ describe('knowledge MCP domain', () => {
 
     expect(resource.mimeType).toBe('application/json')
     expect(payload.counts.docs).toBe(8)
-    expect(payload.counts.examples).toBe(4)
+    expect(payload.counts.examples).toBe(8)
     expect(payload.counts.plugins).toBe(2)
-    expect(payload.counts.recipes).toBe(5)
+    expect(payload.counts.recipes).toBe(11)
     expect(payload.counts.troubleshooting).toBe(5)
     expect(payload.developerTasks.count).toBeGreaterThanOrEqual(20)
     expect(payload.audit.status).toBe('full')

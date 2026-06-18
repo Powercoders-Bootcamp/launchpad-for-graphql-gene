@@ -200,9 +200,10 @@ export function listPlaygroundParityGates(
   catalog: KnowledgeCatalog,
   scenario?: string,
 ) {
+  const playgroundExamples = getPlaygroundExamples(catalog)
   const scenarios = scenario
     ? [scenario]
-    : [...new Set(catalog.examples.map(example => example.scenario))].sort()
+    : [...new Set(playgroundExamples.map(example => example.scenario))].sort()
 
   return {
     scenario: scenario ?? null,
@@ -364,7 +365,7 @@ function buildScenarioContract(
   catalog: KnowledgeCatalog,
   scenario: string,
 ): PlaygroundScenarioContract {
-  const examples = catalog.examples.filter(example => example.scenario === scenario)
+  const examples = getPlaygroundExamples(catalog).filter(example => example.scenario === scenario)
   const relatedDocs = collectScenarioDocs(catalog, scenario)
   const runtimeContract = SCENARIO_RUNTIME_CONTRACTS[scenario] ?? {
     expectedOutputPanels: [],
@@ -393,7 +394,7 @@ function buildScenarioContract(
 function collectScenarioDocs(catalog: KnowledgeCatalog, scenario: string): DocKnowledgeEntry[] {
   const directDocs = catalog.docs.filter(doc => doc.playgroundScenario === scenario)
   const exampleDocIds = new Set(
-    catalog.examples
+    getPlaygroundExamples(catalog)
       .filter(example => example.scenario === scenario)
       .flatMap(example => example.recommendedDocIds),
   )
@@ -721,4 +722,8 @@ function dedupeById<T extends { id: string }>(entries: T[]) {
   }
 
   return result
+}
+
+function getPlaygroundExamples(catalog: KnowledgeCatalog) {
+  return catalog.examples.filter(example => example.suitableSurfaces?.includes('playground'))
 }

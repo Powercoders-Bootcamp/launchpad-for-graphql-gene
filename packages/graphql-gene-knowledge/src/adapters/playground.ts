@@ -70,6 +70,7 @@ function createExampleEntry(
     requiresAdapter: true,
     adapterRisk: 'medium',
     notes: [ADAPTED_RUNTIME_NOTE],
+    suitableSurfaces: ['docs', 'playground', 'mcp'],
   }
 }
 

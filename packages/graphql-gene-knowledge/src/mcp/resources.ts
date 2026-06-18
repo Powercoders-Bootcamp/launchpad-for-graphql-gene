@@ -149,6 +149,7 @@ export function readKnowledgeMcpResource(context: McpDomainContext, uri: string)
 }
 
 function buildOverviewPayload(catalog: KnowledgeCatalog) {
+  const docsById = new Map(catalog.docs.map(doc => [doc.id, doc]))
   const scenarios = [...new Set([
     ...catalog.examples.map(example => example.scenario),
     ...catalog.plugins.flatMap(plugin => plugin.scenarios),
@@ -158,7 +159,14 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
     .sort()
     .map((scenario) => {
       const scenarioExamples = catalog.examples.filter(example => example.scenario === scenario)
-      const linkedDocs = catalog.docs.filter(doc => doc.playgroundScenario === scenario)
+      const linkedDocIds = new Set([
+        ...catalog.docs
+          .filter(doc => doc.playgroundScenario === scenario)
+          .map(doc => doc.id),
+        ...scenarioExamples
+          .flatMap(example => example.recommendedDocIds)
+          .filter(docId => docsById.has(docId)),
+      ])
       const linkedPlugins = catalog.plugins.filter(plugin => plugin.scenarios.includes(scenario))
       const linkedRecipes = catalog.recipes.filter(recipe => recipe.scenarios.includes(scenario))
       const linkedIssues = catalog.troubleshooting.filter(issue => issue.scenarios.includes(scenario))
@@ -166,7 +174,7 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
       return {
         id: scenario,
         exampleCount: scenarioExamples.length,
-        linkedDocCount: linkedDocs.length,
+        linkedDocCount: linkedDocIds.size,
         pluginCount: linkedPlugins.length,
         recipeCount: linkedRecipes.length,
         troubleshootingCount: linkedIssues.length,

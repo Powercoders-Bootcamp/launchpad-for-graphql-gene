@@ -1,10 +1,17 @@
 import type {
   BuildKnowledgeCatalogOptions,
+  ExampleKnowledgeEntry,
+  KnowledgeSurface,
   KnowledgeSourceOverride,
+  CuratedExampleKnowledgeContract,
   PluginKnowledgeEntry,
   RecipeKnowledgeEntry,
   TroubleshootingKnowledgeEntry,
 } from '../contracts'
+
+export function createExampleId(scenario: string, exampleId: string) {
+  return `example:${scenario}:${exampleId}`
+}
 
 export function createPluginId(pluginId: string) {
   return `plugin:${pluginId}`
@@ -21,14 +28,19 @@ export function createTroubleshootingId(issueId: string) {
 export function loadCuratedKnowledgeEntries(
   options: Pick<
     BuildKnowledgeCatalogOptions,
-    'plugins' | 'recipes' | 'troubleshooting' | 'sourceRepo' | 'sourceRef' | 'versionRange' | 'provenanceOverrides'
+    'curatedExamples' | 'plugins' | 'recipes' | 'troubleshooting' | 'sourceRepo' | 'sourceRef' | 'versionRange' | 'provenanceOverrides'
   >,
 ): {
+  examples: ExampleKnowledgeEntry[]
   plugins: PluginKnowledgeEntry[]
   recipes: RecipeKnowledgeEntry[]
   troubleshooting: TroubleshootingKnowledgeEntry[]
 } {
   return {
+    examples: options.curatedExamples.map((example) => {
+      const key = `${example.scenario}:${example.id}`
+      return applySourceOverride(createCuratedExampleEntry(example, options), options.provenanceOverrides?.examplesByKey?.[key])
+    }),
     plugins: options.plugins.map((plugin) => applySourceOverride({
       id: createPluginId(plugin.id),
       kind: 'plugin',
@@ -136,8 +148,54 @@ export function loadCuratedKnowledgeEntries(
   }
 }
 
+function createCuratedExampleEntry(
+  example: CuratedExampleKnowledgeContract,
+  options: Pick<
+    BuildKnowledgeCatalogOptions,
+    'sourceRepo' | 'sourceRef' | 'versionRange'
+  >,
+): ExampleKnowledgeEntry {
+  return {
+    id: createExampleId(example.scenario, example.id),
+    kind: 'example',
+    title: example.title,
+    summary: example.summary,
+    topics: compact([
+      'example',
+      example.scenario,
+      ...(example.topics ?? []),
+    ]),
+    relatedIds: uniqueStrings(ensureArray(example.recommendedDocIds)),
+    sourcePath: example.sourcePath,
+    sourceRepo: options.sourceRepo ?? 'graphql-gene-site',
+    sourceRef: options.sourceRef ?? 'workspace',
+    sourceType: 'canonical-curation',
+    confidence: example.confidence ?? 'high',
+    versionRange: options.versionRange,
+    stability: example.stability ?? 'stable',
+    exampleId: example.id,
+    scenario: example.scenario,
+    description: example.description,
+    editableFields: ensureArray(example.editableFields),
+    recommendedDocIds: ensureArray(example.recommendedDocIds),
+    codeSourcePath: example.codeSourcePath,
+    runtimeSourcePath: example.runtimeSourcePath,
+    executionMode: example.executionMode ?? 'canonical',
+    supportsDisplayedCodeParity: example.supportsDisplayedCodeParity ?? true,
+    supportsRuntimeParity: example.supportsRuntimeParity ?? true,
+    requiresAdapter: example.requiresAdapter ?? false,
+    adapterRisk: example.adapterRisk,
+    notes: ensureArray(example.notes),
+    suitableSurfaces: ensureSurfaces(example.suitableSurfaces),
+  }
+}
+
 function ensureArray(values?: string[]) {
   return values ? [...values] : []
+}
+
+function ensureSurfaces(values?: KnowledgeSurface[]) {
+  return values?.length ? [...values] : ['docs', 'mcp']
 }
 
 function compact(values: Array<string | undefined>) {
@@ -149,7 +207,7 @@ function uniqueStrings(values: string[]) {
 }
 
 function applySourceOverride<
-  T extends PluginKnowledgeEntry | RecipeKnowledgeEntry | TroubleshootingKnowledgeEntry,
+  T extends ExampleKnowledgeEntry | PluginKnowledgeEntry | RecipeKnowledgeEntry | TroubleshootingKnowledgeEntry,
 >(entry: T, override?: KnowledgeSourceOverride): T {
   if (!override) {
     return entry

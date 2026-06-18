@@ -553,12 +553,22 @@ function runPlanIntegrationTool(context: McpDomainContext, input: Record<string,
     : project.constraints ?? []
   const decisionGoal = joinContextText(goal, project.targetOutcome, project.currentGraphqlSetup)
 
-  const recipes = selectRecipeEntries(context.catalog, {
+  const primaryRecipes = selectRecipeEntries(context.catalog, {
     goal: decisionGoal || goal,
     serverStack,
     orm,
     concerns,
   }, 3)
+  const concernRecipes = concerns.flatMap(concern => selectRecipeEntries(context.catalog, {
+    goal: concern,
+    serverStack,
+    orm,
+    concerns: [concern],
+  }, 1))
+  const recipes = dedupeById([
+    ...primaryRecipes,
+    ...concernRecipes,
+  ]).slice(0, 5)
   const primaryRecipe = recipes[0]
   const candidatePlugins = primaryRecipe?.recommendedPluginIds.length
     ? findPluginsByIds(context.catalog, primaryRecipe.recommendedPluginIds)

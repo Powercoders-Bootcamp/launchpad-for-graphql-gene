@@ -43,6 +43,10 @@ export function buildSiteKnowledgeProvenance(
       'query-lookahead:me-with-orders': upstreamDoc('README.md#query-filtering', coreRef, 'package-readme'),
       'polymorphic-blocks:page-blocks-basic': upstreamDoc('docs/polymorphic-blocks.md', coreRef, 'canonical-doc'),
       'directive-middleware:user-auth-directive': upstreamDoc('README.md#example-user-authentication-directive', coreRef, 'package-readme'),
+      'schema-inspection:generate-schema-artifacts': upstreamDoc('README.md#allow-inspecting-the-generated-schema', coreRef, 'package-readme'),
+      'generated-query:products-filters-order-pagination': upstreamDoc('README.md#query-filtering', coreRef, 'package-readme'),
+      'custom-mutation:register-prospect': upstreamDoc('README.md#define-queriesmutations-inside-your-model', coreRef, 'package-readme'),
+      'custom-plugin:sequelize-reference-study': upstreamDoc('docs/plugins/writing-a-plugin.md', coreRef, 'canonical-doc'),
     },
     pluginsById: {
       sequelize: packageDerived('packages/plugin-sequelize/README.md', pluginRef, 'package-readme'),
@@ -50,10 +54,16 @@ export function buildSiteKnowledgeProvenance(
     },
     recipesById: {
       'sequelize-bootstrap': upstreamDoc('README.md#quick-setup', coreRef, 'package-readme'),
+      'inspect-generated-schema-artifacts': upstreamDoc('README.md#allow-inspecting-the-generated-schema', coreRef, 'package-readme'),
+      'add-generated-query-fields': upstreamDoc('README.md#default-resolver', coreRef, 'package-readme'),
+      'generated-filters-order-pagination': upstreamDoc('README.md#query-filtering', coreRef, 'package-readme'),
       'query-lookahead-shape': upstreamDoc('README.md#query-filtering', coreRef, 'package-readme'),
+      'custom-query-or-mutation': upstreamDoc('README.md#define-queriesmutations-inside-your-model', coreRef, 'package-readme'),
+      'cache-friendly-mutation-payloads': siteLocalDoc('content/graphql-gene/docs/schema-design.md'),
       'directive-middleware-auth': upstreamDoc('README.md#define-directives', coreRef, 'package-readme'),
       'polymorphic-content-blocks': upstreamDoc('docs/polymorphic-blocks.md', coreRef, 'canonical-doc'),
       'custom-plugin-evaluation': upstreamDoc('docs/plugins/writing-a-plugin.md', coreRef, 'canonical-doc'),
+      'write-minimal-custom-plugin': upstreamDoc('docs/plugins/writing-a-plugin.md', coreRef, 'canonical-doc'),
     },
     troubleshootingById: {
       'missing-types-in-generated-schema': upstreamDoc('README.md#export-all-models-from-one-file', coreRef, 'package-readme'),
@@ -106,6 +116,16 @@ function localOnly() {
     upstreamSourceRepo: undefined,
     upstreamSourceRef: undefined,
     upstreamSourceType: undefined,
+  }
+}
+
+function siteLocalDoc(upstreamSourcePath: string) {
+  return {
+    provenanceStatus: 'local-only' as const,
+    upstreamSourcePath,
+    upstreamSourceRepo: SITE_REPO,
+    upstreamSourceRef: 'workspace',
+    upstreamSourceType: 'canonical-doc' as const,
   }
 }
 

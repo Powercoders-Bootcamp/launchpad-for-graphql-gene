@@ -277,6 +277,13 @@ function buildAuditedPlugins(catalog: KnowledgeCatalog): AuditedPlugin[] {
 function buildAuditedExamples(examples: ExampleKnowledgeEntry[]): AuditedExample[] {
   return examples.map((example) => {
     const authoritativeSource = resolveAuthoritativeSource(example)
+    const suitableSurfaces = example.suitableSurfaces?.length
+      ? [...example.suitableSurfaces]
+      : dedupeStrings([
+          'playground',
+          'mcp',
+          ...(example.recommendedDocIds.length ? ['docs'] : []),
+        ]) as Array<'docs' | 'playground' | 'mcp'>
 
     return {
     sourcePath: authoritativeSource.sourcePath,
@@ -287,11 +294,7 @@ function buildAuditedExamples(examples: ExampleKnowledgeEntry[]): AuditedExample
       '@graphql-gene/plugin-sequelize',
       'graphql-gene',
     ]),
-    suitableSurfaces: dedupeStrings([
-      'playground',
-      'mcp',
-      ...(example.recommendedDocIds.length ? ['docs'] : []),
-    ]) as Array<'docs' | 'playground' | 'mcp'>,
+    suitableSurfaces,
     paritySuitability: example.executionMode ?? 'unknown',
     confidence: example.confidence,
     source: authoritativeSource,
@@ -331,7 +334,7 @@ function buildConceptMap(): AuditConceptNode[] {
       summary: 'Generated queries, filters, ordering, and custom resolvers sit on top of the model graph rather than a hand-written schema-first stack.',
       requiredDocs: ['doc:/docs/guides/schema-design'],
       requiredPackages: ['graphql-gene', '@graphql-gene/plugin-sequelize'],
-      relatedExamples: ['example:query-lookahead:me-with-orders'],
+      relatedExamples: ['example:query-lookahead:me-with-orders', 'example:generated-query:products-filters-order-pagination', 'example:custom-mutation:register-prospect'],
       relatedTasks: ['add-generated-query-fields', 'use-generated-filters-order-pagination', 'add-custom-query-or-mutation'],
     },
     {
@@ -347,7 +350,7 @@ function buildConceptMap(): AuditConceptNode[] {
       summary: 'Plugin strategy determines whether the project follows the first-class Sequelize path or a custom plugin path.',
       requiredDocs: ['doc:/docs/concepts/getting-started', 'doc:/docs/reference/writing-a-plugin'],
       requiredPackages: ['graphql-gene', '@graphql-gene/plugin-sequelize'],
-      relatedExamples: ['example:model-to-schema:user-orders-basic'],
+      relatedExamples: ['example:model-to-schema:user-orders-basic', 'example:custom-plugin:sequelize-reference-study'],
       relatedTasks: ['choose-plugin-strategy', 'write-custom-plugin'],
     },
     {
@@ -355,7 +358,7 @@ function buildConceptMap(): AuditConceptNode[] {
       summary: 'Generated schema output should be inspected before final GraphQL server wiring.',
       requiredDocs: ['doc:/docs/concepts/getting-started'],
       requiredPackages: ['graphql-gene'],
-      relatedExamples: ['example:model-to-schema:user-orders-basic'],
+      relatedExamples: ['example:model-to-schema:user-orders-basic', 'example:schema-inspection:generate-schema-artifacts'],
       relatedTasks: ['bootstrap-sequelize-project', 'generate-executable-schema', 'migrate-from-handwritten-schema'],
     },
     {
@@ -363,7 +366,7 @@ function buildConceptMap(): AuditConceptNode[] {
       summary: 'Custom mutations, custom plugins, and polymorphic patterns require stronger provenance and parity checks than the basic path.',
       requiredDocs: ['doc:/docs/reference/writing-a-plugin', 'doc:/docs/guides/polymorphic-blocks'],
       requiredPackages: ['graphql-gene', '@graphql-gene/plugin-sequelize'],
-      relatedExamples: ['example:polymorphic-blocks:page-blocks-basic'],
+      relatedExamples: ['example:polymorphic-blocks:page-blocks-basic', 'example:custom-mutation:register-prospect', 'example:custom-plugin:sequelize-reference-study'],
       relatedTasks: ['design-cache-friendly-mutations', 'model-polymorphic-content-blocks', 'write-custom-plugin'],
     },
   ]
@@ -405,7 +408,7 @@ function buildScenarioMatrix(catalog: KnowledgeCatalog): AuditedScenario[] {
       ['schema-generation', 'server-integration'],
       ['graphql-gene'],
       ['doc:/docs/concepts/getting-started', 'doc:/docs/guides/schema-design'],
-      ['example:model-to-schema:user-orders-basic'],
+      ['example:model-to-schema:user-orders-basic', 'example:schema-inspection:generate-schema-artifacts'],
       ['developer-tasks://task/generate-executable-schema', 'developer-tasks://task/inspect-generated-schema'],
       ['setup_graphql_gene_schema_generation'],
       ['classify_developer_goal', 'plan_developer_task', 'validate_developer_task_plan'],
@@ -453,7 +456,7 @@ function buildScenarioMatrix(catalog: KnowledgeCatalog): AuditedScenario[] {
       ['plugins', 'customization-model'],
       ['graphql-gene'],
       ['doc:/docs/reference/writing-a-plugin'],
-      [],
+      ['example:custom-plugin:sequelize-reference-study'],
       ['developer-tasks://task/write-custom-plugin', 'plugins://plugin/custom-plugin'],
       ['author_graphql_gene_plugin', 'select_graphql_gene_plugin_strategy'],
       ['classify_developer_goal', 'choose_plugin_strategy', 'plan_developer_task'],

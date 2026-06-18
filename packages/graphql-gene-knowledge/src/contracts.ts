@@ -18,6 +18,7 @@ export type KnowledgeConfidence = 'high' | 'medium' | 'low'
 export type KnowledgeExecutionMode = 'canonical' | 'adapted' | 'simulated'
 export type KnowledgeStability = 'stable' | 'experimental' | 'planned' | 'deprecated'
 export type AdapterRisk = 'low' | 'medium' | 'high'
+export type KnowledgeSurface = 'docs' | 'playground' | 'mcp'
 export type TroubleshootingStage = 'install' | 'schema' | 'runtime' | 'plugin' | 'query' | 'directive'
 export type KnowledgeProvenanceStatus = 'local-only' | 'upstream-projected' | 'package-derived'
 
@@ -53,6 +54,29 @@ export interface PlaygroundExampleContract {
   title: string
   description: string
   editableFields: string[]
+}
+
+export interface CuratedExampleKnowledgeContract {
+  id: string
+  scenario: string
+  title: string
+  summary: string
+  description: string
+  editableFields?: string[]
+  topics?: string[]
+  sourcePath: string
+  recommendedDocIds?: string[]
+  codeSourcePath?: string
+  runtimeSourcePath?: string
+  notes?: string[]
+  executionMode?: KnowledgeExecutionMode
+  supportsDisplayedCodeParity?: boolean
+  supportsRuntimeParity?: boolean
+  requiresAdapter?: boolean
+  adapterRisk?: AdapterRisk
+  suitableSurfaces?: KnowledgeSurface[]
+  stability?: KnowledgeStability
+  confidence?: KnowledgeConfidence
 }
 
 export interface PluginKnowledgeContract {
@@ -182,6 +206,7 @@ export interface ExampleKnowledgeEntry extends KnowledgeEntryBase {
   requiresAdapter?: boolean
   adapterRisk?: AdapterRisk
   notes?: string[]
+  suitableSurfaces?: KnowledgeSurface[]
 }
 
 export interface PluginKnowledgeEntry extends KnowledgeEntryBase {
@@ -462,6 +487,7 @@ export interface BuildKnowledgeCatalogOptions {
   docsRoot: string
   docsConfig: DocsConfigContract
   examples: PlaygroundExampleContract[]
+  curatedExamples: CuratedExampleKnowledgeContract[]
   plugins: PluginKnowledgeContract[]
   recipes: RecipeKnowledgeContract[]
   troubleshooting: TroubleshootingKnowledgeContract[]

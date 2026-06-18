@@ -4,6 +4,7 @@ import { buildUpstreamAuditSnapshot } from '../audit/upstream-audit'
 import { buildKnowledgeCatalog } from '../compiler/build-catalog'
 import type { BuildKnowledgeCatalogOptions, KnowledgeCatalog } from '../contracts'
 import {
+  getSiteCuratedExampleKnowledge,
   getSitePluginKnowledge,
   getSiteRecipeKnowledge,
   getSiteTroubleshootingKnowledge,
@@ -40,6 +41,7 @@ export function buildSiteKnowledgeCatalog(options: BuildSiteKnowledgeCatalogOpti
     docsRoot: resolve(options.workspaceRoot, options.docsRootRelativePath ?? SITE_DOCS_ROOT_RELATIVE_PATH),
     docsConfig: siteDocsConfig,
     examples: getSitePlaygroundExamples(),
+    curatedExamples: getSiteCuratedExampleKnowledge(),
     plugins: getSitePluginKnowledge(),
     recipes: getSiteRecipeKnowledge(),
     troubleshooting: getSiteTroubleshootingKnowledge(),
@@ -105,10 +107,15 @@ function buildSiteKnowledgeFingerprint(options: BuildSiteKnowledgeCatalogOptions
     packageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'package.json')),
     graphqlGenePackageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'node_modules/graphql-gene/package.json')),
     sequelizePluginPackageFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'node_modules/@graphql-gene/plugin-sequelize/package.json')),
+    playgroundSeedFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'packages/graphql-gene-knowledge/src/site/playground-examples.ts')),
+    curatedKnowledgeFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'packages/graphql-gene-knowledge/src/site/curated-knowledge.ts')),
+    provenanceFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'packages/graphql-gene-knowledge/src/site/provenance.ts')),
+    developerTaskFingerprint: fingerprintFile(resolve(options.workspaceRoot, 'packages/graphql-gene-knowledge/src/developer/task-patterns.ts')),
     pluginCount: getSitePluginKnowledge().length,
     recipeCount: getSiteRecipeKnowledge().length,
     troubleshootingCount: getSiteTroubleshootingKnowledge().length,
     exampleCount: getSitePlaygroundExamples().length,
+    curatedExampleCount: getSiteCuratedExampleKnowledge().length,
   })
 }
 
