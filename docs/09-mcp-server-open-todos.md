@@ -23,38 +23,127 @@ Current foundation already in place:
 - optional bearer auth for the HTTP MCP endpoint
 - built-in request size limits and process-local rate limiting for HTTP mode
 - safe and redacted HTTP access logging
+- optional rich project and issue context inputs for developer-facing MCP tools
+- six composable developer task MCP tools plus `developer-tasks://overview` and `developer-tasks://task/{id}` resources
+- playground maintainer MCP tools for scenario inspection, planning, validation, parity comparison, and parity gate listing
+- source-fingerprint-based cached site knowledge catalog invalidation for docs-backed catalog rebuilds
+- catalog diagnostics that flag required playground parity gates and unverified displayed-code parity
 - explicit `yaml` runtime dependency in `mcp-server/`
 - package-local lockfile for reproducible `mcp-server/` installs
 - golden MCP evaluation coverage for answer quality and provenance, runnable through `npm run mcp:eval` and `npm run mcp:verify`
+- playground maintainer verification coverage via `npm run mcp:playground-verify`
 - auto-detected workspace/package roots plus package-local adoption presets, so built MCP runtimes load the same canonical docs-backed knowledge surface as source tests
+- upstream audit snapshot exposed through `audit://upstream-snapshot`, now carrying explicit provenance mapping and pinned package-version refs for docs, examples, and curated entries
 
 This backlog is intentionally implementation-oriented so a coding agent can pick
 up concrete work from it.
 
 ## Open TODOs
 
-### 1. Product Positioning: Explain The Real Differentiator
+### 1. Upstream Provenance And Full Audit
 
 Priority: high
 
 Goal:
 
-- make it clear that GraphQL Gene is not merely "a library that supports polymorphism"
-- state the real positioning precisely: ORM-native, generator-first, automatic schema generation from real models
+- deepen the current explicit-provenance audit snapshot into a stricter upstream audit grounded in direct repo evidence
+- complete the end-to-end upstream audit across docs, package exports, examples, and plugin behavior
+- keep displayed playground code aligned with upstream docs/source expectations
 
 Tasks:
 
-- update homepage copy with one concise proof point that contrasts GraphQL Gene with generic union/interface-capable builders
-- keep the claim factual and non-defensive; do not imply that unions or interfaces themselves are unique to GraphQL Gene
-- mirror the same positioning in the relevant docs and MCP-facing copy where helpful
-- keep the current homepage structure intact; no redesign required
+- replace package-version-based pinned refs with a direct upstream branch, tag, or commit audit ref when available
+- audit upstream GraphQL Gene docs, examples, tests, and plugin packages
+- assign explicit `sourceRepo`, `sourceRef`, `sourcePath`, and `sourceType` values where possible
+- update playground example entries once parity is proven
+- add drift checks for any scenario that claims canonical runtime or displayed-code parity
 
 Acceptance criteria:
 
-- homepage contains one concise message about the ORM-native plus generator-first difference
-- message does not overclaim "exclusive polymorphism support"
-- `MCP` messaging already added to the homepage remains intact
-- site build passes after the copy update
+- every playground example has clear canonical/adapted/simulated status
+- no adapted scenario is presented as exact upstream runtime behavior
+- `validate_playground_scenario` passes for existing scenario implementation summaries
+- catalog diagnostics stop warning about displayed-code parity only after parity is actually proven
+
+### 2. Package Export Parity Pass
+
+Priority: high
+
+Goal:
+
+- verify every parity-sensitive GraphQL Gene capability against the installed package surface
+- reduce conceptual claims where package exports or runtime behavior do not fully confirm them
+
+Tasks:
+
+- audit documented imports and decorators against installed package entrypoints
+- separate confirmed APIs from conceptual patterns in the canonical knowledge layer
+- add deeper parity checks for polymorphic and directive-sensitive areas
+
+Acceptance criteria:
+
+- task warnings only remain on genuinely unresolved parity gaps
+- developer-task outputs clearly distinguish confirmed APIs from conceptual guidance
+- doctor and eval coverage catch regressions in parity-sensitive task recommendations
+
+### 3. Deeper Canonical Examples And Recipes
+
+Priority: medium
+
+Goal:
+
+- expand the canonical knowledge layer with more implementation-grade examples for real developer tasks
+
+Tasks:
+
+- add more upstream-backed examples for schema generation, filters, mutations, and custom plugin authoring
+- expand recipe coverage where the current tasks rely on high-level docs only
+- keep every added example linked to evidence and version metadata
+
+Acceptance criteria:
+
+- high-frequency developer tasks have at least one strong example or recipe path
+- adaptation tools can point to richer concept mappings without falling back to playground-only guidance
+
+### 4. Optional Schema/Provenance Compiler
+
+Priority: medium
+
+Goal:
+
+- reduce hand-maintained canonical metadata as the knowledge surface grows
+
+Tasks:
+
+- evaluate a compiler layer that derives more catalog structure from upstream docs and package metadata
+- preserve human-curated overrides for warnings, confidence, and parity notes
+- define how generated provenance should be reviewed before release
+
+Acceptance criteria:
+
+- compiler output can be validated deterministically
+- human review points remain explicit for trust-sensitive claims
+
+### 5. Public HTTP Deployment Policy
+
+Priority: medium
+
+Goal:
+
+- document the production boundary for Streamable HTTP MCP deployments
+- keep the built-in HTTP hardening as an inner safety layer, not the only edge control
+
+Tasks:
+
+- define the recommended reverse proxy/TLS/auth deployment pattern
+- decide whether bearer auth should be mandatory for non-local HTTP deployments
+- document log retention and observability expectations
+
+Acceptance criteria:
+
+- production deployment docs clearly distinguish local stdio, local HTTP, and public HTTP usage
+- public HTTP examples include auth and edge hardening guidance
+- `mcp:doctor` remains able to verify a secured HTTP endpoint
 
 ## Explicit Non-Goals
 
@@ -67,3 +156,8 @@ These are intentionally not part of the backlog:
 ## Suggested Execution Order
 
 1. homepage and product-positioning pass
+2. upstream provenance and full audit
+3. package export parity pass
+4. deeper canonical examples and recipes
+5. optional schema/provenance compiler
+6. public HTTP deployment policy

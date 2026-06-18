@@ -18,8 +18,13 @@ describe('knowledge MCP domain', () => {
 
     expect(manifest.server.name).toBe('graphql-gene-mcp')
     expect(manifest.resources.length).toBeGreaterThanOrEqual(4)
-    expect(manifest.prompts.length).toBeGreaterThanOrEqual(4)
-    expect(manifest.tools.length).toBeGreaterThanOrEqual(6)
+    expect(manifest.prompts.length).toBeGreaterThanOrEqual(9)
+    expect(manifest.tools.length).toBeGreaterThanOrEqual(17)
+    expect(manifest.tools.some(tool => tool.name === 'classify_developer_goal')).toBe(true)
+    expect(manifest.tools.some(tool => tool.name === 'plan_developer_task')).toBe(true)
+    expect(manifest.tools.some(tool => tool.name === 'adapt_example_to_project')).toBe(true)
+    expect(manifest.tools.some(tool => tool.name === 'diagnose_developer_issue')).toBe(true)
+    expect(manifest.tools.some(tool => tool.name === 'validate_playground_scenario')).toBe(true)
   })
 
   it('reads the overview resource', () => {
@@ -28,10 +33,14 @@ describe('knowledge MCP domain', () => {
 
     expect(resource.mimeType).toBe('application/json')
     expect(payload.counts.docs).toBe(8)
-    expect(payload.counts.examples).toBe(4)
+    expect(payload.counts.examples).toBe(8)
     expect(payload.counts.plugins).toBe(2)
-    expect(payload.counts.recipes).toBe(5)
+    expect(payload.counts.recipes).toBe(11)
     expect(payload.counts.troubleshooting).toBe(5)
+    expect(payload.developerTasks.count).toBeGreaterThanOrEqual(20)
+    expect(payload.audit.status).toBe('full')
+    expect(payload.audit.scenarioCount).toBeGreaterThanOrEqual(6)
+    expect(payload.audit.packageParity.unresolved).toBeGreaterThan(0)
   })
 
   it('renders prompts with caller context', () => {
@@ -44,6 +53,8 @@ describe('knowledge MCP domain', () => {
     expect(prompt.text).toContain('Generate a schema from Sequelize models')
     expect(prompt.text).toContain('Apollo Server')
     expect(prompt.text).toContain('Sequelize')
+    expect(prompt.text).toContain('Inspect the local project files through the host coding agent')
+    expect(prompt.text).toContain('classify_developer_goal')
   })
 
   it('renders the plugin authoring prompt', () => {
@@ -56,6 +67,19 @@ describe('knowledge MCP domain', () => {
     expect(prompt.text).toContain('derive GraphQL fields from models')
   })
 
+  it('renders the plugin strategy selection prompt', () => {
+    const prompt = renderKnowledgeMcpPrompt('select_graphql_gene_plugin_strategy', {
+      goal: 'Choose the right GraphQL Gene path for our Prisma models',
+      orm: 'Prisma',
+      current_graphql_setup: 'hand-written schema',
+    })
+
+    expect(prompt.text).toContain('Prisma')
+    expect(prompt.text).toContain('hand-written schema')
+    expect(prompt.text).toContain('choose_plugin_strategy')
+    expect(prompt.text).toContain('The MCP server cannot read the developer project directly')
+  })
+
   it('renders the upgrade planning prompt', () => {
     const prompt = renderKnowledgeMcpPrompt('plan_graphql_gene_upgrade', {
       current_state: 'Sequelize plugin with custom directives',
@@ -66,6 +90,18 @@ describe('knowledge MCP domain', () => {
     expect(prompt.text).toContain('Sequelize plugin with custom directives')
     expect(prompt.text).toContain('Aligned canonical plugin and recipe usage')
     expect(prompt.text).toContain('plugin strategy')
+  })
+
+  it('renders the lookahead debugging prompt', () => {
+    const prompt = renderKnowledgeMcpPrompt('debug_graphql_gene_lookahead', {
+      symptom: 'Nested order query triggers too many SQL statements',
+      server_stack: 'Apollo Server',
+      orm: 'Sequelize',
+    })
+
+    expect(prompt.text).toContain('Nested order query triggers too many SQL statements')
+    expect(prompt.text).toContain('diagnose_developer_issue')
+    expect(prompt.text).toContain('selected-field-driven loading')
   })
 
   it('renders the troubleshooting triage prompt', () => {
@@ -176,6 +212,92 @@ describe('knowledge MCP domain', () => {
     expect(result.docs.length).toBeGreaterThan(0)
   })
 
+  it('classifies a developer goal into ranked task candidates', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'classify_developer_goal', {
+      goal: 'I need to migrate a hand-written schema toward GraphQL Gene',
+      project: {
+        currentGraphqlSetup: 'hand-written schema and resolvers',
+      },
+    })
+
+    expect(result.rankedTasks[0].taskId).toBe('migrate-from-handwritten-schema')
+    expect(result.recommendedNextTool).toBe('plan_developer_task')
+  })
+
+  it('plans developer task patterns from canonical scenario guidance', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'plan_developer_task', {
+      patternId: 'polymorphic-blocks',
+      project: {
+        serverStack: 'Apollo Server',
+        orm: 'Sequelize',
+      },
+    })
+
+    expect(result.taskId).toBe('model-polymorphic-content-blocks')
+    expect(result.patternId).toBe('polymorphic-blocks')
+    expect(result.pluginStrategy.strategy).toBe('plugin-sequelize')
+    expect(result.docs.some((doc: { id: string }) => doc.id === 'doc:/docs/guides/polymorphic-blocks')).toBe(true)
+    expect(result.agentInstructions.join(' ')).toContain('not as the implementation source')
+    expect(result.versionMetadata.parityFindings.some((finding: { capabilityId: string, status: string }) => (
+      finding.capabilityId === 'polymorphic-blocks' && finding.status === 'conceptual-pattern'
+    ))).toBe(true)
+  })
+
+  it('validates developer task plans without treating playground code as source', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'validate_developer_task_plan', {
+      patternId: 'query-lookahead',
+      usesPlaygroundRuntimeAsSource: true,
+      includesPluginDecision: false,
+      handlesLookahead: false,
+    })
+
+    expect(result.status).toBe('fail')
+    expect(result.issues.some((issue: { code: string }) => issue.code === 'PLAYGROUND_RUNTIME_USED_AS_SOURCE')).toBe(true)
+    expect(result.issues.some((issue: { code: string }) => issue.code === 'LOOKAHEAD_NOT_HANDLED')).toBe(true)
+  })
+
+  it('diagnoses developer issues with task-aware guidance', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'diagnose_developer_issue', {
+      symptom: 'my generated schema is missing expected model types',
+      stage: 'schema',
+    })
+
+    expect(result.taskId).toBe('debug-schema-generation')
+    expect(result.recommendedChecks.length).toBeGreaterThan(1)
+    expect(result.sourceEvidence.length).toBeGreaterThan(0)
+  })
+
+  it('inspects playground scenario contracts for maintainer agents', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'inspect_playground_scenario', {
+      scenario: 'polymorphic-blocks',
+    })
+
+    expect(result.knownScenario).toBe(true)
+    expect(result.expectedApiEndpoints).toContain('POST /api/playground/query')
+    expect(result.relatedDocs.some((doc: { slug: string }) => doc.slug === '/docs/guides/polymorphic-blocks')).toBe(true)
+  })
+
+  it('validates playground scenario implementation summaries', () => {
+    const result = invokeKnowledgeMcpTool(createContext(), 'validate_playground_scenario', {
+      scenario: 'query-lookahead',
+      exampleId: 'me-with-orders',
+      editableFields: ['query'],
+      docsSlugs: ['/docs/guides/schema-design'],
+      outputPanels: ['response-payload', 'captured-sql', 'include-graph', 'diagnostics'],
+      executionMode: 'adapted',
+      declaresAdaptedRuntime: true,
+      hasFixture: true,
+      hasApiValidation: true,
+      hasTests: true,
+      usesHardcodedOutput: false,
+      sourcePath: 'server/utils/playground/registry.ts',
+      runtimeSourcePath: 'server/utils/playground/engine.ts',
+    })
+
+    expect(result.status).toBe('pass')
+    expect(result.contract.knownScenario).toBe(true)
+  })
+
   it('keeps the capabilities resource aligned with the resource manifest', () => {
     const capabilities = readKnowledgeMcpResource(createContext(), 'capabilities://server')
     const payload = JSON.parse(capabilities.text)
@@ -213,5 +335,36 @@ describe('knowledge MCP domain', () => {
 
     expect(payload.id).toBe('troubleshooting:directive-not-printed-in-sdl')
     expect(payload.issueId).toBe('directive-not-printed-in-sdl')
+  })
+
+  it('exposes developer task resources for targeted retrieval', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'developer-tasks://task/optimize-lookahead-loading')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.taskId).toBe('optimize-lookahead-loading')
+    expect(payload.patternId).toBe('query-lookahead')
+  })
+
+  it('exposes the upstream audit snapshot resource', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'audit://upstream-snapshot')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.metadata.status).toBe('full')
+    expect(payload.coverage.docs).toBe(8)
+    expect(payload.coverage.capabilities).toBeGreaterThanOrEqual(8)
+    expect(payload.scenarios.some((scenario: { scenarioId: string }) => scenario.scenarioId === 'sequelize-setup')).toBe(true)
+    expect(payload.docs.some((doc: { workspaceProjectionPath?: string, sourcePath: string }) => (
+      doc.workspaceProjectionPath && doc.sourcePath !== doc.workspaceProjectionPath
+    ))).toBe(true)
+  })
+
+  it('exposes the package parity audit resource', () => {
+    const resource = readKnowledgeMcpResource(createContext(), 'audit://package-parity')
+    const payload = JSON.parse(resource.text)
+
+    expect(payload.summary.unresolved).toBeGreaterThan(0)
+    expect(payload.capabilities.some((capability: { capabilityId: string, status: string }) => (
+      capability.capabilityId === 'polymorphic-blocks' && capability.status === 'conceptual-pattern'
+    ))).toBe(true)
   })
 })

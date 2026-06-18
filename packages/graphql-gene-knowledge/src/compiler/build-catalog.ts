@@ -1,6 +1,6 @@
 import { loadCuratedKnowledgeEntries } from '../adapters/curated'
 import { loadDocKnowledgeEntries } from '../adapters/docs'
-import { createExampleId, loadPlaygroundKnowledgeEntries } from '../adapters/playground'
+import { loadPlaygroundKnowledgeEntries } from '../adapters/playground'
 import type {
   BuildKnowledgeCatalogOptions,
   DocKnowledgeEntry,
@@ -16,7 +16,9 @@ import type {
 export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): KnowledgeCatalog {
   const docDrafts = loadDocKnowledgeEntries(options)
   const docIdsBySlug = new Map(docDrafts.map(doc => [doc.slug, doc.id]))
-  const examples = loadPlaygroundKnowledgeEntries(options)
+  const playgroundExamples = loadPlaygroundKnowledgeEntries(options)
+  const curated = loadCuratedKnowledgeEntries(options)
+  const examples = [...playgroundExamples, ...curated.examples]
   const exampleIdsByScenario = groupExampleIdsByScenario(examples)
 
   const docs = docDrafts
@@ -39,7 +41,10 @@ export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): Kn
 
   const normalizedExamples = examples
     .map((example) => {
-      const recommendedDocIds = recommendedDocIdsByScenario.get(example.scenario) ?? []
+      const recommendedDocIds = uniqueStrings([
+        ...example.recommendedDocIds,
+        ...(recommendedDocIdsByScenario.get(example.scenario) ?? []),
+      ])
 
       return sortRelatedIds({
         ...example,
@@ -47,8 +52,6 @@ export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): Kn
         recommendedDocIds,
       })
     })
-
-  const curated = loadCuratedKnowledgeEntries(options)
 
   const linkedEntries = createBidirectionalKnowledgeGraph([
     ...docs,
@@ -88,6 +91,8 @@ export function buildKnowledgeCatalog(options: BuildKnowledgeCatalogOptions): Kn
 
   const byId = Object.fromEntries(entries.map(entry => [entry.id, entry]))
   const diagnostics = buildDiagnostics({
+    playgroundExamples: normalizedExampleEntries.filter(example => example.sourceType === 'demo-catalog'),
+    curatedExamples: normalizedExampleEntries.filter(example => example.sourceType !== 'demo-catalog'),
     examples: normalizedExampleEntries,
     plugins: normalizedPluginEntries,
     recipes: normalizedRecipeEntries,
@@ -120,7 +125,7 @@ function groupExampleIdsByScenario(examples: ExampleKnowledgeEntry[]) {
 
   for (const example of examples) {
     const ids = grouped.get(example.scenario) ?? []
-    ids.push(createExampleId(example.scenario, example.exampleId))
+    ids.push(example.id)
     grouped.set(example.scenario, ids)
   }
 
@@ -170,6 +175,8 @@ function createBidirectionalKnowledgeGraph(entries: KnowledgeEntry[]) {
 }
 
 function buildDiagnostics(options: {
+  playgroundExamples: ExampleKnowledgeEntry[]
+  curatedExamples: ExampleKnowledgeEntry[]
   examples: ExampleKnowledgeEntry[]
   plugins: PluginKnowledgeEntry[]
   recipes: RecipeKnowledgeEntry[]
@@ -180,7 +187,13 @@ function buildDiagnostics(options: {
   diagnostics.push({
     level: 'info',
     code: 'PLAYGROUND_CATALOG_NORMALIZED',
-    message: `Normalized ${options.examples.length} playground examples into canonical entries.`,
+    message: `Normalized ${options.playgroundExamples.length} playground examples into knowledge entries.`,
+  })
+
+  diagnostics.push({
+    level: 'info',
+    code: 'CURATED_EXAMPLE_CATALOG_NORMALIZED',
+    message: `Normalized ${options.curatedExamples.length} curated source-backed examples into canonical entries.`,
   })
 
   diagnostics.push({
@@ -189,12 +202,27 @@ function buildDiagnostics(options: {
     message: `Normalized ${options.plugins.length + options.recipes.length + options.troubleshooting.length} curated knowledge entries for plugins, recipes, and troubleshooting.`,
   })
 
+  diagnostics.push({
+    level: 'info',
+    code: 'PLAYGROUND_PARITY_GATES_REQUIRED',
+    message: 'Playground scenarios require maintainer parity gates before new scenario implementations are treated as source-aligned.',
+  })
+
   for (const example of options.examples) {
     if (example.executionMode !== 'canonical') {
       diagnostics.push({
         level: 'warning',
         code: 'PLAYGROUND_RUNTIME_NOT_CANONICAL',
         message: `Example "${example.id}" is currently exposed through an ${example.executionMode} runtime.`,
+        entryId: example.id,
+      })
+    }
+
+    if (example.supportsDisplayedCodeParity === false) {
+      diagnostics.push({
+        level: 'warning',
+        code: 'PLAYGROUND_DISPLAYED_CODE_PARITY_UNVERIFIED',
+        message: `Example "${example.id}" does not yet prove displayed-code parity with upstream sources.`,
         entryId: example.id,
       })
     }

@@ -216,7 +216,7 @@
 const { t: ti } = useI18n()
 const localePath = useLocalePath()
 const polymorphicPlaygroundPath = `${localePath('/playground')}?scenario=polymorphic-blocks&example=page-blocks-basic`
-const mcpSetupPath = localePath('/docs/guides/mcp-server-setup')
+const mcpSetupPath = localePath('/mcp/setup')
 useSeoMeta({
   title: 'graphql-gene — ORM-native GraphQL generation',
   description: 'Generate production-ready GraphQL schemas from your Sequelize models with an ORM-native, generator-first workflow. Smart query lookahead, directive middleware, and full TypeScript support.',

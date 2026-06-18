@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   buildSiteKnowledgeCatalog,
+  getSiteCuratedExampleKnowledge,
   getSitePluginKnowledge,
   getSitePlaygroundExample,
   getSitePlaygroundExamples,
@@ -18,8 +19,9 @@ describe('site knowledge seeds', () => {
   it('exports the shared docs config and playground examples', () => {
     expect(siteDocsConfig.sections.length).toBe(5)
     expect(getSitePlaygroundExamples().length).toBe(4)
+    expect(getSiteCuratedExampleKnowledge().length).toBe(4)
     expect(getSitePluginKnowledge().length).toBe(2)
-    expect(getSiteRecipeKnowledge().length).toBe(5)
+    expect(getSiteRecipeKnowledge().length).toBe(11)
     expect(getSiteTroubleshootingKnowledge().length).toBe(5)
     expect(getSitePlaygroundExample('directive-middleware', 'user-auth-directive')?.title).toBe('Auth Directive')
   })
@@ -33,14 +35,23 @@ describe('site knowledge seeds', () => {
     })
 
     expect(catalog.counts.docs).toBe(8)
-    expect(catalog.counts.examples).toBe(4)
+    expect(catalog.counts.examples).toBe(8)
     expect(catalog.counts.plugins).toBe(2)
-    expect(catalog.counts.recipes).toBe(5)
+    expect(catalog.counts.recipes).toBe(11)
     expect(catalog.counts.troubleshooting).toBe(5)
     expect(catalog.byId['doc:/docs/guides/directives']).toBeDefined()
     expect(catalog.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
+    expect(catalog.byId['example:custom-mutation:register-prospect']).toBeDefined()
     expect(catalog.byId['plugin:sequelize']).toBeDefined()
     expect(catalog.byId['recipe:sequelize-bootstrap']).toBeDefined()
+    expect(catalog.byId['recipe:write-minimal-custom-plugin']).toBeDefined()
     expect(catalog.byId['troubleshooting:missing-types-in-generated-schema']).toBeDefined()
+    expect(catalog.audit?.metadata.upstreamRepo).toBeTruthy()
+    expect(catalog.audit?.metadata.status).toBe('full')
+    expect(catalog.audit?.repositoryInventory.some(entry => entry.path === 'content/graphql-gene/docs')).toBe(true)
+    expect(catalog.audit?.coverage.capabilities).toBeGreaterThanOrEqual(8)
+    expect(catalog.audit?.packageParity.summary.unresolved).toBeGreaterThan(0)
+    expect(catalog.byId['doc:/docs/concepts/getting-started'].upstreamSourcePath).toBe('README.md#quick-setup')
+    expect(catalog.byId['doc:/mcp/setup'].provenanceStatus).toBe('local-only')
   })
 })

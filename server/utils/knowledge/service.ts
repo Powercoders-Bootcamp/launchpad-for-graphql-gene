@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  buildSiteKnowledgeCatalog,
+  buildCachedSiteKnowledgeCatalog,
   searchKnowledgeCatalog,
   type DocKnowledgeEntry,
   type ExampleKnowledgeEntry,
@@ -16,7 +16,7 @@ import {
 export function getKnowledgeCatalog() {
   const workspaceRoot = process.cwd()
 
-  return buildSiteKnowledgeCatalog({
+  return buildCachedSiteKnowledgeCatalog({
     workspaceRoot,
     sourceRepo: 'graphql-gene-site',
     sourceRef: 'workspace',
@@ -174,18 +174,7 @@ function summarizeScenarios(
   recipes: RecipeKnowledgeEntry[],
   troubleshooting: TroubleshootingKnowledgeEntry[],
 ) {
-  const docCountByScenario = new Map<string, number>()
-
-  for (const doc of docs) {
-    if (!doc.playgroundScenario) {
-      continue
-    }
-
-    docCountByScenario.set(
-      doc.playgroundScenario,
-      (docCountByScenario.get(doc.playgroundScenario) ?? 0) + 1,
-    )
-  }
+  const docsById = new Map(docs.map(doc => [doc.id, doc]))
 
   return [...new Set([
     ...examples.map(example => example.scenario),
@@ -195,10 +184,19 @@ function summarizeScenarios(
   ])]
     .map((scenario) => {
       const scenarioExamples = examples.filter(example => example.scenario === scenario)
+      const linkedDocIds = new Set([
+        ...docs
+          .filter(doc => doc.playgroundScenario === scenario)
+          .map(doc => doc.id),
+        ...scenarioExamples
+          .flatMap(example => example.recommendedDocIds)
+          .filter(docId => docsById.has(docId)),
+      ])
+
       return {
         id: scenario,
         exampleCount: scenarioExamples.length,
-        linkedDocCount: docCountByScenario.get(scenario) ?? 0,
+        linkedDocCount: linkedDocIds.size,
         pluginCount: plugins.filter(plugin => plugin.scenarios.includes(scenario)).length,
         recipeCount: recipes.filter(recipe => recipe.scenarios.includes(scenario)).length,
         troubleshootingCount: troubleshooting.filter(issue => issue.scenarios.includes(scenario)).length,

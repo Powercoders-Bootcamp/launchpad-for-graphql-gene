@@ -7,10 +7,11 @@ describe('mcp-server wrapper', () => {
     const context = createKnowledgeDomainContext()
 
     expect(context.catalog.counts.docs).toBe(8)
-    expect(context.catalog.counts.examples).toBe(4)
+    expect(context.catalog.counts.examples).toBe(8)
     expect(context.catalog.counts.plugins).toBe(2)
-    expect(context.catalog.counts.recipes).toBe(5)
+    expect(context.catalog.counts.recipes).toBe(11)
     expect(context.catalog.counts.troubleshooting).toBe(5)
+    expect(context.catalog.audit?.coverage.docs).toBe(8)
     expect(context.serverVersion).toBeTypeOf('string')
   })
 

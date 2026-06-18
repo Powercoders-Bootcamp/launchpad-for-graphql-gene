@@ -12,6 +12,29 @@ import {
 import { createKnowledgeDomainContext, createKnowledgeManifest } from './context.js'
 import { formatJson } from './format.js'
 
+const projectSummarySchema = z.object({
+  packageManager: z.string().optional(),
+  runtime: z.string().optional(),
+  language: z.string().optional(),
+  serverStack: z.string().optional(),
+  orm: z.string().optional(),
+  currentGraphqlSetup: z.string().optional(),
+  constraints: z.array(z.string()).optional(),
+  targetOutcome: z.string().optional(),
+  graphqlGeneVersion: z.string().optional(),
+}).optional()
+
+const issueReportSchema = z.object({
+  userGoal: z.string().optional(),
+  symptom: z.string().optional(),
+  context: z.string().optional(),
+  tried: z.array(z.string()).optional(),
+  environment: z.string().optional(),
+  graphqlGeneVersion: z.string().optional(),
+}).optional()
+
+const executionModeSchema = z.enum(['canonical', 'adapted', 'simulated'])
+
 export function createGraphqlGeneMcpServer() {
   const manifest = createKnowledgeManifest()
   const context = createKnowledgeDomainContext()
@@ -104,6 +127,7 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
               section: z.string().optional(),
               scenario: z.string().optional(),
               limit: z.number().int().min(1).max(25).optional(),
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -118,6 +142,13 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             description: tool.description,
             inputSchema: {
               feature: z.string().min(2),
+              question: z.object({
+                feature: z.string().optional(),
+                desiredDepth: z.enum(['brief', 'standard', 'deep']).optional(),
+                currentContext: z.string().optional(),
+                targetVersion: z.string().optional(),
+              }).optional(),
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -132,6 +163,8 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
             description: tool.description,
             inputSchema: {
               goal: z.string().min(2),
+              project: projectSummarySchema,
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -148,6 +181,8 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
               orm: z.string().optional(),
               goal: z.string().optional(),
               wantsCustomPlugin: z.boolean().optional(),
+              project: projectSummarySchema,
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -165,6 +200,8 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
               serverStack: z.string().optional(),
               orm: z.string().optional(),
               concerns: z.array(z.string()).optional(),
+              project: projectSummarySchema,
+              targetVersion: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
@@ -181,6 +218,228 @@ function registerTools(server: McpServer, context: ReturnType<typeof createKnowl
               symptom: z.string().min(2),
               context: z.string().optional(),
               stage: z.enum(['install', 'schema', 'runtime', 'plugin', 'query', 'directive']).optional(),
+              issue: issueReportSchema,
+              project: projectSummarySchema,
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'list_developer_task_patterns':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              query: z.string().optional(),
+              scenario: z.string().optional(),
+              stage: z.enum(['evaluate', 'setup', 'typing', 'schema', 'server', 'customization', 'query', 'directive', 'plugin', 'debug', 'upgrade', 'integration', 'migration']).optional(),
+              capability: z.enum(['adoption', 'plugin-strategy', 'setup', 'typing', 'schema-generation', 'schema-inspection', 'scalars', 'field-exposure', 'aliases', 'generated-query', 'filtering', 'lookahead', 'mutation', 'directive', 'polymorphism', 'plugin-authoring', 'debugging', 'upgrade', 'codegen', 'migration']).optional(),
+              orm: z.string().optional(),
+              confidence: z.enum(['high', 'medium', 'low']).optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'classify_developer_goal':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              goal: z.string().min(2),
+              project: projectSummarySchema,
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'plan_developer_task':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              taskId: z.string().optional(),
+              patternId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'adapt_example_to_project':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              taskId: z.string().optional(),
+              patternId: z.string().optional(),
+              exampleId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              targetModels: z.array(z.string()).optional(),
+              constraints: z.array(z.string()).optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'validate_developer_task_plan':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              taskId: z.string().optional(),
+              patternId: z.string().optional(),
+              goal: z.string().optional(),
+              project: projectSummarySchema,
+              proposedSteps: z.array(z.string()).optional(),
+              selectedPlugin: z.string().optional(),
+              usesPlaygroundCodeAsSource: z.boolean().optional(),
+              usesPlaygroundRuntimeAsSource: z.boolean().optional(),
+              includesSchemaInspection: z.boolean().optional(),
+              includesTests: z.boolean().optional(),
+              includesPluginDecision: z.boolean().optional(),
+              handlesLookahead: z.boolean().optional(),
+              handlesDirectiveRuntimeMode: z.boolean().optional(),
+              handlesPolymorphicResolution: z.boolean().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'diagnose_developer_issue':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              taskId: z.string().optional(),
+              patternId: z.string().optional(),
+              symptom: z.string().min(2),
+              stage: z.enum(['install', 'schema', 'runtime', 'plugin', 'query', 'directive']).optional(),
+              project: projectSummarySchema,
+              observedBehavior: z.string().optional(),
+              expectedBehavior: z.string().optional(),
+              selectedPlugin: z.string().optional(),
+              schemaExcerpt: z.string().optional(),
+              operationExcerpt: z.string().optional(),
+              targetVersion: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'inspect_playground_scenario':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              scenario: z.string().min(2),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'validate_playground_scenario':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              scenario: z.string().min(2),
+              exampleId: z.string().optional(),
+              editableFields: z.array(z.string()).optional(),
+              docsSlugs: z.array(z.string()).optional(),
+              outputPanels: z.array(z.string()).optional(),
+              executionMode: executionModeSchema.optional(),
+              declaresAdaptedRuntime: z.boolean().optional(),
+              hasFixture: z.boolean().optional(),
+              hasApiValidation: z.boolean().optional(),
+              hasTests: z.boolean().optional(),
+              usesHardcodedOutput: z.boolean().optional(),
+              sourcePath: z.string().optional(),
+              runtimeSourcePath: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'plan_playground_scenario':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              scenario: z.string().min(2),
+              goal: z.string().optional(),
+              exampleId: z.string().optional(),
+              executionMode: executionModeSchema.optional(),
+              editableFields: z.array(z.string()).optional(),
+              outputPanels: z.array(z.string()).optional(),
+              upstreamSourcePath: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'compare_playground_with_canonical':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              scenario: z.string().min(2),
+              exampleId: z.string().optional(),
+              observedExecutionMode: executionModeSchema.optional(),
+              observedSourceType: z.string().optional(),
+              observedBehaviorSummary: z.string().optional(),
+            },
+          },
+          async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),
+        )
+        break
+
+      case 'list_playground_parity_gates':
+        server.registerTool(
+          tool.name,
+          {
+            title: tool.name,
+            description: tool.description,
+            inputSchema: {
+              scenario: z.string().optional(),
             },
           },
           async (input) => toToolResult(invokeKnowledgeMcpTool(context, tool.name, input as Record<string, unknown>)),

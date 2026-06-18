@@ -43,20 +43,55 @@ export interface SearchKnowledgeToolInput {
   section?: string
   scenario?: string
   limit?: number
+  targetVersion?: string
+}
+
+export interface ProjectSummary {
+  packageManager?: string
+  runtime?: string
+  language?: string
+  serverStack?: string
+  orm?: string
+  currentGraphqlSetup?: string
+  constraints?: string[]
+  targetOutcome?: string
+  graphqlGeneVersion?: string
+}
+
+export interface IssueReport {
+  userGoal?: string
+  symptom?: string
+  context?: string
+  tried?: string[]
+  environment?: string
+  graphqlGeneVersion?: string
+}
+
+export interface FeatureQuestion {
+  feature: string
+  desiredDepth?: 'brief' | 'standard' | 'deep'
+  currentContext?: string
+  targetVersion?: string
 }
 
 export interface ExplainGraphqlGeneFeatureInput {
   feature: string
+  question?: FeatureQuestion
+  targetVersion?: string
 }
 
 export interface RecommendIntegrationPathInput {
   goal: string
+  project?: ProjectSummary
+  targetVersion?: string
 }
 
 export interface ChoosePluginStrategyInput {
   orm?: string
   goal?: string
   wantsCustomPlugin?: boolean
+  project?: ProjectSummary
+  targetVersion?: string
 }
 
 export interface PlanGraphqlGeneIntegrationInput {
@@ -64,6 +99,8 @@ export interface PlanGraphqlGeneIntegrationInput {
   serverStack?: string
   orm?: string
   concerns?: string[]
+  project?: ProjectSummary
+  targetVersion?: string
 }
 
 export type DiagnoseIssueStage =
@@ -78,6 +115,9 @@ export interface DiagnoseGraphqlGeneIssueInput {
   symptom: string
   context?: string
   stage?: DiagnoseIssueStage
+  issue?: IssueReport
+  project?: ProjectSummary
+  targetVersion?: string
 }
 
 export interface KnowledgeMcpManifest {

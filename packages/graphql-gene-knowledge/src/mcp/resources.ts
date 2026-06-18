@@ -1,4 +1,9 @@
 import type { KnowledgeCatalog } from '../contracts'
+import {
+  buildDeveloperTaskOverviewResource,
+  listDeveloperTaskPatterns,
+  readDeveloperTaskResource,
+} from '../developer/task-patterns'
 import type { McpDomainContext, McpResourceDescriptor, McpResourceDocument } from './contracts'
 
 const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
@@ -44,6 +49,24 @@ const BASE_RESOURCE_DEFINITIONS: McpResourceDescriptor[] = [
     description: 'Returns common GraphQL Gene troubleshooting entries backed by canonical guidance.',
     mimeType: 'application/json',
   },
+  {
+    uri: 'developer-tasks://overview',
+    name: 'Developer Task Overview',
+    description: 'Returns the canonical GraphQL Gene developer task catalog with stages, capabilities, evidence, and warnings.',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'audit://upstream-snapshot',
+    name: 'Upstream Audit Snapshot',
+    description: 'Returns the current upstream-audit snapshot covering inventories, scenario matrix, provenance, and conflict log.',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'audit://package-parity',
+    name: 'Package Parity Audit',
+    description: 'Returns the package export parity and capability audit used by developer-task planning.',
+    mimeType: 'application/json',
+  },
 ]
 
 export function listKnowledgeMcpResources(context?: McpDomainContext): McpResourceDescriptor[] {
@@ -83,6 +106,12 @@ export function listKnowledgeMcpResources(context?: McpDomainContext): McpResour
       description: `Curated troubleshooting entry for ${issue.issueId}.`,
       mimeType: 'application/json' as const,
     })),
+    ...listDeveloperTaskPatterns(context.catalog).patterns.map(task => ({
+      uri: toDeveloperTaskResourceUri(task.taskId),
+      name: `Developer Task: ${task.title}`,
+      description: `Canonical developer task entry for ${task.taskId}.`,
+      mimeType: 'application/json' as const,
+    })),
   ]
 }
 
@@ -108,12 +137,19 @@ export function readKnowledgeMcpResource(context: McpDomainContext, uri: string)
       return jsonResource(uri, context.catalog.recipes)
     case 'troubleshooting://catalog':
       return jsonResource(uri, context.catalog.troubleshooting)
+    case 'developer-tasks://overview':
+      return jsonResource(uri, buildDeveloperTaskOverviewResource(context.catalog))
+    case 'audit://upstream-snapshot':
+      return jsonResource(uri, context.catalog.audit ?? null)
+    case 'audit://package-parity':
+      return jsonResource(uri, context.catalog.audit?.packageParity ?? null)
     default:
       return readEntryResource(context, uri)
   }
 }
 
 function buildOverviewPayload(catalog: KnowledgeCatalog) {
+  const docsById = new Map(catalog.docs.map(doc => [doc.id, doc]))
   const scenarios = [...new Set([
     ...catalog.examples.map(example => example.scenario),
     ...catalog.plugins.flatMap(plugin => plugin.scenarios),
@@ -123,7 +159,14 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
     .sort()
     .map((scenario) => {
       const scenarioExamples = catalog.examples.filter(example => example.scenario === scenario)
-      const linkedDocs = catalog.docs.filter(doc => doc.playgroundScenario === scenario)
+      const linkedDocIds = new Set([
+        ...catalog.docs
+          .filter(doc => doc.playgroundScenario === scenario)
+          .map(doc => doc.id),
+        ...scenarioExamples
+          .flatMap(example => example.recommendedDocIds)
+          .filter(docId => docsById.has(docId)),
+      ])
       const linkedPlugins = catalog.plugins.filter(plugin => plugin.scenarios.includes(scenario))
       const linkedRecipes = catalog.recipes.filter(recipe => recipe.scenarios.includes(scenario))
       const linkedIssues = catalog.troubleshooting.filter(issue => issue.scenarios.includes(scenario))
@@ -131,7 +174,7 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
       return {
         id: scenario,
         exampleCount: scenarioExamples.length,
-        linkedDocCount: linkedDocs.length,
+        linkedDocCount: linkedDocIds.size,
         pluginCount: linkedPlugins.length,
         recipeCount: linkedRecipes.length,
         troubleshootingCount: linkedIssues.length,
@@ -142,6 +185,29 @@ function buildOverviewPayload(catalog: KnowledgeCatalog) {
   return {
     generatedAt: catalog.generatedAt,
     counts: catalog.counts,
+    developerTasks: {
+      count: listDeveloperTaskPatterns(catalog).count,
+    },
+    audit: catalog.audit
+      ? {
+          status: catalog.audit.metadata.status,
+          upstreamRepo: catalog.audit.metadata.upstreamRepo,
+          auditedRef: catalog.audit.metadata.auditedRef,
+          docsCount: catalog.audit.coverage.docs,
+          packageCount: catalog.audit.coverage.packages,
+          capabilityCount: catalog.audit.coverage.capabilities,
+          pluginCount: catalog.audit.coverage.plugins,
+          exampleCount: catalog.audit.coverage.examples,
+          scenarioCount: catalog.audit.coverage.scenarios,
+          conflictCount: catalog.audit.coverage.conflicts,
+          packageParity: {
+            total: catalog.audit.packageParity.summary.total,
+            unresolved: catalog.audit.packageParity.summary.unresolved,
+            warningCount: catalog.audit.packageParity.summary.warningCount,
+            byStatus: catalog.audit.packageParity.summary.byStatus,
+          },
+        }
+      : null,
     scenarios,
     diagnostics: catalog.diagnostics,
   }
@@ -185,6 +251,11 @@ function readEntryResource(context: McpDomainContext, uri: string): McpResourceD
     return jsonResource(uri, troubleshooting)
   }
 
+  if (uri.startsWith('developer-tasks://task/')) {
+    const taskId = uri.slice('developer-tasks://task/'.length)
+    return jsonResource(uri, readDeveloperTaskResource(context.catalog, taskId))
+  }
+
   throw new Error(`Unknown MCP resource URI "${uri}".`)
 }
 
@@ -206,4 +277,8 @@ function toRecipeResourceUri(recipeId: string) {
 
 function toTroubleshootingResourceUri(issueId: string) {
   return `troubleshooting://issue/${issueId}`
+}
+
+function toDeveloperTaskResourceUri(taskId: string) {
+  return `developer-tasks://task/${taskId}`
 }

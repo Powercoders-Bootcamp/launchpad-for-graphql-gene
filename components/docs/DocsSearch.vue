@@ -1,13 +1,13 @@
 <template>
   <div class="docs-search">
-    <label class="docs-search__label" for="docs-search-input">{{ t('docs.searchLabel') }}</label>
+    <label class="docs-search__label" :for="inputId">{{ t(labelKey('searchLabel')) }}</label>
 
     <input
-      id="docs-search-input"
+      :id="inputId"
       v-model.trim="query"
       class="docs-search__input"
       type="search"
-      :placeholder="t('docs.searchPlaceholder')"
+      :placeholder="t(labelKey('searchPlaceholder'))"
       autocomplete="off"
     >
 
@@ -23,7 +23,7 @@
       </NuxtLink>
 
       <p v-if="!limitedResults.length" class="docs-search__empty">
-        {{ t('docs.noResults', { query }) }}
+        {{ t(labelKey('noResults'), { query }) }}
       </p>
     </div>
   </div>
@@ -42,22 +42,37 @@ interface SearchPage {
   category?: string
 }
 
+const props = withDefaults(defineProps<{
+  slugPrefix?: string
+  labelsKeyPrefix?: string
+}>(), {
+  slugPrefix: '/docs',
+  labelsKeyPrefix: 'docs',
+})
+
 const query = ref('')
 const localePath = useLocalePath()
 const { locale, t } = useI18n()
+const inputId = computed(() => `docs-search-input-${props.slugPrefix.replace(/[^a-z0-9]+/gi, '-')}`)
 
-const { data: pages } = await useAsyncData(`docs-search-pages-${locale.value}`, async () => {
+function labelKey(key: 'searchLabel' | 'searchPlaceholder' | 'noResults') {
+  return `${props.labelsKeyPrefix}.${key}`
+}
+
+const { data: pages } = await useAsyncData(`docs-search-pages-${locale.value}-${props.slugPrefix}`, async () => {
   const docs = await queryCollection('docs').all()
 
-  return docs.map((page) => ({
-    title: String(page.title ?? ''),
-    description: String(page.description ?? ''),
-    summary: typeof page.summary === 'string' ? page.summary : undefined,
-    slug: String(page.slug ?? page._path ?? ''),
-    sidebarLabel: typeof page.sidebarLabel === 'string' ? page.sidebarLabel : undefined,
-    section: typeof page.section === 'string' ? page.section : undefined,
-    category: typeof page.category === 'string' ? page.category : undefined,
-  })) as SearchPage[]
+  return docs
+    .map((page) => ({
+      title: String(page.title ?? ''),
+      description: String(page.description ?? ''),
+      summary: typeof page.summary === 'string' ? page.summary : undefined,
+      slug: String(page.slug ?? page._path ?? ''),
+      sidebarLabel: typeof page.sidebarLabel === 'string' ? page.sidebarLabel : undefined,
+      section: typeof page.section === 'string' ? page.section : undefined,
+      category: typeof page.category === 'string' ? page.category : undefined,
+    }))
+    .filter(page => page.slug.startsWith(props.slugPrefix)) as SearchPage[]
 })
 
 const filteredResults = computed(() => {

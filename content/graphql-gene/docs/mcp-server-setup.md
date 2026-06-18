@@ -4,24 +4,25 @@ description: Run the GraphQL Gene MCP server locally over stdio or Streamable HT
 section: guides
 category: integration
 order: 4
-slug: /docs/guides/mcp-server-setup
+slug: /mcp/setup
 status: experimental
-summary: Build the standalone GraphQL Gene MCP server, print client-ready registration snippets, and choose between stdio and Streamable HTTP transports.
+summary: Build the standalone GraphQL Gene MCP server, print client-ready registration snippets, choose between stdio and Streamable HTTP transports, and inspect parity-aware audit resources.
 related:
   - /docs/concepts/getting-started
   - /docs/reference/writing-a-plugin
-  - /docs/guides/mcp-server-deployment
-  - /docs/reference/mcp-version-contract
+  - /mcp/deployment
+  - /mcp/version-contract
 ---
 
 # GraphQL Gene MCP server setup
 
-The GraphQL Gene MCP server is a separate package in this repository. Its job is to give coding agents source-backed GraphQL Gene guidance through tools, prompts, and resources.
+The GraphQL Gene MCP server is a separate package in this repository. Its job is to give coding agents source-backed GraphQL Gene guidance through tools, prompts, resources, and audit snapshots.
 
 Use it when you want an agent to:
 
 - search canonical GraphQL Gene docs and examples
 - inspect curated plugin, recipe, and troubleshooting guidance
+- inspect provenance and package-parity audit output before trusting a capability claim
 - choose a plugin strategy
 - plan an integration path
 - diagnose GraphQL Gene issues
@@ -128,8 +129,8 @@ The repository also includes:
 
 For the official deployment story and Docker template, see:
 
-- `/docs/guides/mcp-server-deployment`
-- `/docs/reference/mcp-version-contract`
+- `/mcp/deployment`
+- `/mcp/version-contract`
 
 ## Verify the installation
 
@@ -147,6 +148,8 @@ This checks:
 - a real Streamable HTTP MCP handshake
 - the HTTP health endpoint
 - tool/resource listing plus knowledge resource reads
+- upstream and package-parity audit resource reads
+- representative developer-task and playground-maintainer tool calls
 - canonical docs/examples/plugins/recipes/troubleshooting counts from the built runtime
 
 For machine-readable output:
@@ -160,13 +163,16 @@ npm run mcp:doctor -- --json
 The most useful MCP capabilities right now are:
 
 - resources for overview, docs catalogs, examples catalogs, plugin catalogs, recipe catalogs, troubleshooting catalogs, and single entry records
+- audit resources such as `audit://upstream-snapshot` and `audit://package-parity`
+- developer task resources such as `developer-tasks://overview` and `developer-tasks://task/{id}`
 - prompts for integration framing and plugin authoring
-- tools such as `search_knowledge`, `choose_plugin_strategy`, `plan_graphql_gene_integration`, and `diagnose_graphql_gene_issue`
+- tools such as `search_knowledge`, `choose_plugin_strategy`, `plan_graphql_gene_integration`, `classify_developer_goal`, `plan_developer_task`, and `diagnose_graphql_gene_issue`
 
 ## Source-of-truth rule
 
 The MCP server is backed by the canonical knowledge layer in this repo. That means:
 
 - docs, examples, plugins, recipes, and troubleshooting entries are linked through one normalized graph
+- the runtime exposes provenance and package-parity audits so clients can distinguish confirmed public APIs from conceptual guidance
 - playground examples are still marked when they are adapted rather than canonical runtime behavior
 - if a demo surface and upstream-aligned docs disagree, prefer the docs and source-backed examples

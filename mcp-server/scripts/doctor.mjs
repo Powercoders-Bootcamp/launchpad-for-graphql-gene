@@ -171,6 +171,29 @@ async function verifyStdioTransport(payload) {
       10000,
       'Timed out while reading the stdio directives doc resource.',
     )
+    const developerTaskOverview = await withTimeout(
+      client.readResource({ uri: 'developer-tasks://overview' }),
+      10000,
+      'Timed out while reading the stdio developer task overview resource.',
+    )
+    const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const auditSnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://upstream-snapshot' }),
+      10000,
+      'Timed out while reading the stdio upstream audit snapshot resource.',
+    )
+    const auditPayload = parseOverviewPayload(auditSnapshot)
+    const packageParitySnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://package-parity' }),
+      10000,
+      'Timed out while reading the stdio package parity audit resource.',
+    )
+    const packageParityPayload = parseOverviewPayload(packageParitySnapshot)
+    assertPackageParityCoverage('stdio', packageParityPayload)
+    const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'stdio')
+    const developerToolPayload = await verifyDeveloperTaskTool(client, 'stdio')
+    const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'stdio')
+    const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'stdio')
 
     if (resources.resources.length !== expectedResourceCount) {
       throw new Error(
@@ -183,7 +206,23 @@ async function verifyStdioTransport(payload) {
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
+      developerTaskCount: developerTaskOverviewPayload.count,
+      developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
+      developerTaskVersionMetadata: developerToolPayload.versionMetadata,
+      auditStatus: auditPayload.metadata?.status ?? null,
+      auditConflictCount: auditPayload.coverage?.conflicts ?? 0,
+      packageParityUnresolvedCount: packageParityPayload.summary?.unresolved ?? 0,
+      packageParityPolymorphicStatus: packageParityPayload.capabilities?.find(
+        capability => capability.capabilityId === 'polymorphic-blocks',
+      )?.status ?? null,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
+      developerToolPattern: developerToolPayload.patternId,
+      developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
+      developerIssueTask: developerIssueDiagnosisPayload.taskId,
+      maintainerToolScenario: maintainerToolPayload.scenario,
+      maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
+      maintainerToolGateCount: maintainerToolPayload.parityGates.length,
       stderrPreview: stderrBuffer.read(),
     }
   }
@@ -250,6 +289,29 @@ async function verifyHttpTransport(payload) {
       10000,
       'Timed out while reading the HTTP directives doc resource.',
     )
+    const developerTaskOverview = await withTimeout(
+      client.readResource({ uri: 'developer-tasks://overview' }),
+      10000,
+      'Timed out while reading the HTTP developer task overview resource.',
+    )
+    const developerTaskOverviewPayload = parseOverviewPayload(developerTaskOverview)
+    const auditSnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://upstream-snapshot' }),
+      10000,
+      'Timed out while reading the HTTP upstream audit snapshot resource.',
+    )
+    const auditPayload = parseOverviewPayload(auditSnapshot)
+    const packageParitySnapshot = await withTimeout(
+      client.readResource({ uri: 'audit://package-parity' }),
+      10000,
+      'Timed out while reading the HTTP package parity audit resource.',
+    )
+    const packageParityPayload = parseOverviewPayload(packageParitySnapshot)
+    assertPackageParityCoverage('http', packageParityPayload)
+    const developerTaskClassificationPayload = await verifyDeveloperTaskClassificationTool(client, 'HTTP')
+    const developerToolPayload = await verifyDeveloperTaskTool(client, 'HTTP')
+    const developerIssueDiagnosisPayload = await verifyDeveloperTaskDiagnosisTool(client, 'HTTP')
+    const maintainerToolPayload = await verifyPlaygroundMaintainerTool(client, 'HTTP')
     const healthUrl = new URL(process.env.GRAPHQL_GENE_MCP_HEALTH_PATH ?? '/healthz', url).toString()
     const health = await withTimeout(
       fetch(healthUrl, {
@@ -280,7 +342,23 @@ async function verifyHttpTransport(payload) {
       resourceCount: resources.resources.length,
       overviewBytes: JSON.stringify(overview).length,
       overviewCounts: overviewPayload.counts,
+      developerTaskCount: developerTaskOverviewPayload.count,
+      developerTaskParityWarningCount: developerTaskOverviewPayload.parityWarningCount,
+      developerTaskVersionMetadata: developerToolPayload.versionMetadata,
+      auditStatus: auditPayload.metadata?.status ?? null,
+      auditConflictCount: auditPayload.coverage?.conflicts ?? 0,
+      packageParityUnresolvedCount: packageParityPayload.summary?.unresolved ?? 0,
+      packageParityPolymorphicStatus: packageParityPayload.capabilities?.find(
+        capability => capability.capabilityId === 'polymorphic-blocks',
+      )?.status ?? null,
       directivesDocBytes: JSON.stringify(directivesDoc).length,
+      developerTaskClassificationTopTask: developerTaskClassificationPayload.rankedTasks?.[0]?.taskId ?? null,
+      developerToolPattern: developerToolPayload.patternId,
+      developerToolStrategy: developerToolPayload.pluginStrategy.strategy,
+      developerIssueTask: developerIssueDiagnosisPayload.taskId,
+      maintainerToolScenario: maintainerToolPayload.scenario,
+      maintainerToolKnownScenario: maintainerToolPayload.knownScenario,
+      maintainerToolGateCount: maintainerToolPayload.parityGates.length,
       stdoutPreview: stdoutBuffer.read(),
       stderrPreview: stderrBuffer.read(),
     }
@@ -575,6 +653,113 @@ function parseOverviewPayload(resourceResult) {
   return JSON.parse(text)
 }
 
+async function verifyDeveloperTaskTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'plan_developer_task',
+      arguments: {
+        patternId: 'polymorphic-blocks',
+        project: {
+          orm: 'Sequelize',
+          serverStack: 'Apollo Server',
+        },
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer task planning tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'plan_developer_task')
+
+  if (payload.patternId !== 'polymorphic-blocks') {
+    throw new Error(`${transportLabel} developer task tool returned an unexpected pattern.`)
+  }
+
+  if (payload?.pluginStrategy?.strategy !== 'plugin-sequelize') {
+    throw new Error(`${transportLabel} developer task tool did not return the expected Sequelize plugin strategy.`)
+  }
+
+  return payload
+}
+
+async function verifyDeveloperTaskClassificationTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'classify_developer_goal',
+      arguments: {
+        goal: 'I need to migrate a hand-written schema toward GraphQL Gene',
+        project: {
+          currentGraphqlSetup: 'hand-written schema and resolvers',
+        },
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer task classification tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'classify_developer_goal')
+
+  if (payload?.rankedTasks?.[0]?.taskId !== 'migrate-from-handwritten-schema') {
+    throw new Error(`${transportLabel} developer task classification tool returned an unexpected top task.`)
+  }
+
+  return payload
+}
+
+async function verifyDeveloperTaskDiagnosisTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'diagnose_developer_issue',
+      arguments: {
+        symptom: 'my generated schema is missing expected model types',
+        stage: 'schema',
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} developer issue diagnosis tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'diagnose_developer_issue')
+
+  if (payload.taskId !== 'debug-schema-generation') {
+    throw new Error(`${transportLabel} developer issue diagnosis tool returned an unexpected task.`)
+  }
+
+  return payload
+}
+
+async function verifyPlaygroundMaintainerTool(client, transportLabel) {
+  const result = await withTimeout(
+    client.callTool({
+      name: 'inspect_playground_scenario',
+      arguments: {
+        scenario: 'polymorphic-blocks',
+      },
+    }),
+    10000,
+    `Timed out while calling the ${transportLabel} playground maintainer inspection tool.`,
+  )
+  const payload = parseToolJsonPayload(result, 'inspect_playground_scenario')
+
+  if (payload.scenario !== 'polymorphic-blocks' || payload.knownScenario !== true) {
+    throw new Error(
+      `${transportLabel} maintainer tool returned an unexpected scenario contract for polymorphic-blocks.`,
+    )
+  }
+
+  if (!Array.isArray(payload.parityGates) || payload.parityGates.length < 5) {
+    throw new Error(`${transportLabel} maintainer tool did not return the expected playground parity gates.`)
+  }
+
+  return payload
+}
+
+function parseToolJsonPayload(toolResult, toolName) {
+  const text = toolResult?.content?.find(content => typeof content?.text === 'string')?.text
+  if (!text) {
+    throw new Error(`${toolName} did not return JSON text content.`)
+  }
+
+  return JSON.parse(text)
+}
+
 function assertOverviewCoverage(transport, overviewPayload) {
   const counts = overviewPayload?.counts
   const requiredKeys = ['docs', 'examples', 'plugins', 'recipes', 'troubleshooting']
@@ -588,7 +773,43 @@ function assertOverviewCoverage(transport, overviewPayload) {
     }
   }
 
-  return 7 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting
+  const developerTaskCount = overviewPayload?.developerTasks?.count
+  if (!Number.isInteger(developerTaskCount) || developerTaskCount <= 0) {
+    throw new Error(
+      `The ${transport} knowledge overview reported an invalid developer task count (${String(developerTaskCount)}). The built MCP runtime is likely missing canonical developer task inputs.`,
+    )
+  }
+
+  const auditScenarioCount = overviewPayload?.audit?.scenarioCount
+  if (!Number.isInteger(auditScenarioCount) || auditScenarioCount <= 0) {
+    throw new Error(
+      `The ${transport} knowledge overview reported an invalid audit scenario count (${String(auditScenarioCount)}). The built MCP runtime is likely missing upstream-audit snapshot coverage.`,
+    )
+  }
+
+  return 10 + counts.docs + counts.examples + counts.plugins + counts.recipes + counts.troubleshooting + developerTaskCount
+}
+
+function assertPackageParityCoverage(transport, packageParityPayload) {
+  if (!Array.isArray(packageParityPayload?.capabilities) || packageParityPayload.capabilities.length < 5) {
+    throw new Error(
+      `The ${transport} package parity audit did not expose the expected capability coverage.`,
+    )
+  }
+
+  const polymorphicCapability = packageParityPayload.capabilities.find(
+    capability => capability.capabilityId === 'polymorphic-blocks',
+  )
+
+  if (!polymorphicCapability) {
+    throw new Error(`The ${transport} package parity audit is missing the polymorphic-blocks capability.`)
+  }
+
+  if (polymorphicCapability.status === 'confirmed-public-api') {
+    throw new Error(
+      `The ${transport} package parity audit unexpectedly marked polymorphic-blocks as a confirmed public API.`,
+    )
+  }
 }
 
 function resolveSdkRoot() {

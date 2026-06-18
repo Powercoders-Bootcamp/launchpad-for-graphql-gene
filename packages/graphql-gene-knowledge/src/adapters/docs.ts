@@ -5,6 +5,7 @@ import type {
   BuildKnowledgeCatalogOptions,
   DocKnowledgeEntry,
   DocsFrontmatterContract,
+  KnowledgeSourceOverride,
 } from '../contracts'
 
 const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/
@@ -16,7 +17,7 @@ export interface DocKnowledgeDraft extends DocKnowledgeEntry {
 export function loadDocKnowledgeEntries(
   options: Pick<
     BuildKnowledgeCatalogOptions,
-    'workspaceRoot' | 'docsRoot' | 'sourceRepo' | 'sourceRef' | 'versionRange'
+    'workspaceRoot' | 'docsRoot' | 'sourceRepo' | 'sourceRef' | 'versionRange' | 'provenanceOverrides'
   >,
 ): DocKnowledgeDraft[] {
   const absoluteDocsRoot = resolve(options.docsRoot)
@@ -28,8 +29,9 @@ export function loadDocKnowledgeEntries(
     const frontmatter = readFrontmatter(file.source)
     const body = stripFrontmatter(file.source)
     const slug = frontmatter.slug ?? `/${file.relativePath.replace(/\.md$/i, '')}`
+    const override = options.provenanceOverrides?.docsBySlug?.[slug]
 
-    return {
+    return applySourceOverride({
       id: createDocId(slug),
       kind: 'doc',
       title: frontmatter.title ?? humanizeFilename(file.relativePath),
@@ -57,7 +59,7 @@ export function loadDocKnowledgeEntries(
       sidebarLabel: frontmatter.sidebarLabel,
       playgroundScenario: frontmatter.playgroundScenario,
       body,
-    }
+    }, override)
   })
 }
 
@@ -123,4 +125,19 @@ function humanizeFilename(relativePath: string) {
 
 function compact(values: Array<string | undefined>) {
   return values.filter((value): value is string => Boolean(value))
+}
+
+function applySourceOverride<T extends DocKnowledgeEntry>(entry: T, override?: KnowledgeSourceOverride): T {
+  if (!override) {
+    return entry
+  }
+
+  return {
+    ...entry,
+    provenanceStatus: override.provenanceStatus,
+    upstreamSourcePath: override.upstreamSourcePath,
+    upstreamSourceRepo: override.upstreamSourceRepo,
+    upstreamSourceRef: override.upstreamSourceRef,
+    upstreamSourceType: override.upstreamSourceType,
+  }
 }

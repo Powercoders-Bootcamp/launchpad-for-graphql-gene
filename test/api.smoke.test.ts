@@ -120,9 +120,9 @@ describe('GET /api/knowledge/catalog', () => {
     expect(res.status).toBe('ok')
     expect(res.requestId).toBeTypeOf('string')
     expect(res.knowledge.counts.docs).toBe(8)
-    expect(res.knowledge.counts.examples).toBe(4)
+    expect(res.knowledge.counts.examples).toBe(8)
     expect(res.knowledge.counts.plugins).toBe(2)
-    expect(res.knowledge.counts.recipes).toBe(5)
+    expect(res.knowledge.counts.recipes).toBe(11)
     expect(res.knowledge.counts.troubleshooting).toBe(5)
     expect(res.knowledge.byId['doc:/docs/guides/directives']).toBeDefined()
     expect(res.knowledge.byId['example:directive-middleware:user-auth-directive']).toBeDefined()
@@ -138,7 +138,7 @@ describe('GET /api/knowledge/overview', () => {
     const res = await api('/api/knowledge/overview')
     expect(res.status).toBe('ok')
     expect(res.overview.counts.docs).toBe(8)
-    expect(res.overview.counts.examples).toBe(4)
+    expect(res.overview.counts.examples).toBe(8)
     expect(res.overview.counts.plugins).toBe(2)
 
     const guidesSection = res.overview.sections.find((section: { id: string }) => section.id === 'guides')
@@ -211,7 +211,7 @@ describe('GET /api/knowledge/search', () => {
     expect(res.status).toBe('ok')
     expect(res.results.length).toBeGreaterThanOrEqual(1)
     expect(res.results[0].id).toBe('doc:/docs/reference/writing-a-plugin')
-    expect(res.results.some((result: { id: string }) => result.id === 'doc:/docs/reference/mcp-version-contract')).toBe(true)
+    expect(res.results.some((result: { id: string }) => result.id === 'doc:/mcp/version-contract')).toBe(true)
   })
 
   it('supports curated kind filters', async () => {

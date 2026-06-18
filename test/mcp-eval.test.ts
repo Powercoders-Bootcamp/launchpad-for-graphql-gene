@@ -44,6 +44,10 @@ function assertEvalResult(evalCase: McpEvalCase, result: Record<string, unknown>
     expect(asString(result.strategy)).toBe(expected.strategy)
   }
 
+  if (expected.pluginStrategy) {
+    expect(asString(asRecord(result.pluginStrategy).strategy)).toBe(expected.pluginStrategy)
+  }
+
   if ('recommendedPlugin' in expected) {
     expect(result.recommendedPlugin ?? null).toBe(expected.recommendedPlugin ?? null)
   }
@@ -66,6 +70,30 @@ function assertEvalResult(evalCase: McpEvalCase, result: Record<string, unknown>
 
   if (expected.diagnosisArea) {
     expect(asString(result.diagnosisArea)).toBe(expected.diagnosisArea)
+  }
+
+  if (expected.taskId) {
+    expect(asString(result.taskId)).toBe(expected.taskId)
+  }
+
+  if (expected.topTaskId || expected.rankedTaskIdsInclude?.length) {
+    const rankedTasks = asRecordArray(result.rankedTasks)
+
+    if (expected.topTaskId) {
+      expect(asString(rankedTasks[0]?.taskId)).toBe(expected.topTaskId)
+    }
+
+    if (expected.rankedTaskIdsInclude?.length) {
+      expect(rankedTasks.map(entry => asString(entry.taskId))).toEqual(expect.arrayContaining(expected.rankedTaskIdsInclude))
+    }
+  }
+
+  if (expected.recommendedNextTool) {
+    expect(asString(result.recommendedNextTool)).toBe(expected.recommendedNextTool)
+  }
+
+  if (expected.nextTool) {
+    expect(asString(result.nextTool)).toBe(expected.nextTool)
   }
 
   if (expected.docsFirstId || expected.docsInclude?.length) {
@@ -117,6 +145,16 @@ function assertEvalResult(evalCase: McpEvalCase, result: Record<string, unknown>
   if (expected.recommendedChecksInclude?.length) {
     expect(asStringArray(result.recommendedChecks)).toEqual(expect.arrayContaining(expected.recommendedChecksInclude))
   }
+
+  if (expected.warningIncludes?.length) {
+    const warnings = [
+      ...asStringArray(result.warnings),
+      ...asStringArray(asRecordArray(result.rankedTasks)[0]?.warnings),
+    ]
+    for (const fragment of expected.warningIncludes) {
+      expect(warnings.some(warning => warning.includes(fragment))).toBe(true)
+    }
+  }
 }
 
 function assertRelatedIds(
@@ -151,4 +189,10 @@ function asNumber(value: unknown) {
 
 function asString(value: unknown) {
   return typeof value === 'string' ? value : ''
+}
+
+function asRecord(value: unknown) {
+  return typeof value === 'object' && value !== null
+    ? value as Record<string, unknown>
+    : {}
 }

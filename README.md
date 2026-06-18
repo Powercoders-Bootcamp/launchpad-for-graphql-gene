@@ -22,6 +22,24 @@ The site combines three surfaces in a single Nuxt 4 application:
 - **Interactive playground** — runs real `graphql-gene` + Sequelize + SQLite execution on the backend; not a frontend simulation
 - **Public documentation** — rendered from the graphql-gene repo (placed at `content/graphql-gene/`)
 
+## GraphQL Gene MCP Server
+
+This repository also includes a separate GraphQL Gene MCP server under `mcp-server/`.
+
+It is designed for coding agents and IDE clients that need source-backed GraphQL Gene guidance through shared docs, examples, recipes, troubleshooting entries, and task-aware tools.
+
+Useful commands:
+
+```bash
+npm run mcp:build
+npm run mcp:print-config
+npm run mcp:start
+npm run mcp:start:http
+npm run mcp:doctor
+```
+
+For more detail, see `mcp-server/README.md` and the MCP docs pages in `content/graphql-gene/docs/`.
+
 ## Quick start
 
 ```bash

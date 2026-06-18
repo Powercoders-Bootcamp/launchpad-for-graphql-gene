@@ -182,7 +182,11 @@ describe('mcp-server streamable HTTP wrapper', () => {
 
     expect(toolNames).toContain('search_knowledge')
     expect(toolNames).toContain('plan_graphql_gene_integration')
+    expect(toolNames).toContain('classify_developer_goal')
+    expect(toolNames).toContain('plan_developer_task')
+    expect(toolNames).toContain('diagnose_developer_issue')
     expect(toolNames).toContain('diagnose_graphql_gene_issue')
+    expect(toolNames).toContain('validate_playground_scenario')
   })
 
   it('lists and reads MCP resources through HTTP', async () => {
@@ -191,6 +195,9 @@ describe('mcp-server streamable HTTP wrapper', () => {
     expect(resources.resources.some(resource => resource.uri === 'plugins://catalog')).toBe(true)
     expect(resources.resources.some(resource => resource.uri === 'recipes://catalog')).toBe(true)
     expect(resources.resources.some(resource => resource.uri === 'troubleshooting://catalog')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'developer-tasks://overview')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'audit://upstream-snapshot')).toBe(true)
+    expect(resources.resources.some(resource => resource.uri === 'audit://package-parity')).toBe(true)
 
     const readResult = await client!.readResource({ uri: 'docs://docs/guides/directives' })
     const firstContent = readResult.contents[0]
@@ -211,6 +218,30 @@ describe('mcp-server streamable HTTP wrapper', () => {
     const troubleshootingContent = troubleshootingResult.contents[0]
     expect(troubleshootingContent).toBeDefined()
     expect('text' in troubleshootingContent && troubleshootingContent.text.includes('directive-not-printed-in-sdl')).toBe(true)
+  })
+
+  it('reads developer task resources through HTTP', async () => {
+    const taskResult = await client!.readResource({ uri: 'developer-tasks://task/optimize-lookahead-loading' })
+    const taskContent = taskResult.contents[0]
+
+    expect(taskContent).toBeDefined()
+    expect('text' in taskContent && taskContent.text.includes('optimize-lookahead-loading')).toBe(true)
+  })
+
+  it('reads the upstream audit snapshot through HTTP', async () => {
+    const auditResult = await client!.readResource({ uri: 'audit://upstream-snapshot' })
+    const auditContent = auditResult.contents[0]
+
+    expect(auditContent).toBeDefined()
+    expect('text' in auditContent && auditContent.text.includes('"status": "full"')).toBe(true)
+  })
+
+  it('reads the package parity audit through HTTP', async () => {
+    const auditResult = await client!.readResource({ uri: 'audit://package-parity' })
+    const auditContent = auditResult.contents[0]
+
+    expect(auditContent).toBeDefined()
+    expect('text' in auditContent && auditContent.text.includes('"polymorphic-blocks"')).toBe(true)
   })
 
   it('calls a structured knowledge tool over HTTP', async () => {

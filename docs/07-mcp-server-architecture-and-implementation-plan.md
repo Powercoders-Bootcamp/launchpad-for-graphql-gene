@@ -531,6 +531,7 @@ Required direct resources:
 
 - `capabilities://server`
 - `knowledge://overview`
+- `developer-tasks://overview`
 - `docs://catalog`
 - `examples://catalog`
 - `plugins://catalog`
@@ -544,6 +545,7 @@ Required template resources:
 - `plugins://plugin/{pluginId}`
 - `recipes://recipe/{recipeId}`
 - `troubleshooting://issue/{issueId}`
+- `developer-tasks://task/{taskId}`
 - `workflows://pattern/{workflowId}`
 
 Rules:
@@ -561,8 +563,14 @@ Minimum prompt set:
 1. `start_graphql_gene_integration`
 2. `choose_integration_recipe`
 3. `debug_graphql_gene_problem`
-4. `author_graphql_gene_plugin`
-5. `upgrade_graphql_gene_version`
+4. `select_graphql_gene_plugin_strategy`
+5. `setup_graphql_gene_schema_generation`
+6. `implement_graphql_gene_directive_middleware`
+7. `debug_graphql_gene_lookahead`
+8. `author_graphql_gene_plugin`
+9. `migrate_handwritten_schema_to_graphql_gene`
+10. `plan_graphql_gene_upgrade`
+11. `triage_graphql_gene_issue`
 
 ### Tools
 
@@ -577,6 +585,20 @@ Recommended core tools:
 5. `plan_graphql_gene_integration`
 6. `diagnose_graphql_gene_issue`
 
+Recommended developer task pattern tools:
+
+1. `list_developer_task_patterns`
+2. `classify_developer_goal`
+3. `plan_developer_task`
+4. `adapt_example_to_project`
+5. `validate_developer_task_plan`
+6. `diagnose_developer_issue`
+
+These tools should treat playground scenarios as source-backed task patterns
+for developers, not as website runtime implementation templates. Their job is
+to help a host coding agent adapt a GraphQL Gene capability to the developer's
+own ORM models, GraphQL server, plugin strategy, and test plan.
+
 Optional later tools:
 
 - `compare_graphql_gene_approaches`
@@ -584,7 +606,35 @@ Optional later tools:
 - `playground_generate_schema`
 - `playground_run_query`
 
-The playground tools remain secondary.
+The playground execution tools remain secondary.
+
+Every task-aware tool response should carry evidence, confidence, version notes,
+and parity warnings when the installed package surface does not fully confirm a
+documented capability.
+
+### Playground maintainer tools
+
+Playground authoring and parity work is a separate tool family. These tools are
+for maintainers and coding agents working inside this website repo, not for
+general developers adopting GraphQL Gene in their own projects.
+
+Implemented maintainer tools:
+
+1. `inspect_playground_scenario`
+2. `validate_playground_scenario`
+3. `plan_playground_scenario`
+4. `compare_playground_with_canonical`
+5. `list_playground_parity_gates`
+
+Rules:
+
+1. These tools should use canonical scenario contracts and parity gates.
+2. They should accept implementation summaries from the host coding agent rather
+   than reading local files themselves.
+3. They should flag hardcoded primary outputs, missing API validation, missing
+   docs linkage, and execution-mode overclaims.
+4. They should not expand the public developer adoption tool surface with
+   website-specific implementation details.
 
 ## MCP Tool Contract Philosophy
 
@@ -635,6 +685,7 @@ Requirements:
 2. compiler output includes source ref or release version when possible
 3. MCP tools accept optional target version
 4. search and lookup prefer the requested version when supported
+5. doctor output should surface representative version metadata from task-aware calls
 
 ## Build And Delivery Pipeline
 
