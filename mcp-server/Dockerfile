@@ -3,7 +3,7 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY mcp-server/package.json ./mcp-server/package.json
+COPY mcp-server/package.json mcp-server/package-lock.json ./mcp-server/
 
 RUN npm ci --ignore-scripts
 RUN npm ci --prefix mcp-server --ignore-scripts
